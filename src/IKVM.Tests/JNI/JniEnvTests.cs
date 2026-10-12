@@ -19,8 +19,7 @@ namespace IKVM.Tests.JNI
     /// finds something wrong throws JniEnvTests$Failure, which fails the test with the location of the failed check.
     /// </summary>
     /// <remarks>
-    /// Tests that are ignored document behavior that is known to be wrong. The reason given is the defect, and the
-    /// test should pass once it is fixed.
+    /// Tests that are ignored document behavior that differs from the JNI specification, with the reason it does.
     /// </remarks>
     [TestClass]
     public class JniEnvTests
@@ -49,9 +48,6 @@ namespace IKVM.Tests.JNI
         /// </summary>
         static readonly object[] ManyArgs = [1, 2L, 0.5f, 0.25d, -3, 4000000000L, 1.5f, -2.75d, 5, -6L, 2.5f, 8.125d, -7, 9L, -3.25f, 1e10d];
 
-        const string NativeCharMarshaling = "Native method stubs marshal char as a single ANSI byte, so a char outside ASCII passed to or returned from a native method is corrupted.";
-        const string GetStaticMethodIDEscapes = "GetStaticMethodID lets NoSuchMethodError escape into native code instead of returning NULL with the exception pending. On Windows it unwinds through the native frames; elsewhere it crashes the process.";
-        const string BooleanAndByteArrayRegionBounds = "The boolean and byte array region functions do not check the region before copying: a negative length or a start past the end is accepted, and the set functions write part of the region before throwing.";
 
         static object test;
         static Type testsType;
@@ -185,7 +181,6 @@ namespace IKVM.Tests.JNI
         public void GetVersion() => Invoke("getVersion");
 
         [TestMethod]
-        [Ignore("DefineClass passes the name to ClassLoader.defineClass with its slashes, so the class is rejected as having the wrong name.")]
         public void DefineClass()
         {
             var bytes = JniTestClasses.Compiler.GetClassBytes(JniTestClasses.DefinedByJniClassName);
@@ -238,7 +233,6 @@ namespace IKVM.Tests.JNI
         public void IsInstanceOf() => Invoke("isInstanceOf");
 
         [TestMethod]
-        [Ignore("IsInstanceOf throws NullPointerException for a NULL object, instead of returning JNI_TRUE.")]
         public void IsInstanceOfNull() => Invoke("isInstanceOfNull");
 
         [TestMethod]
@@ -480,7 +474,6 @@ namespace IKVM.Tests.JNI
         public void GetObjectRefType() => Invoke("getObjectRefType");
 
         [TestMethod]
-        [Ignore("GetObjectRefType reports a local reference for NULL, instead of JNIInvalidRefType.")]
         public void GetObjectRefTypeOfNull() => Invoke("getObjectRefTypeOfNull");
 
         #endregion
@@ -553,11 +546,9 @@ namespace IKVM.Tests.JNI
         public void GetStaticMethodID() => Invoke("getStaticMethodID");
 
         [TestMethod]
-        [Ignore(GetStaticMethodIDEscapes)]
         public void GetStaticMethodIDNotFound() => Invoke("getStaticMethodIDNotFound");
 
         [TestMethod]
-        [Ignore(GetStaticMethodIDEscapes)]
         public void GetStaticMethodIDOfInstanceMethod() => Invoke("getStaticMethodIDOfInstanceMethod");
 
         #endregion
@@ -732,8 +723,6 @@ namespace IKVM.Tests.JNI
             yield return ["Object", "l", "value"];
         }
 
-        public static IEnumerable<object[]> StaticFieldTypesAndValues() => FieldTypesAndValues().Where(i => (string)i[0] != "Boolean");
-
         [DataTestMethod]
         [DynamicData(nameof(FieldTypesAndValues), DynamicDataSourceType.Method)]
         public void SetAndGetField(string type, string prefix, object value)
@@ -745,7 +734,7 @@ namespace IKVM.Tests.JNI
         }
 
         [DataTestMethod]
-        [DynamicData(nameof(StaticFieldTypesAndValues), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(FieldTypesAndValues), DynamicDataSourceType.Method)]
         public void SetAndGetStaticField(string type, string prefix, object value)
         {
             Invoke("setStatic" + type + "Field", value);
@@ -754,7 +743,6 @@ namespace IKVM.Tests.JNI
         }
 
         [DataTestMethod]
-        [Ignore("SetStaticBooleanField stores the opposite of the value it is given.")]
         [DataRow(true)]
         [DataRow(false)]
         public void SetAndGetStaticBooleanField(bool value)
@@ -765,7 +753,6 @@ namespace IKVM.Tests.JNI
         }
 
         [TestMethod]
-        [Ignore(NativeCharMarshaling)]
         public void SetAndGetNonAsciiCharField()
         {
             var target = NewTarget();
@@ -890,7 +877,6 @@ namespace IKVM.Tests.JNI
         }
 
         [TestMethod]
-        [Ignore("GetStringRegion accepts a negative length, instead of throwing StringIndexOutOfBoundsException.")]
         public void GetStringRegionWithNegativeLength()
         {
             FluentActions.Invoking(() => Invoke("getStringRegion", UnicodeString, 0, -1)).Should().Throw<java.lang.StringIndexOutOfBoundsException>();
@@ -914,7 +900,6 @@ namespace IKVM.Tests.JNI
         }
 
         [TestMethod]
-        [Ignore("GetStringUTFRegion accepts a negative length, instead of throwing StringIndexOutOfBoundsException.")]
         public void GetStringUTFRegionWithNegativeLength()
         {
             FluentActions.Invoking(() => Invoke("getStringUTFRegion", UnicodeString, 0, -1)).Should().Throw<java.lang.StringIndexOutOfBoundsException>();
@@ -950,30 +935,12 @@ namespace IKVM.Tests.JNI
         /// </summary>
         static readonly (int Start, int Len)[] BadRegions = [(-1, 2), (3, 3), (6, 0), (0, -1)];
 
-        static bool IsBooleanOrByte(string type) => type is "Boolean" or "Byte";
-
-        /// <summary>
-        /// Whether the boolean and byte array region functions mishandle the region: they do not check it before
-        /// copying, so a negative length or a start past the end is accepted, and a set writes up to the end first.
-        /// </summary>
-        static bool IsBrokenBooleanOrByteRegion(string type, (int Start, int Len) region, bool set) =>
-            IsBooleanOrByte(type) && (region.Len < 0 || region.Start > 5 || (set && region.Start >= 0 && region.Start < 5));
-
-        static IEnumerable<object[]> BadRegionData(bool set, bool broken)
+        public static IEnumerable<object[]> PrimitiveArrayTypesAndBadRegions()
         {
             foreach (var type in PrimitiveArrayTypes)
                 foreach (var region in BadRegions)
-                    if (IsBrokenBooleanOrByteRegion(type, region, set) == broken)
-                        yield return [type, region.Start, region.Len];
+                    yield return [type, region.Start, region.Len];
         }
-
-        public static IEnumerable<object[]> GetBadRegions() => BadRegionData(false, false);
-
-        public static IEnumerable<object[]> BrokenGetBadRegions() => BadRegionData(false, true);
-
-        public static IEnumerable<object[]> SetBadRegions() => BadRegionData(true, false);
-
-        public static IEnumerable<object[]> BrokenSetBadRegions() => BadRegionData(true, true);
 
         /// <summary>
         /// Makes an array of the given primitive type. For a boolean array, odd values are true.
@@ -1041,7 +1008,7 @@ namespace IKVM.Tests.JNI
         public void ObjectArrayCovariance() => Invoke("objectArrayCovariance");
 
         [TestMethod]
-        [Ignore("SetObjectArrayElement does not check the element type of an array of a ghost interface such as CharSequence, which is an object[] in .NET, so it stores anything without throwing ArrayStoreException.")]
+        [Ignore("Arrays of a ghost interface such as CharSequence are object arrays, so they take any reference. Compiled Java code has the same limitation, which avoids a check on every object array store; see the newarray case in compiler.cs.")]
         public void GhostInterfaceArrayStoreCheck() => Invoke("ghostInterfaceArrayStoreCheck");
 
         [DataTestMethod]
@@ -1092,19 +1059,11 @@ namespace IKVM.Tests.JNI
         }
 
         [DataTestMethod]
-        [DynamicData(nameof(GetBadRegions), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(PrimitiveArrayTypesAndBadRegions), DynamicDataSourceType.Method)]
         public void GetPrimitiveArrayRegionOutOfBounds(string type, int start, int len)
         {
             var array = MakeArray(type, 10, 11, 12, 13, 14);
             FluentActions.Invoking(() => Invoke("get" + type + "ArrayRegion", array, start, len)).Should().Throw<java.lang.ArrayIndexOutOfBoundsException>();
-        }
-
-        [DataTestMethod]
-        [Ignore(BooleanAndByteArrayRegionBounds)]
-        [DynamicData(nameof(BrokenGetBadRegions), DynamicDataSourceType.Method)]
-        public void GetBooleanAndByteArrayRegionOutOfBounds(string type, int start, int len)
-        {
-            GetPrimitiveArrayRegionOutOfBounds(type, start, len);
         }
 
         [DataTestMethod]
@@ -1120,7 +1079,7 @@ namespace IKVM.Tests.JNI
         }
 
         [DataTestMethod]
-        [DynamicData(nameof(SetBadRegions), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(PrimitiveArrayTypesAndBadRegions), DynamicDataSourceType.Method)]
         public void SetPrimitiveArrayRegionOutOfBounds(string type, int start, int len)
         {
             var array = MakeArray(type, 10, 11, 12, 13, 14);
@@ -1128,14 +1087,6 @@ namespace IKVM.Tests.JNI
 
             // nothing was written, and the values differ from all of the elements, so any partial write shows
             AssertArray(array, MakeArray(type, 10, 11, 12, 13, 14));
-        }
-
-        [DataTestMethod]
-        [Ignore(BooleanAndByteArrayRegionBounds)]
-        [DynamicData(nameof(BrokenSetBadRegions), DynamicDataSourceType.Method)]
-        public void SetBooleanAndByteArrayRegionOutOfBounds(string type, int start, int len)
-        {
-            SetPrimitiveArrayRegionOutOfBounds(type, start, len);
         }
 
         [TestMethod]
@@ -1184,7 +1135,6 @@ namespace IKVM.Tests.JNI
         }
 
         [TestMethod]
-        [Ignore(NativeCharMarshaling)]
         public void NativeMethodNonAsciiCharArgument()
         {
             Invoke("echoArgs", true, (byte)0, '☺', (short)0, 0, 0L, 0f, 0d, null).Should().Be("true,0,9786,0,0,0,0.0,0.0,null");
@@ -1227,7 +1177,6 @@ namespace IKVM.Tests.JNI
         }
 
         [TestMethod]
-        [Ignore(NativeCharMarshaling)]
         public void NativeMethodReturnsNonAsciiChar()
         {
             Invoke("returnChar", '☃').Should().Be('☃');
@@ -1310,7 +1259,6 @@ namespace IKVM.Tests.JNI
         }
 
         [TestMethod]
-        [Ignore("The native method stub writes '*** exception in native code ***' and the exception to standard output when an exception passes through it.")]
         public void NativeMethodReturningWrongTypeDoesNotWriteToStandardOutput()
         {
             var stdout = Console.Out;
@@ -1365,7 +1313,6 @@ namespace IKVM.Tests.JNI
         public void ZeroCapacityDirectBuffer() => Invoke("zeroCapacityDirectBuffer");
 
         [TestMethod]
-        [Ignore("GetDirectBufferAddress and GetDirectBufferCapacity throw ClassCastException for a buffer that isn't direct, instead of returning NULL and -1.")]
         public void GetDirectBufferAddressOfHeapBuffer() => Invoke("getDirectBufferAddressOfHeapBuffer");
 
         #endregion
@@ -1394,7 +1341,6 @@ namespace IKVM.Tests.JNI
         public void AttachCurrentThread() => Invoke("attachCurrentThread", 0);
 
         [TestMethod]
-        [Ignore("AttachCurrentThread with JavaVMAttachArgs whose group is NULL looks up global reference -1, and the exception that escapes into native code crashes the process.")]
         public void AttachCurrentThreadWithName() => Invoke("attachCurrentThread", 1);
 
         [TestMethod]
