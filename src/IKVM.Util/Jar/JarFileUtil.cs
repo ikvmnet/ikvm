@@ -97,7 +97,8 @@ namespace IKVM.Util.Jar
             name.AsSpan().CopyTo(span);
 
             // If the name matches the regular expression "-(\\d+(\\.|$))" then the module name will be derived from the subsequence preceding the hyphen of the first occurrence.
-            if (Regex.Match(name, @"-(\d+(\.|$))") is Match m)
+            var m = Regex.Match(name, @"-(\d+(\.|$))");
+            if (m.Success)
             {
                 info.Version = TryParseVersion(span.Slice(m.Index + 1));
                 span = span.Slice(0, m.Index);
