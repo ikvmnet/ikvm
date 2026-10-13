@@ -90,7 +90,7 @@
         static IkvmReferenceItemDebug ParseDebug(string debug) => debug?.ToLower() switch
         {
             "none" or "false" or "" or null => IkvmReferenceItemDebug.None,
-            "full" or "true" => IkvmReferenceItemDebug.Full,
+            "full" or "pdbonly" or "true" => IkvmReferenceItemDebug.Full,
             "portable" => IkvmReferenceItemDebug.Portable,
             "embedded" => IkvmReferenceItemDebug.Embedded,
             _ => IkvmReferenceItemDebug.None

@@ -424,6 +424,47 @@ namespace IKVM.MSBuild.Tasks.Tests
         }
 
         [TestMethod]
+        public void Should_vary_by_debug()
+        {
+            var t1 = BuildTestTask("net6.0", "0.0.0");
+            var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Debug, "none");
+            t1.Items = [i1];
+            t1.Execute().Should().BeTrue();
+
+            var t2 = BuildTestTask("net6.0", "0.0.0");
+            var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
+            i2.SetMetadata(IkvmReferenceItemMetadata.Debug, "portable");
+            t2.Items = [i2];
+            t2.Execute().Should().BeTrue();
+
+            var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            identity1.Should().NotBe(identity2);
+        }
+
+        [TestMethod]
+        public void Should_not_discard_pdbonly_debug()
+        {
+            var t1 = BuildTestTask("net6.0", "0.0.0");
+            var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Debug, "none");
+            t1.Items = [i1];
+            t1.Execute().Should().BeTrue();
+
+            var t2 = BuildTestTask("net6.0", "0.0.0");
+            var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
+            i2.SetMetadata(IkvmReferenceItemMetadata.Debug, "pdbonly");
+            t2.Items = [i2];
+            t2.Execute().Should().BeTrue();
+
+            i2.GetMetadata(IkvmReferenceItemMetadata.Debug).Should().Be("full");
+            var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            identity1.Should().NotBe(identity2);
+        }
+
+        [TestMethod]
         public void Should_vary_by_optimize()
         {
             var t1 = BuildTestTask("net6.0", "0.0.0");
