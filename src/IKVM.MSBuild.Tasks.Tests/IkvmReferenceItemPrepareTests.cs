@@ -125,7 +125,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             try
             {
                 var jar = Path.Combine(dir, fileName);
-                File.Copy(HELLOWORLD1_JAR, jar);
+                File.Copy(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"), jar);
                 var i1 = new TaskItem(jar);
                 IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItem.Import(new[] { i1 }));
                 return i1;
