@@ -387,10 +387,12 @@
             // a path without wildcards can only match the one file it names, so don't search for it
             if (path.IndexOfAny(GlobWildcards) < 0)
             {
-                if (File.Exists(path))
-                    yield return IkvmTaskUtil.GetRelativePath(Environment.CurrentDirectory, Path.GetFullPath(path));
-                else if (includeDirectories && Directory.Exists(path))
-                    yield return IkvmTaskUtil.GetRelativePath(Environment.CurrentDirectory, Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar)) + Path.DirectorySeparatorChar;
+                // separators are taken as MSBuild takes them, and as the glob below would
+                var literal = Path.DirectorySeparatorChar == '\\' ? path : path.Replace('\\', Path.DirectorySeparatorChar);
+                if (File.Exists(literal))
+                    yield return IkvmTaskUtil.GetRelativePath(Environment.CurrentDirectory, Path.GetFullPath(literal));
+                else if (includeDirectories && Directory.Exists(literal))
+                    yield return IkvmTaskUtil.GetRelativePath(Environment.CurrentDirectory, Path.GetFullPath(literal).TrimEnd(Path.DirectorySeparatorChar)) + Path.DirectorySeparatorChar;
 
                 yield break;
             }

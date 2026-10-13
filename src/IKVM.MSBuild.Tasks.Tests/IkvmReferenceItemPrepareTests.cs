@@ -179,6 +179,13 @@ namespace IKVM.MSBuild.Tasks.Tests
         }
 
         [TestMethod]
+        public void Should_expand_literal_path_with_backslashes_on_every_platform()
+        {
+            IkvmReferenceItemPrepare.ExpandPath(HELLOWORLD1_JAR).Should().Equal(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"));
+            IkvmReferenceItemPrepare.ExpandPath(@".\helloworld\helloworld-2.0-1", includeDirectories: true).Should().Equal(Path.Combine("helloworld", "helloworld-2.0-1") + Path.DirectorySeparatorChar);
+        }
+
+        [TestMethod]
         public void Should_expand_missing_literal_path_to_nothing()
         {
             IkvmReferenceItemPrepare.ExpandPath(Path.Combine("helloworld", "helloworld-2.0-1", "missing.jar")).Should().BeEmpty();
