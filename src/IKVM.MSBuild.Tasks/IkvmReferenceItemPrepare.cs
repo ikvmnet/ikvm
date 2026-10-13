@@ -517,6 +517,7 @@
                 manifest.WriteLine("AssemblyFileVersion={0}", item.AssemblyFileVersion);
                 manifest.WriteLine("ClassLoader={0}", item.ClassLoader);
                 manifest.WriteLine("Debug={0}", Enum.GetName(typeof(IkvmReferenceItemDebug), item.Debug));
+                manifest.WriteLine("Optimize={0}", item.Optimize ? "true" : "false");
                 manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? await fileIdentityUtil.GetIdentityForFileAsync(item.KeyFile, Log, cancellationToken) : "");
                 manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
 

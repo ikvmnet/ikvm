@@ -424,6 +424,26 @@ namespace IKVM.MSBuild.Tasks.Tests
         }
 
         [TestMethod]
+        public void Should_vary_by_optimize()
+        {
+            var t1 = BuildTestTask("net6.0", "0.0.0");
+            var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Optimize, "false");
+            t1.Items = [i1];
+            t1.Execute().Should().BeTrue();
+
+            var t2 = BuildTestTask("net6.0", "0.0.0");
+            var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
+            i2.SetMetadata(IkvmReferenceItemMetadata.Optimize, "true");
+            t2.Items = [i2];
+            t2.Execute().Should().BeTrue();
+
+            var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            identity1.Should().NotBe(identity2);
+        }
+
+        [TestMethod]
         public void Should_sort_by_reference_order()
         {
             var t = BuildTestTask("net6.0", "0.0.0");

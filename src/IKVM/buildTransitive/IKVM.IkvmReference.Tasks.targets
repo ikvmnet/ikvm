@@ -39,6 +39,7 @@
             Runtime="$([System.IO.Path]::GetFullPath('$(IkvmRuntimeAssembly)'))"
             Target="library"
             Debug="%(IkvmReferenceItem.Debug)"
+            Optimize="%(IkvmReferenceItem.Optimize)"
             KeyFile="%(IkvmReferenceItem.KeyFile)"
             DelaySign="%(IkvmReferenceItem.DelaySign)"
             CompressResources="true"
