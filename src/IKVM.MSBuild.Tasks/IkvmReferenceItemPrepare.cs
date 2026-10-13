@@ -520,16 +520,12 @@
                 manifest.WriteLine("Optimize={0}", item.Optimize ? "true" : "false");
                 manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? await fileIdentityUtil.GetIdentityForFileAsync(item.KeyFile, Log, cancellationToken) : "");
                 manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
+                manifest.WriteLine("Static={0}", item.Static ? "true" : "false");
 
-                // each Compile item should be a jar or class file
-                var compiles = new List<string>(16);
+                // each Compile item should be a jar or class file, written in compiler order since the first duplicate class wins
                 foreach (var path in item.Compile)
                     if (path.EndsWith(".jar") || path.EndsWith(".class"))
-                        compiles.Add(await GetCompileLine(item, path, cancellationToken));
-
-                // sort and write the compile lines
-                foreach (var c in compiles.OrderBy(i => i))
-                    manifest.WriteLine(c);
+                        manifest.WriteLine(await GetCompileLine(item, path, cancellationToken));
 
                 // gather reference lines
                 var references = new List<string>(16);

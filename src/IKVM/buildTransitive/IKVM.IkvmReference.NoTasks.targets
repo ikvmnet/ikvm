@@ -38,8 +38,6 @@
             <_IkvmCompilerArgs Include="-keyfile:%(IkvmReferenceItem.KeyFile)" Condition=" '%(IkvmReferenceItem.KeyFile)' != '' " />
             <_IkvmCompilerArgs Include="-delaysign:%(IkvmReferenceItem.DelaySign)" Condition=" '%(IkvmReferenceItem.DelaySign)' == 'true' " />
             <_IkvmCompilerArgs Include="-compressresources" />
-            <_IkvmCompilerArgs Include="-strictfinalfieldsemantics" Condition=" '$(StrictFinalFieldSemantics)' == 'true' " />
-            <_IkvmCompilerArgs Include="-removeassertions" Condition=" '$(RemoveAssertions)' == 'true' " />
             <_IkvmCompilerArgs Include="-target:library" />
             <_IkvmCompilerArgs Include="-nostdlib" />
             <_IkvmCompilerArgs Include="-static" Condition=" '%(IkvmReferenceItem.Static)' == 'true' " />
