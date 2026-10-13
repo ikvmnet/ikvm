@@ -175,7 +175,7 @@ namespace IKVM.MSBuild.Tasks.Tests
         [TestMethod]
         public void Should_expand_absolute_literal_path_to_relative_path()
         {
-            IkvmReferenceItemPrepare.ExpandPath(Path.GetFullPath(HELLOWORLD1_JAR)).Should().Equal(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"));
+            IkvmReferenceItemPrepare.ExpandPath(Path.GetFullPath(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"))).Should().Equal(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"));
         }
 
         [TestMethod]
