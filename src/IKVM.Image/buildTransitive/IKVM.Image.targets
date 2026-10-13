@@ -75,33 +75,32 @@
 
     <!--
     Runs once for each pair, adding a copy of each image item that applies to it, in the order of the image items. The
-    pairs are gathered by an earlier target, since a target's condition is evaluated before its dependencies run.
+    expansion has to happen in the body of this target: targets hooked before it, such as those generating image items,
+    run after its dependencies. The pairs can be gathered by a dependency, because the batches are formed when the body
+    runs. With no pairs the body still runs once, with empty values, and adds nothing.
     -->
-    <Target Name="_ExpandIkvmImageItemsForTarget" Condition=" '@(_IkvmImageItemTarget)' != '' " Outputs="%(_IkvmImageItemTarget.TargetFramework)|%(_IkvmImageItemTarget.Identity)">
+    <Target Name="ExpandIkvmImageItems" DependsOnTargets="$(ExpandIkvmImageItemsDependsOn);_GetIkvmImageItemTargets" Outputs="%(_IkvmImageItemTarget.TargetFramework)|%(_IkvmImageItemTarget.Identity)">
         <PropertyGroup>
             <_IkvmImageItemTargetFramework>%(_IkvmImageItemTarget.TargetFramework)</_IkvmImageItemTargetFramework>
             <_IkvmImageItemRuntimeIdentifier>%(_IkvmImageItemTarget.Identity)</_IkvmImageItemRuntimeIdentifier>
         </PropertyGroup>
-        <ItemGroup>
+        <ItemGroup Condition=" '$(_IkvmImageItemTargetFramework)' != '' And '$(_IkvmImageItemRuntimeIdentifier)' != '' ">
             <_IkvmImageItemForTarget Remove="@(_IkvmImageItemForTarget)" />
             <_IkvmImageItemForTarget Include="@(IkvmImageItem)" />
             <_IkvmImageItemForTarget Remove="@(_IkvmImageItemForTarget)" Condition=" '%(_IkvmImageItemForTarget.TargetFramework)' == '' Or '%(_IkvmImageItemForTarget.RuntimeIdentifier)' == '' " />
             <_IkvmImageItemForTarget Remove="@(_IkvmImageItemForTarget)" Condition=" '%(_IkvmImageItemForTarget.TargetFramework)' != 'any' And '%(_IkvmImageItemForTarget.TargetFramework)' != '$(_IkvmImageItemTargetFramework)' " />
             <_IkvmImageItemForTarget Remove="@(_IkvmImageItemForTarget)" Condition=" '%(_IkvmImageItemForTarget.RuntimeIdentifier)' != 'any' And '%(_IkvmImageItemForTarget.RuntimeIdentifier)' != '$(_IkvmImageItemRuntimeIdentifier)' " />
-            <_IkvmImageItemExpanded Include="@(_IkvmImageItemForTarget)" TargetFramework="$(_IkvmImageItemTargetFramework)" RuntimeIdentifier="$(_IkvmImageItemRuntimeIdentifier)" />
-            <_IkvmImageItemForTarget Remove="@(_IkvmImageItemForTarget)" />
-        </ItemGroup>
-    </Target>
-
-    <Target Name="ExpandIkvmImageItems" DependsOnTargets="$(ExpandIkvmImageItemsDependsOn);_GetIkvmImageItemTargets;_ExpandIkvmImageItemsForTarget">
-        <ItemGroup>
-            <_IkvmImageItemExpanded Update="@(_IkvmImageItemExpanded)">
-                <TargetPath>$(IkvmImageTargetPath)\%(_IkvmImageItemExpanded.RuntimeIdentifier)\%(_IkvmImageItemExpanded.ImagePath)</TargetPath>
+            <_IkvmImageItemForTarget Update="@(_IkvmImageItemForTarget)">
+                <TargetFramework>$(_IkvmImageItemTargetFramework)</TargetFramework>
+                <RuntimeIdentifier>$(_IkvmImageItemRuntimeIdentifier)</RuntimeIdentifier>
+                <TargetPath>$(IkvmImageTargetPath)\$(_IkvmImageItemRuntimeIdentifier)\%(_IkvmImageItemForTarget.ImagePath)</TargetPath>
                 <CopyToOutputDirectory>$(CopyIkvmImageItemToOutputDirectory)</CopyToOutputDirectory>
                 <CopyToPublishDirectory>$(CopyIkvmImageItemToPublishDirectory)</CopyToPublishDirectory>
-                <Link>$(IkvmImageTargetPath)\%(_IkvmImageItemExpanded.RuntimeIdentifier)\%(_IkvmImageItemExpanded.ImagePath)</Link>
-                <Pack Condition=" '%(_IkvmImageItemExpanded.Pack)' == '' ">false</Pack>
-            </_IkvmImageItemExpanded>
+                <Link>$(IkvmImageTargetPath)\$(_IkvmImageItemRuntimeIdentifier)\%(_IkvmImageItemForTarget.ImagePath)</Link>
+                <Pack Condition=" '%(_IkvmImageItemForTarget.Pack)' == '' ">false</Pack>
+            </_IkvmImageItemForTarget>
+            <_IkvmImageItemExpanded Include="@(_IkvmImageItemForTarget)" />
+            <_IkvmImageItemForTarget Remove="@(_IkvmImageItemForTarget)" />
         </ItemGroup>
     </Target>
 
