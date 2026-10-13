@@ -74,6 +74,8 @@
                 item.StageSymbolsPath = item.Item.GetMetadata(IkvmReferenceItemMetadata.StageSymbolsPath);
                 item.Static = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.Static), "true", StringComparison.OrdinalIgnoreCase);
                 item.Optimize = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.Optimize), "true", StringComparison.OrdinalIgnoreCase);
+                item.StrictFinalFieldSemantics = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.StrictFinalFieldSemantics), "true", StringComparison.OrdinalIgnoreCase);
+                item.RemoveAssertions = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.RemoveAssertions), "true", StringComparison.OrdinalIgnoreCase);
                 item.Save();
             }
 
@@ -90,8 +92,7 @@
         static IkvmReferenceItemDebug ParseDebug(string debug) => debug?.ToLower() switch
         {
             "none" or "false" or "" or null => IkvmReferenceItemDebug.None,
-            "full" or "pdbonly" or "true" => IkvmReferenceItemDebug.Full,
-            "portable" => IkvmReferenceItemDebug.Portable,
+            "full" or "pdbonly" or "portable" or "true" => IkvmReferenceItemDebug.Portable,
             "embedded" => IkvmReferenceItemDebug.Embedded,
             _ => IkvmReferenceItemDebug.None
         };
@@ -284,6 +285,16 @@
         public bool Optimize { get; set; } = false;
 
         /// <summary>
+        /// Whether IKVMC should enforce strict final field semantics.
+        /// </summary>
+        public bool StrictFinalFieldSemantics { get; set; } = false;
+
+        /// <summary>
+        /// Whether IKVMC should remove assertions.
+        /// </summary>
+        public bool RemoveAssertions { get; set; } = false;
+
+        /// <summary>
         /// Writes the metadata to the item.
         /// </summary>
         public void Save()
@@ -314,6 +325,8 @@
             Item.SetMetadata(IkvmReferenceItemMetadata.ResolvedReferences, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, ResolvedReferences));
             Item.SetMetadata(IkvmReferenceItemMetadata.Static, Static ? "true" : "false");
             Item.SetMetadata(IkvmReferenceItemMetadata.Optimize, Optimize ? "true" : "false");
+            Item.SetMetadata(IkvmReferenceItemMetadata.StrictFinalFieldSemantics, StrictFinalFieldSemantics ? "true" : "false");
+            Item.SetMetadata(IkvmReferenceItemMetadata.RemoveAssertions, RemoveAssertions ? "true" : "false");
         }
 
         /// <summary>
@@ -325,7 +338,6 @@
         string ToString(IkvmReferenceItemDebug debug) => debug switch
         {
             IkvmReferenceItemDebug.None => "none",
-            IkvmReferenceItemDebug.Full => "full",
             IkvmReferenceItemDebug.Portable => "portable",
             IkvmReferenceItemDebug.Embedded => "embedded",
             _ => throw new NotImplementedException(),

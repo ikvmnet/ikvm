@@ -102,6 +102,18 @@
         </BoolProperty.DataSource>
     </BoolProperty>
 
+    <BoolProperty Name="StrictFinalFieldSemantics" DisplayName="Strict Final Field Semantics" Category="Compilation" Description="Whether final fields are compiled with strict semantics.">
+        <BoolProperty.DataSource>
+            <DataSource HasConfigurationCondition="False" ItemType="IkvmReference" Persistence="ProjectFile" SourceOfDefaultValue="AfterContext" />
+        </BoolProperty.DataSource>
+    </BoolProperty>
+
+    <BoolProperty Name="RemoveAssertions" DisplayName="Remove Assertions" Category="Compilation" Description="Whether assert statements are removed from the generated assembly.">
+        <BoolProperty.DataSource>
+            <DataSource HasConfigurationCondition="False" ItemType="IkvmReference" Persistence="ProjectFile" SourceOfDefaultValue="AfterContext" />
+        </BoolProperty.DataSource>
+    </BoolProperty>
+
     <StringProperty Name="KeyFile" DisplayName="Key File" Category="Signing" Description="Strong name key file used to sign the generated assembly. Defaults to the project IkvmKeyFile.">
         <StringProperty.DataSource>
             <DataSource HasConfigurationCondition="False" ItemType="IkvmReference" Persistence="ProjectFile" SourceOfDefaultValue="AfterContext" />

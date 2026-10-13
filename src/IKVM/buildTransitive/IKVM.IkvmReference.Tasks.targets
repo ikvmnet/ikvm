@@ -46,6 +46,8 @@
             ClassLoader="%(IkvmReferenceItem.ClassLoader)"
             NoStdLib="true"
             Static="%(IkvmReferenceItem.Static)"
+            StrictFinalFieldSemantics="%(IkvmReferenceItem.StrictFinalFieldSemantics)"
+            RemoveAssertions="%(IkvmReferenceItem.RemoveAssertions)"
             References="@(_IkvmCompilerReferencePath->'%(FullPath)')"
             Input="%(IkvmReferenceItem.Compile)"
             Condition=" '%(IkvmReferenceItem.Compile)' != '' "/>

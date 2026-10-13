@@ -521,8 +521,10 @@
                 manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? await fileIdentityUtil.GetIdentityForFileAsync(item.KeyFile, Log, cancellationToken) : "");
                 manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
                 manifest.WriteLine("Static={0}", item.Static ? "true" : "false");
+                manifest.WriteLine("StrictFinalFieldSemantics={0}", item.StrictFinalFieldSemantics ? "true" : "false");
+                manifest.WriteLine("RemoveAssertions={0}", item.RemoveAssertions ? "true" : "false");
 
-                // each Compile item should be a jar or class file, written in compiler order since the first duplicate class wins
+                // each Compile item should be a jar or class file, written in order since order is part of the identity
                 foreach (var path in item.Compile)
                     if (path.EndsWith(".jar") || path.EndsWith(".class"))
                         manifest.WriteLine(await GetCompileLine(item, path, cancellationToken));

@@ -30,6 +30,8 @@
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <Static>false</Static>
             <Optimize>$(Optimize)</Optimize>
+            <StrictFinalFieldSemantics>false</StrictFinalFieldSemantics>
+            <RemoveAssertions>false</RemoveAssertions>
         </IkvmReference>
     </ItemDefinitionGroup>
 

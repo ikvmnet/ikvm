@@ -46,6 +46,10 @@
 
     <BoolProperty Name="Static" DisplayName="Static" Category="Compilation" Description="Whether the assembly is compiled in static mode." />
 
+    <BoolProperty Name="StrictFinalFieldSemantics" DisplayName="Strict Final Field Semantics" Category="Compilation" Description="Whether final fields are compiled with strict semantics." />
+
+    <BoolProperty Name="RemoveAssertions" DisplayName="Remove Assertions" Category="Compilation" Description="Whether assert statements are removed from the generated assembly." />
+
     <StringProperty Name="KeyFile" DisplayName="Key File" Category="Signing" Description="Strong name key file used to sign the generated assembly. Defaults to the project IkvmKeyFile." />
 
     <BoolProperty Name="DelaySign" DisplayName="Delay Sign" Category="Signing" Description="Reserves space for a signature to be added later. Requires Key File." />
