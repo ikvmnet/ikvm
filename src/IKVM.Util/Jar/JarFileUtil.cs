@@ -83,6 +83,59 @@ namespace IKVM.Util.Jar
         }
 
         /// <summary>
+        /// Derives the module name and version from the name of a directory of class files, the same way as for the
+        /// name of a JAR file.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="DirectoryNotFoundException"></exception>
+        public static ModuleInfo GetModuleInfoFromDirectory(string path)
+        {
+            if (path is null)
+                throw new ArgumentNullException(nameof(path));
+            if (Directory.Exists(path) == false)
+                throw new DirectoryNotFoundException($"Cannot find directory '{path}'.");
+
+            var name = Path.GetFileName(Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            var info = new ModuleInfo();
+
+            // If the name matches the regular expression "-(\\d+(\\.|$))" then the module name will be derived from the subsequence preceding the hyphen of the first occurrence.
+            var m = Regex.Match(name, @"-(\d+(\.|$))");
+            if (m.Success)
+            {
+                info.Version = TryParseVersion(name.AsSpan(m.Index + 1));
+                name = name.Substring(0, m.Index);
+            }
+
+            info.Name = NormalizeModuleName(name);
+            return info.Name.Length > 0 ? info : new ModuleInfo(null, info.Version);
+        }
+
+        /// <summary>
+        /// Replaces the characters of a derived module name as described by the specification.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        static string NormalizeModuleName(string name)
+        {
+            // All non-alphanumeric characters ([^A-Za-z0-9]) in the module name are replaced with a dot ("."),
+            var span = (Span<char>)stackalloc char[name.Length];
+            name.AsSpan().CopyTo(span);
+            for (var i = 0; i < span.Length; i++)
+                if (char.IsLetterOrDigit(span[i]) == false)
+                    span[i] = '.';
+
+            // all repeating dots are replaced with one dot,
+            name = span.ToString();
+            while (name.IndexOf("..") is int i && i != -1)
+                name = name.Remove(i, 1);
+
+            // and all leading and trailing dots are removed.
+            return name.Trim('.');
+        }
+
+        /// <summary>
         /// Derives the module name from the name of the file given by the path, as described by the specification.
         /// </summary>
         /// <param name="name"></param>

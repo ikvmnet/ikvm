@@ -7,16 +7,26 @@
     This file contains targets which invoke the jobs in 'Task' mode. The tasks provided by MSBuild are used.
     -->
 
-    <!-- Builds the IkvmReferenceItem set into their output items within the cache. -->
-    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmFrameworkReferences" Inputs="%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)">
+    <!--
+    Builds the IkvmReferenceItem set into their output items within the cache. Runs for each item, compiling the ones
+    missing from the cache: an item is cached at a path named by the identity of everything it is compiled from, so an
+    output that exists is never stale, whatever the timestamps say. Outputs are shared by every project, so an existing
+    one is never rewritten.
+    -->
+    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmFrameworkReferences" Outputs="%(IkvmReferenceItem.CachePath)" Condition=" '@(IkvmReferenceItem)' != '' ">
+        <PropertyGroup>
+            <_IkvmReferenceItemCached>false</_IkvmReferenceItemCached>
+            <_IkvmReferenceItemCached Condition="Exists('%(IkvmReferenceItem.CachePath)')">true</_IkvmReferenceItemCached>
+        </PropertyGroup>
+
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
 
         <!-- Output to stage path then copy to cache path to be atomic. -->
-        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.StagePath)'))" />
-        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.StageSymbolsPath)'))" />
-        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.CachePath)'))" />
-        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.CacheSymbolsPath)'))" />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.StagePath)'))" Condition=" '$(_IkvmReferenceItemCached)' != 'true' " />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.StageSymbolsPath)'))" Condition=" '$(_IkvmReferenceItemCached)' != 'true' " />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.CachePath)'))" Condition=" '$(_IkvmReferenceItemCached)' != 'true' " />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.CacheSymbolsPath)'))" Condition=" '$(_IkvmReferenceItemCached)' != 'true' " />
 
         <ItemGroup>
             <_IkvmCompilerReferencePath Remove="@(_IkvmCompilerReferencePath)" />
@@ -25,7 +35,7 @@
             <_IkvmCompilerReferencePath Include="@(IkvmFrameworkReference);@(_IkvmReferenceItemResolvedReference)" />
         </ItemGroup>
 
-        <Delete Files="%(IkvmReferenceItem.StagePath)" Condition="Exists('%(IkvmReferenceItem.StagePath)')" />
+        <Delete Files="%(IkvmReferenceItem.StagePath)" Condition=" '$(_IkvmReferenceItemCached)' != 'true' And Exists('%(IkvmReferenceItem.StagePath)')" />
 
         <!-- Compile the reference item to the stage path. -->
         <IkvmCompiler
@@ -47,34 +57,35 @@
             Static="%(IkvmReferenceItem.Static)"
             References="@(_IkvmCompilerReferencePath->'%(FullPath)')"
             Input="%(IkvmReferenceItem.Compile)"
-            Condition=" '%(IkvmReferenceItem.Compile)' != '' "/>
+            Condition=" '$(_IkvmReferenceItemCached)' != 'true' And '%(IkvmReferenceItem.Compile)' != '' "/>
 
         <!-- Copy the compiled assembly to its cache path. -->
         <Copy
             SourceFiles="%(IkvmReferenceItem.StagePath)"
             DestinationFiles="%(IkvmReferenceItem.CachePath)"
-            OverwriteReadOnlyFiles="true" />
+            OverwriteReadOnlyFiles="true"
+            Condition=" '$(_IkvmReferenceItemCached)' != 'true' " />
 
         <!-- Copy the compiled assembly symbols to its cache path. -->
         <Copy
             SourceFiles="%(IkvmReferenceItem.StageSymbolsPath)"
             DestinationFiles="%(IkvmReferenceItem.CacheSymbolsPath)"
             OverwriteReadOnlyFiles="true"
-            Condition="Exists('%(IkvmReferenceItem.StageSymbolsPath)')"/>
+            Condition=" '$(_IkvmReferenceItemCached)' != 'true' And Exists('%(IkvmReferenceItem.StageSymbolsPath)')"/>
 
         <!-- Copy the response file to the cache path. -->
         <Copy
             SourceFiles="%(IkvmReferenceItem.StagePath).rsp"
             DestinationFiles="%(IkvmReferenceItem.CachePath).rsp"
             OverwriteReadOnlyFiles="true"
-            Condition="Exists('%(IkvmReferenceItem.StagePath).rsp')"/>
+            Condition=" '$(_IkvmReferenceItemCached)' != 'true' And Exists('%(IkvmReferenceItem.StagePath).rsp')"/>
 
         <!-- Copy the log file to the cache path. -->
         <Copy
             SourceFiles="%(IkvmReferenceItem.StagePath).log"
             DestinationFiles="%(IkvmReferenceItem.CachePath).log"
             OverwriteReadOnlyFiles="true"
-            Condition="Exists('%(IkvmReferenceItem.StagePath).log')"/>
+            Condition=" '$(_IkvmReferenceItemCached)' != 'true' And Exists('%(IkvmReferenceItem.StagePath).log')"/>
 
         <ItemGroup>
             <FileWrites Include="%(IkvmReferenceItem.StagePath)" />

@@ -29,6 +29,8 @@
         const string XML_ASSEMBLY_INFO_STATE_ELEMENT_NAME = "AssemblyInfoState";
         const string XML_FILE_IDENTITY_STATE_ELEMENT_NAME = "FileIdentityState";
 
+        static readonly char[] GlobWildcards = ['*', '?'];
+
         /// <summary>
         /// Topologically sorts the <see cref="IkvmReferenceItem"/> set.
         /// </summary>
@@ -247,11 +249,7 @@
                 await fileIdentityUtil.SaveStateXmlAsync(fileIdentityStateXml);
                 root.Add(fileIdentityStateXml);
 
-                var dir = Path.GetDirectoryName(StateFile);
-                if (Directory.Exists(dir) == false)
-                    Directory.CreateDirectory(dir);
-
-                root.Save(StateFile);
+                IkvmTaskUtil.SaveXmlIfChanged(root, StateFile);
             }
         }
 
@@ -352,7 +350,7 @@
         {
             var l = new List<string>();
             foreach (var c in item.Compile)
-                l.AddRange(ExpandPath(c));
+                l.AddRange(ExpandPath(c, includeDirectories: true));
 
             item.Compile = l;
         }
@@ -374,7 +372,8 @@
         /// Expands the path to real underlying files.
         /// </summary>
         /// <param name="path"></param>
-        internal static IEnumerable<string> ExpandPath(string path)
+        /// <param name="includeDirectories">Whether a path that names a directory is kept. Globs only ever match files.</param>
+        internal static IEnumerable<string> ExpandPath(string path, bool includeDirectories = false)
         {
             // if the path is a glob, we're going to match items, else skip
             var glob = MSBuildGlob.Parse(path);
@@ -385,14 +384,26 @@
                 yield break;
             }
 
+            // a path without wildcards can only match the one file it names, so don't search for it
+            if (path.IndexOfAny(GlobWildcards) < 0)
+            {
+                if (File.Exists(path))
+                    yield return IkvmTaskUtil.GetRelativePath(Environment.CurrentDirectory, Path.GetFullPath(path));
+                else if (includeDirectories && Directory.Exists(path))
+                    yield return IkvmTaskUtil.GetRelativePath(Environment.CurrentDirectory, Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar)) + Path.DirectorySeparatorChar;
+
+                yield break;
+            }
+
             // no fixed directory, nothing to match
             if (Directory.Exists(glob.FixedDirectoryPart) == false)
                 yield break;
 
-            // enumerate all files in the fixed part, and match them against the glob
-            // results are our expanded options
-            foreach (var i in Directory.EnumerateFileSystemEntries(glob.FixedDirectoryPart, "*", SearchOption.AllDirectories))
-                if (File.Exists(i) && glob.IsMatch(i))
+            // enumerate the files in the fixed part, and match them against the glob
+            // only descend into subdirectories when the glob has a wildcard directory part
+            var searchOption = string.IsNullOrEmpty(glob.WildcardDirectoryPart) ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories;
+            foreach (var i in Directory.EnumerateFiles(glob.FixedDirectoryPart, "*", searchOption))
+                if (glob.IsMatch(i))
                     yield return IkvmTaskUtil.GetRelativePath(Environment.CurrentDirectory, i);
         }
 
@@ -473,6 +484,9 @@
             {
                 if (path.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) && File.Exists(path))
                     return JarFileUtil.GetModuleInfo(path);
+
+                if (Directory.Exists(path))
+                    return JarFileUtil.GetModuleInfoFromDirectory(path);
             }
             catch (Exception e)
             {
@@ -520,10 +534,12 @@
                 manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? await fileIdentityUtil.GetIdentityForFileAsync(item.KeyFile, Log, cancellationToken) : "");
                 manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
 
-                // each Compile item should be a jar or class file
+                // each Compile item should be a jar or class file, or a directory of them
                 var compiles = new List<string>(16);
                 foreach (var path in item.Compile)
-                    if (path.EndsWith(".jar") || path.EndsWith(".class"))
+                    if (Directory.Exists(path))
+                        compiles.AddRange(await GetCompileDirectoryLinesAsync(path, cancellationToken));
+                    else if (path.EndsWith(".jar") || path.EndsWith(".class"))
                         compiles.Add(await GetCompileLine(item, path, cancellationToken));
 
                 // sort and write the compile lines
@@ -587,6 +603,25 @@
                 throw new FileNotFoundException($"Cannot generate hash for missing file '{path}' on '{item.ItemSpec}'.");
 
             return $"Compile={await fileIdentityUtil.GetIdentityForFileAsync(path, Log, cancellationToken)}";
+        }
+
+        /// <summary>
+        /// Writes a File entry for each file within the given directory, named by its path relative to the directory,
+        /// since the compiler names the classes and resources it finds there the same way.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="cancellationToken"></param>
+        async Task<string[]> GetCompileDirectoryLinesAsync(string path, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException($"'{nameof(path)}' cannot be null or whitespace.", nameof(path));
+
+            var root = Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            return await Task.WhenAll(Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories).Select(async file =>
+            {
+                var name = file.Substring(root.Length).Replace(Path.DirectorySeparatorChar, '/');
+                return $"CompileDirectory={name}={await fileIdentityUtil.GetIdentityForFileAsync(file, Log, cancellationToken)}";
+            }));
         }
 
         /// <summary>
@@ -691,6 +726,10 @@
             {
                 foreach (var compile in item.Compile)
                 {
+                    // directories of class files are compiled recursively
+                    if (Directory.Exists(compile))
+                        continue;
+
                     if (Path.GetExtension(compile) is not ".jar" and not ".class")
                         diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmInvalidCompile", item.ItemSpec, compile));
 
@@ -757,6 +796,9 @@
             item.StagePath = Path.Combine(StageDir, item.IkvmIdentity, item.AssemblyName + ".dll");
             item.StageSymbolsPath = Path.Combine(StageDir, item.IkvmIdentity, item.AssemblyName + ".pdb");
             item.Save();
+
+            // keep the cache entry from being cleaned while it is in use
+            IkvmTaskUtil.MarkCacheEntryUsed(Path.Combine(CacheDir, item.IkvmIdentity));
         }
 
         /// <summary>

@@ -278,7 +278,7 @@ public class AddNoInliningAnnotation : Task
         <CharacterDataStaticItem Include="CharacterDataPrivateUse" />
     </ItemGroup>
 
-    <Target Name="GenerateCharacterDataStatic" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);$(CharacterDataDir)%(CharacterDataStaticItem.Identity).java.template" Outputs="$(CharacterDataOutputPath)java\lang\%(CharacterDataStaticItem.Identity).java">
+    <Target Name="GenerateCharacterDataStatic" DependsOnTargets="BuildJdkBuildTools" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);$(CharacterDataDir)%(CharacterDataStaticItem.Identity).java.template" Outputs="$(CharacterDataOutputPath)java\lang\%(CharacterDataStaticItem.Identity).java">
         <MakeDir Directories="$(CharacterDataOutputPath)java\lang\" />
         <Message Importance="high" Text="Generating %(CharacterDataStaticItem.Identity).java" />
         <Copy SourceFiles="$(CharacterDataDir)%(CharacterDataStaticItem.Identity).java.template" DestinationFiles="$(CharacterDataOutputPath)java\lang\%(CharacterDataStaticItem.Identity).java" />
@@ -693,7 +693,7 @@ public class WriteStandardCharsets : Task
         <StandardCharsetsTempPath>$(IntermediateOutputPath)jdk_stdchar_tmp\</StandardCharsetsTempPath>
     </PropertyGroup>
 
-    <Target Name="GenerateStandardCharsets" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);$(OpenJdkDir)jdk\src\share\classes\sun\nio\cs\standard-charsets" Outputs="$(StandardCharsetsOutputPath)sun\nio\cs\StandardCharsets.java">
+    <Target Name="GenerateStandardCharsets" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);$(OpenJdkDir)jdk\src\share\classes\sun\nio\cs\standard-charsets" Outputs="$(StandardCharsetsOutputPath)sun\nio\cs\StandardCharsets.java">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -1679,7 +1679,20 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         </Task>
     </UsingTask>
 
+    <!--
+    The item groups of a target that is up to date are still evaluated to infer its outputs, so the locale resources are
+    listed by a separate target, called only when the file is generated.
+    -->
     <Target Name="GenerateLocaleDataMetaInfo" Inputs="$(MSBuildThisFileFullPath);$(LocaleDataMetaInfoSrc)" Outputs="$(LocaleDataMetaInfoDst)">
+        <CallTarget Targets="_GenerateLocaleDataMetaInfo" />
+
+        <ItemGroup>
+            <FileWrites Include="$(LocaleDataMetaInfoDst)" />
+            <Compile Include="$(LocaleDataMetaInfoDst)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="_GenerateLocaleDataMetaInfo">
         <ItemGroup>
             <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\FormatData_*.java" />
             <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\FormatData_*.properties" />
@@ -1703,11 +1716,6 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
             SourceFile="$(LocaleDataMetaInfoSrc)"
             OutputFile="$(LocaleDataMetaInfoDst)"
             LocaleResourceList="@(LocaleResourceList)" />
-
-        <ItemGroup>
-            <FileWrites Include="$(LocaleDataMetaInfoDst)" />
-            <Compile Include="$(LocaleDataMetaInfoDst)" />
-        </ItemGroup>
     </Target>
 
     <PropertyGroup>

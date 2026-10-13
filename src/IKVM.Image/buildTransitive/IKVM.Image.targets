@@ -42,7 +42,7 @@
     </Target>
 
     <Target Name="ResolveIkvmImageRuntimeIdentifier">
-        <IkvmResolveNearestRuntimeIdentifier AvailableRuntimeIdentifiers="@(IkvmImageAvailableRuntimeIdentifiers, ';')" TargetRuntimeIdentifier="$(RuntimeIdentifier)">
+        <IkvmResolveNearestRuntimeIdentifier AvailableRuntimeIdentifiers="@(IkvmImageAvailableRuntimeIdentifiers, ';')" TargetRuntimeIdentifier="$(RuntimeIdentifier)" Condition=" '$(RuntimeIdentifier)' != '' ">
             <Output TaskParameter="NearestRuntimeIdentifier" PropertyName="_IkvmImageRuntimeIdentifier" />
         </IkvmResolveNearestRuntimeIdentifier>
         <ItemGroup>
@@ -52,51 +52,6 @@
         </ItemGroup>
     </Target>
 
-    <UsingTask TaskName="_ExpandIkvmImageItems" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-        <ParameterGroup>
-            <TargetFrameworks ParameterType="System.String[]" Required="true" />
-            <RuntimeIdentifiers ParameterType="System.String[]" Required="true" />
-            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" Output="true" />
-        </ParameterGroup>
-        <Task>
-            <Using Namespace="System" />
-            <Using Namespace="System.Collections.Generic" />
-            <Using Namespace="System.IO" />
-            <Code Type="Fragment" Language="cs">
-                <![CDATA[
-                var l = new List<ITaskItem>();
-                
-                foreach (var tfm in TargetFrameworks)
-                {
-                    foreach (var rid in RuntimeIdentifiers)
-                    {
-                        foreach (var item in Items)
-                        {
-                            var itemTfm = item.GetMetadata("TargetFramework");
-                            if (string.IsNullOrEmpty(itemTfm))
-                                continue;
-                            
-                            var itemRid = item.GetMetadata("RuntimeIdentifier");
-                            if (string.IsNullOrEmpty(itemRid))
-                                continue;
-                            
-                            if ((itemTfm == "any" || itemTfm == tfm) && (itemRid == "any" || itemRid == rid))
-                            {
-                                var i = new TaskItem(item);
-                                i.SetMetadata("TargetFramework", tfm);
-                                i.SetMetadata("RuntimeIdentifier", rid);
-                                l.Add(i);
-                            }
-                        }
-                    }
-                }
-                
-                Items = l.ToArray();
-                ]]>
-            </Code>
-        </Task>
-    </UsingTask>
-
     <PropertyGroup>
         <ExpandIkvmImageItemsDependsOn>
             $(ExpandIkvmImageItemsDependsOn);
@@ -105,10 +60,40 @@
         </ExpandIkvmImageItemsDependsOn>
     </PropertyGroup>
 
-    <Target Name="ExpandIkvmImageItems" DependsOnTargets="$(ExpandIkvmImageItemsDependsOn)">
-        <_ExpandIkvmImageItems TargetFrameworks="@(_IkvmImageTargetFrameworks)" RuntimeIdentifiers="@(_IkvmImageRuntimeIdentifiers)" Items="@(IkvmImageItem)">
-            <Output TaskParameter="Items" ItemName="_IkvmImageItemExpanded" />
-        </_ExpandIkvmImageItems>
+    <!--
+    The image items are expanded and filtered with items alone rather than with tasks. A task would either have to be
+    compiled on every build (RoslynCodeTaskFactory), or loaded from an assembly the build may be producing.
+    -->
+
+    <!-- Pairs each image target framework with each image runtime identifier, frameworks first. -->
+    <Target Name="_GetIkvmImageItemTargets">
+        <ItemGroup>
+            <_IkvmImageItemTarget Remove="@(_IkvmImageItemTarget)" />
+            <_IkvmImageItemTarget Include="@(_IkvmImageRuntimeIdentifiers)" TargetFramework="%(_IkvmImageTargetFrameworks.Identity)" Condition=" '%(_IkvmImageTargetFrameworks.Identity)' != '' " />
+        </ItemGroup>
+    </Target>
+
+    <!--
+    Runs once for each pair, adding a copy of each image item that applies to it, in the order of the image items. The
+    pairs are gathered by an earlier target, since a target's condition is evaluated before its dependencies run.
+    -->
+    <Target Name="_ExpandIkvmImageItemsForTarget" Condition=" '@(_IkvmImageItemTarget)' != '' " Outputs="%(_IkvmImageItemTarget.TargetFramework)|%(_IkvmImageItemTarget.Identity)">
+        <PropertyGroup>
+            <_IkvmImageItemTargetFramework>%(_IkvmImageItemTarget.TargetFramework)</_IkvmImageItemTargetFramework>
+            <_IkvmImageItemRuntimeIdentifier>%(_IkvmImageItemTarget.Identity)</_IkvmImageItemRuntimeIdentifier>
+        </PropertyGroup>
+        <ItemGroup>
+            <_IkvmImageItemForTarget Remove="@(_IkvmImageItemForTarget)" />
+            <_IkvmImageItemForTarget Include="@(IkvmImageItem)" />
+            <_IkvmImageItemForTarget Remove="@(_IkvmImageItemForTarget)" Condition=" '%(_IkvmImageItemForTarget.TargetFramework)' == '' Or '%(_IkvmImageItemForTarget.RuntimeIdentifier)' == '' " />
+            <_IkvmImageItemForTarget Remove="@(_IkvmImageItemForTarget)" Condition=" '%(_IkvmImageItemForTarget.TargetFramework)' != 'any' And '%(_IkvmImageItemForTarget.TargetFramework)' != '$(_IkvmImageItemTargetFramework)' " />
+            <_IkvmImageItemForTarget Remove="@(_IkvmImageItemForTarget)" Condition=" '%(_IkvmImageItemForTarget.RuntimeIdentifier)' != 'any' And '%(_IkvmImageItemForTarget.RuntimeIdentifier)' != '$(_IkvmImageItemRuntimeIdentifier)' " />
+            <_IkvmImageItemExpanded Include="@(_IkvmImageItemForTarget)" TargetFramework="$(_IkvmImageItemTargetFramework)" RuntimeIdentifier="$(_IkvmImageItemRuntimeIdentifier)" />
+            <_IkvmImageItemForTarget Remove="@(_IkvmImageItemForTarget)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="ExpandIkvmImageItems" DependsOnTargets="$(ExpandIkvmImageItemsDependsOn);_GetIkvmImageItemTargets;_ExpandIkvmImageItemsForTarget">
         <ItemGroup>
             <_IkvmImageItemExpanded Update="@(_IkvmImageItemExpanded)">
                 <TargetPath>$(IkvmImageTargetPath)\%(_IkvmImageItemExpanded.RuntimeIdentifier)\%(_IkvmImageItemExpanded.ImagePath)</TargetPath>
@@ -120,32 +105,6 @@
         </ItemGroup>
     </Target>
 
-    <UsingTask TaskName="_FilterIkvmImageItems" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-        <ParameterGroup>
-            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" Output="true" />
-        </ParameterGroup>
-        <Task>
-            <Using Namespace="System" />
-            <Using Namespace="System.Collections.Generic" />
-            <Using Namespace="System.IO" />
-            <Code Type="Fragment" Language="cs">
-                <![CDATA[
-                var l = new List<ITaskItem>();
-                
-                var targetPathHashSet = new HashSet<string>();
-                foreach (var item in Items)
-                {
-                    var targetPath = item.GetMetadata("TargetPath");
-                    if (string.IsNullOrEmpty(targetPath) == false && targetPathHashSet.Add(targetPath))
-                        l.Add(item);
-                }
-                
-                Items = l.ToArray();
-                ]]>
-            </Code>
-        </Task>
-    </UsingTask>
-
     <PropertyGroup>
         <GetIkvmImageItemsOutputItemsDependsOn>
             $(GetIkvmImageItemsOutputItemsDependsOn);
@@ -154,9 +113,22 @@
     </PropertyGroup>
 
     <Target Name="GetIkvmImageItemsOutputItems" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths" DependsOnTargets="$(GetIkvmImageItemsOutputItemsDependsOn)">
-        <_FilterIkvmImageItems Items="@(_IkvmImageItemExpanded)">
-            <Output TaskParameter="Items" ItemName="_IkvmImageItemFiltered" />
-        </_FilterIkvmImageItems>
+        <!-- Keep the first image item for each target path: key the items by target path, remove the duplicate keys, and key them back. -->
+        <ItemGroup>
+            <_IkvmImageItemExpanded Update="@(_IkvmImageItemExpanded)">
+                <_IkvmImageItemSpec>%(_IkvmImageItemExpanded.Identity)</_IkvmImageItemSpec>
+            </_IkvmImageItemExpanded>
+            <_IkvmImageItemByTargetPath Remove="@(_IkvmImageItemByTargetPath)" />
+            <_IkvmImageItemByTargetPath Include="@(_IkvmImageItemExpanded->'%(TargetPath)')" />
+        </ItemGroup>
+        <RemoveDuplicates Inputs="@(_IkvmImageItemByTargetPath)">
+            <Output TaskParameter="Filtered" ItemName="_IkvmImageItemByUniqueTargetPath" />
+        </RemoveDuplicates>
+        <ItemGroup>
+            <_IkvmImageItemFiltered Include="@(_IkvmImageItemByUniqueTargetPath->'%(_IkvmImageItemSpec)')" RemoveMetadata="_IkvmImageItemSpec" />
+            <_IkvmImageItemByTargetPath Remove="@(_IkvmImageItemByTargetPath)" />
+            <_IkvmImageItemByUniqueTargetPath Remove="@(_IkvmImageItemByUniqueTargetPath)" />
+        </ItemGroup>
         <ItemGroup>
             <_IkvmImageItemExpanded Remove="@(_IkvmImageItemExpanded)" />
             <_SourceItemsToCopyToOutputDirectory Include="@(_IkvmImageItemFiltered)" Condition=" '$(IkvmImageItemToNone)' != 'true' " />

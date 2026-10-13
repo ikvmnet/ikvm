@@ -117,7 +117,7 @@ Value = b.ToString();
     </Target>
 
     <!-- Override IKVM.NET.Sdk: directly invoke executable  -->
-    <Target Name="_ExportReference" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports;_ExportReferenceGetTempSuffix" Inputs="$(MSBuildThisFileFullPath);@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
+    <Target Name="_ExportReference" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports;_ExportReferenceGetTempSuffix" Outputs="%(ReferenceExport.CachePath)">
         <Error Text="Could not locate ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />
         <Error Text="ikvmstub executable could not be located at '$(IkvmExporterPath)'" Condition="!Exists('$(IkvmExporterPath)')" />
         <Exec Command="chmod +x $(IkvmExporterPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -152,7 +152,6 @@ Value = b.ToString();
         <Exec Command="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Condition="!Exists('%(ReferenceExport.CachePath)')" IgnoreStandardErrorWarningFormat="true" />
         <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath).$(_ExportReferenceTempSuffix)" OverwriteReadOnlyFiles="true" UseHardlinksIfPossible="true" Retries="$(CopyRetryCount)" RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)" Condition="!Exists('%(ReferenceExport.CachePath)')" />
         <Move SourceFiles="%(ReferenceExport.CachePath).$(_ExportReferenceTempSuffix)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" Condition="!Exists('%(ReferenceExport.CachePath)')" />
-        <Touch Files="%(ReferenceExport.CachePath)" ForceTouch="true" />
 
         <ItemGroup>
             <FileWrites Include="%(ReferenceExport.StagePath)" />
@@ -215,11 +214,6 @@ Value = b.ToString();
     <Target Name="_CompileJava" DependsOnTargets="_CompileJavaResponseFile;_ResolveClasspathFiles;_ResolveBootClasspathFiles" Inputs="$(MSBuildThisFileFullPath);$(_CompileJavaResponseFile);@(Compile);@(ClasspathFiles);@(BootClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
         <Delete Files="$(_CompileJavaStampFile)" />
 
-        <!-- Store initial time. Files that remain older than this will be removed. -->
-        <PropertyGroup>
-            <_CompileJavaStartTime>$([System.DateTime]::Now.Ticks)</_CompileJavaStartTime>
-        </PropertyGroup>
-
         <RemoveDir Directories="$(ClassOutputPath)" />
         <MakeDir Directories="$(ClassOutputPath)" />
         <RemoveDir Directories="$(HeaderOutputPath)" />
@@ -228,21 +222,7 @@ Value = b.ToString();
         <Message Text="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" />
         <Exec Command="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" IgnoreStandardErrorWarningFormat="true" />
 
-        <!-- Remove files that were not modified by this compilation. -->
-        <ItemGroup>
-            <_CompileJavaClassFiles Include="$(ClassOutputPath)**\*.class" />
-            <_CompileJavaHeaderFiles Include="$(ClassOutputPath)**\*.h" />
-            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles);@(_CompileJavaHeaderFiles)" Condition=" '%(ModifiedTime)' == '' Or $([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime) " />
-            <_CompileJavaClassFiles Remove="@(_CompileJavaClassFiles)" />
-            <_CompileJavaHeaderFiles Remove="@(_CompileJavaHeaderFiles)" />
-        </ItemGroup>
-
-        <Delete Files="@(_CompileJavaStaleFiles)" />
         <Touch Files="$(_CompileJavaStampFile)" AlwaysCreate="true" ForceTouch="true" />
-
-        <ItemGroup>
-            <_CompileJavaStaleFiles Remove="@(_CompileJavaStaleFiles)" />
-        </ItemGroup>
     </Target>
 
     <Target Name="_CoreCompileResponseFile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;CompileJava;_WriteExcludeFile">

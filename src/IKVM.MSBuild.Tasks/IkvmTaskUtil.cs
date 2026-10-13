@@ -6,11 +6,75 @@
     using System.IO;
     using System.Linq;
     using System.Security;
+    using System.Xml.Linq;
 
     static class IkvmTaskUtil
     {
 
         static char[] hexChars => new char[16] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+
+        /// <summary>
+        /// Name of the file within a cache entry whose timestamp records when the entry was last used.
+        /// </summary>
+        public const string CacheEntryUsedFileName = ".used";
+
+        /// <summary>
+        /// Records that the cache entry in the given directory was used, so that cleaning the cache keeps it. Cleaning
+        /// measures age in days, so the record is refreshed at most once a day.
+        /// </summary>
+        /// <param name="entryDirectory"></param>
+        public static void MarkCacheEntryUsed(string entryDirectory)
+        {
+            try
+            {
+                if (Directory.Exists(entryDirectory) == false)
+                    return;
+
+                var used = new FileInfo(Path.Combine(entryDirectory, CacheEntryUsedFileName));
+                if (used.Exists && DateTime.UtcNow - used.LastWriteTimeUtc < TimeSpan.FromDays(1))
+                    return;
+
+                TouchFile(used.FullName);
+            }
+            catch (IOException)
+            {
+                // another build may be marking or removing the same entry
+            }
+            catch (UnauthorizedAccessException)
+            {
+
+            }
+        }
+
+        /// <summary>
+        /// Saves the element to the given file, unless the file already holds the same content.
+        /// </summary>
+        /// <param name="root"></param>
+        /// <param name="path"></param>
+        public static void SaveXmlIfChanged(XElement root, string path)
+        {
+            var xml = root.ToString();
+            if (File.Exists(path) && File.ReadAllText(path) == xml)
+                return;
+
+            var dir = Path.GetDirectoryName(path);
+            if (Directory.Exists(dir) == false)
+                Directory.CreateDirectory(dir);
+
+            File.WriteAllText(path, xml);
+        }
+
+        /// <summary>
+        /// Sets the last write time of the given file to now, creating it if it does not exist.
+        /// </summary>
+        /// <param name="path"></param>
+        public static void TouchFile(string path)
+        {
+            if (File.Exists(path))
+                File.SetLastWriteTimeUtc(path, DateTime.UtcNow);
+            else
+                File.WriteAllBytes(path, new byte[0]);
+        }
 
         /// <summary>
         /// Attempts to canonicalize the given path.

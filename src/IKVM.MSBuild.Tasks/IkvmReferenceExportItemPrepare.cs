@@ -75,6 +75,11 @@
         public ITaskItem[] References { get; set; }
 
         /// <summary>
+        /// Optional directory where the exports are cached, in which the entries of the items are marked as used.
+        /// </summary>
+        public string CacheDir { get; set; }
+
+        /// <summary>
         /// Executes the task.
         /// </summary>
         /// <returns></returns>
@@ -164,11 +169,7 @@
                 await fileIdentityUtil.SaveStateXmlAsync(fileIdentityStateXml);
                 root.Add(fileIdentityStateXml);
 
-                var dir = Path.GetDirectoryName(StateFile);
-                if (Directory.Exists(dir) == false)
-                    Directory.CreateDirectory(dir);
-
-                root.Save(StateFile);
+                IkvmTaskUtil.SaveXmlIfChanged(root, StateFile);
             }
         }
 
@@ -211,6 +212,10 @@
             item.IkvmIdentity = await CalculateIkvmIdentityAsync(item, cancellationToken);
             item.RandomIndex ??= GetRandomNumber();
             item.Save();
+
+            // keep the cache entry from being cleaned while it is in use
+            if (string.IsNullOrWhiteSpace(CacheDir) == false)
+                IkvmTaskUtil.MarkCacheEntryUsed(Path.Combine(CacheDir, item.IkvmIdentity));
         }
 
         /// <summary>
