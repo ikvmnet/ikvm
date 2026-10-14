@@ -91,7 +91,7 @@ namespace IKVM.CoreLib.System
                 Array.Sort(l, comparer);
 
                 self.Add(1);
-                foreach (var i in items)
+                foreach (var i in l)
                     self.Add(i);
             }
         }
@@ -129,7 +129,7 @@ namespace IKVM.CoreLib.System
                 Array.Sort(l, comparer);
 
                 self.Add(1);
-                foreach (var i in items)
+                foreach (var i in l)
                     self.Add(i);
             }
         }

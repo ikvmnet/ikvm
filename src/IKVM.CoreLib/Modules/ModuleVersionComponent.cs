@@ -67,7 +67,7 @@ namespace IKVM.CoreLib.Modules
             if (IsInteger && other.IsInteger)
                 return AsInteger().CompareTo(other.AsInteger());
             else
-                return AsString().CompareTo(other.AsString());
+                return string.CompareOrdinal(AsString(), other.AsString());
         }
 
         /// <inheritdoc />
