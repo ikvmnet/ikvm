@@ -22,6 +22,11 @@
         <PreprocessorDefinitions Include="JDK_BUILD_NUMBER" Value="&quot;$(OpenJdkBuildNumber)&quot;" />
     </ItemGroup>
 
+    <!-- upstream sources pass mismatched pointer types, which clang 22+ rejects by default -->
+    <ItemGroup>
+        <AdditionalCompileOptions Include="-Wno-incompatible-pointer-types" />
+    </ItemGroup>
+
     <!-- common/autoconf/flags.m4 -->
     <PropertyGroup Condition="$(TargetIdentifier.StartsWith('win-')) ">
         <OpenJdkTargetOsApiDir>windows</OpenJdkTargetOsApiDir>

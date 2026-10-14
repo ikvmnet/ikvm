@@ -1848,84 +1848,31 @@ namespace IKVM.Runtime
                     }
                 }
             }
-        // Split try blocks at branch targets (branches from outside the try block)
-        restart_split:
-            for (int i = 0; i < ar.Count; i++)
+            // Split try blocks at branch targets (branches from outside the try block) and at exception handlers (which
+            // are also a kind of jump), because the CLR does not allow jumping into a try block. Splitting a block can
+            // turn a branch inside it into a branch from one part into another, so the split points of a block are the
+            // smallest set that leaves no part with a branch into it from outside, or a handler inside it. Splitting a
+            // block does not affect the split points of any other block, so each block is split independently and its
+            // parts take its place in the list.
+            if (ar.Count > 0)
             {
-                var ei = ar[i];
-                int start = ei.startIndex;
-                int end = ei.endIndex;
-                for (int j = 0; j < instructions.Length; j++)
-                {
-                    if (j < start || j >= end)
-                    {
-                        switch (instructions[j].NormalizedOpCode)
-                        {
-                            case NormalizedByteCode.__tableswitch:
-                            case NormalizedByteCode.__lookupswitch:
-                                // start at -1 to have an opportunity to handle the default offset
-                                for (int k = -1; k < instructions[j].SwitchEntryCount; k++)
-                                {
-                                    int targetIndex = (k == -1 ? instructions[j].DefaultTarget : instructions[j].GetSwitchTargetIndex(k));
-                                    if (ei.startIndex < targetIndex && targetIndex < ei.endIndex)
-                                    {
-                                        var en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
-                                        ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
-                                        ar[i] = ei;
-                                        ar.Insert(i + 1, en);
-                                        goto restart_split;
-                                    }
-                                }
-                                break;
-                            case NormalizedByteCode.__ifeq:
-                            case NormalizedByteCode.__ifne:
-                            case NormalizedByteCode.__iflt:
-                            case NormalizedByteCode.__ifge:
-                            case NormalizedByteCode.__ifgt:
-                            case NormalizedByteCode.__ifle:
-                            case NormalizedByteCode.__if_icmpeq:
-                            case NormalizedByteCode.__if_icmpne:
-                            case NormalizedByteCode.__if_icmplt:
-                            case NormalizedByteCode.__if_icmpge:
-                            case NormalizedByteCode.__if_icmpgt:
-                            case NormalizedByteCode.__if_icmple:
-                            case NormalizedByteCode.__if_acmpeq:
-                            case NormalizedByteCode.__if_acmpne:
-                            case NormalizedByteCode.__ifnull:
-                            case NormalizedByteCode.__ifnonnull:
-                            case NormalizedByteCode.__goto:
-                                {
-                                    int targetIndex = instructions[j].Arg1;
-                                    if (ei.startIndex < targetIndex && targetIndex < ei.endIndex)
-                                    {
-                                        var en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
-                                        ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
-                                        ar[i] = ei;
-                                        ar.Insert(i + 1, en);
-                                        goto restart_split;
-                                    }
-                                    break;
-                                }
-                        }
-                    }
-                }
-            }
+                var branches = GetBranchesByTarget(instructions);
+                var handlers = new HashSet<int>();
+                foreach (var e in ar)
+                    handlers.Add(e.handlerIndex);
 
-            // exception handlers are also a kind of jump, so we need to split try blocks around handlers as well
-            for (int i = 0; i < ar.Count; i++)
-            {
-                var ei = ar[i];
-                for (int j = 0; j < ar.Count; j++)
+                for (int i = 0; i < ar.Count; i++)
                 {
-                    var ej = ar[j];
-                    if (ei.startIndex < ej.handlerIndex && ej.handlerIndex < ei.endIndex)
-                    {
-                        var en = new ExceptionTableEntry(ej.handlerIndex, ei.endIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
-                        ei = new ExceptionTableEntry(ei.startIndex, ej.handlerIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
-                        ar[i] = ei;
-                        ar.Insert(i + 1, en);
-                        goto restart_split;
-                    }
+                    var ei = ar[i];
+                    var splits = FindTryBlockSplits(ei.startIndex, ei.endIndex, branches, handlers);
+                    if (splits == null)
+                        continue;
+
+                    ar[i] = new ExceptionTableEntry(ei.startIndex, splits[0], ei.handlerIndex, ei.catchType, ei.ordinal);
+                    for (int k = 0; k < splits.Count; k++)
+                        ar.Insert(i + 1 + k, new ExceptionTableEntry(splits[k], k + 1 < splits.Count ? splits[k + 1] : ei.endIndex, ei.handlerIndex, ei.catchType, ei.ordinal));
+
+                    i += splits.Count;
                 }
             }
 
@@ -2016,6 +1963,139 @@ namespace IKVM.Runtime
             var exceptions = ar.ToArray();
             Array.Sort(exceptions, new ExceptionTableEntryComparer());
             return new UntangledExceptionTable(exceptions);
+        }
+
+        /// <summary>
+        /// Returns every branch in the method as a (source, target) pair, ordered by target.
+        /// </summary>
+        static (int Source, int Target)[] GetBranchesByTarget(ClassFile.Method.Instruction[] instructions)
+        {
+            var branches = new List<(int Source, int Target)>();
+            for (int i = 0; i < instructions.Length; i++)
+            {
+                switch (instructions[i].NormalizedOpCode)
+                {
+                    case NormalizedByteCode.__tableswitch:
+                    case NormalizedByteCode.__lookupswitch:
+                        branches.Add((i, instructions[i].DefaultTarget));
+                        for (int k = 0; k < instructions[i].SwitchEntryCount; k++)
+                            branches.Add((i, instructions[i].GetSwitchTargetIndex(k)));
+                        break;
+                    case NormalizedByteCode.__ifeq:
+                    case NormalizedByteCode.__ifne:
+                    case NormalizedByteCode.__iflt:
+                    case NormalizedByteCode.__ifge:
+                    case NormalizedByteCode.__ifgt:
+                    case NormalizedByteCode.__ifle:
+                    case NormalizedByteCode.__if_icmpeq:
+                    case NormalizedByteCode.__if_icmpne:
+                    case NormalizedByteCode.__if_icmplt:
+                    case NormalizedByteCode.__if_icmpge:
+                    case NormalizedByteCode.__if_icmpgt:
+                    case NormalizedByteCode.__if_icmple:
+                    case NormalizedByteCode.__if_acmpeq:
+                    case NormalizedByteCode.__if_acmpne:
+                    case NormalizedByteCode.__ifnull:
+                    case NormalizedByteCode.__ifnonnull:
+                    case NormalizedByteCode.__goto:
+                        branches.Add((i, instructions[i].Arg1));
+                        break;
+                }
+            }
+
+            var array = branches.ToArray();
+            Array.Sort(array, (x, y) => x.Target.CompareTo(y.Target));
+            return array;
+        }
+
+        /// <summary>
+        /// Returns the ordered indexes at which the try block [<paramref name="start"/>, <paramref name="end"/>) must be
+        /// split so that no part is entered by a branch from outside it and no part contains an exception handler other
+        /// than at its start, or <c>null</c> if it needs no splitting.
+        /// </summary>
+        static List<int> FindTryBlockSplits(int start, int end, (int Source, int Target)[] branchesByTarget, HashSet<int> handlers)
+        {
+            List<int> splits = null;
+
+            foreach (var handler in handlers)
+                if (start < handler && handler < end)
+                    AddTryBlockSplit(ref splits, handler);
+
+            // the branches that target the inside of the block, excluding its start
+            var first = FindFirstBranchWithTargetAfter(branchesByTarget, start);
+            var last = first;
+            while (last < branchesByTarget.Length && branchesByTarget[last].Target < end)
+                last++;
+
+            // a branch splits the block at its target when the source is in a different part, which can change when the
+            // block is split elsewhere, so repeat until no more splits are found
+            var changed = true;
+            while (changed)
+            {
+                changed = false;
+                for (int i = first; i < last; i++)
+                {
+                    var (source, target) = branchesByTarget[i];
+                    if (splits != null && splits.BinarySearch(target) >= 0)
+                        continue;
+
+                    if (source < start || source >= end || HasTryBlockSplitBetween(splits, source, target))
+                    {
+                        AddTryBlockSplit(ref splits, target);
+                        changed = true;
+                    }
+                }
+            }
+
+            return splits;
+        }
+
+        /// <summary>
+        /// Returns the index of the first branch whose target is greater than <paramref name="index"/>.
+        /// </summary>
+        static int FindFirstBranchWithTargetAfter((int Source, int Target)[] branchesByTarget, int index)
+        {
+            int lo = 0;
+            int hi = branchesByTarget.Length;
+            while (lo < hi)
+            {
+                int mid = lo + (hi - lo) / 2;
+                if (branchesByTarget[mid].Target > index)
+                    hi = mid;
+                else
+                    lo = mid + 1;
+            }
+
+            return lo;
+        }
+
+        /// <summary>
+        /// Adds a split point, keeping the list ordered.
+        /// </summary>
+        static void AddTryBlockSplit(ref List<int> splits, int index)
+        {
+            splits ??= new List<int>();
+            var i = splits.BinarySearch(index);
+            if (i < 0)
+                splits.Insert(~i, index);
+        }
+
+        /// <summary>
+        /// Returns whether the instructions at <paramref name="a"/> and <paramref name="b"/> are in different parts, that
+        /// is, whether a part starts after the lower of the two and at or before the higher of the two.
+        /// </summary>
+        static bool HasTryBlockSplitBetween(List<int> splits, int a, int b)
+        {
+            if (splits == null)
+                return false;
+
+            var lo = Math.Min(a, b);
+            var hi = Math.Max(a, b);
+            var i = splits.BinarySearch(lo + 1);
+            if (i < 0)
+                i = ~i;
+
+            return i < splits.Count && splits[i] <= hi;
         }
 
         /// <summary>

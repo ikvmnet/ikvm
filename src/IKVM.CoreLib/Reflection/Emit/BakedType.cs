@@ -24,149 +24,102 @@
 namespace IKVM.Reflection.Emit
 {
 
+    /// <summary>
+    /// Represents a completed <see cref="TypeBuilder"/>, as returned by <see cref="TypeBuilder.CreateType"/>. Members are
+    /// forwarded to the underlying type builder, but the type reports itself as baked.
+    /// </summary>
     sealed class BakedType : TypeInfo
     {
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="typeBuilder"></param>
+        /// <param name="typeBuilder">The completed type builder that this type represents.</param>
         internal BakedType(TypeBuilder typeBuilder) :
             base(typeBuilder)
         {
-
         }
 
-        public override string AssemblyQualifiedName
-        {
-            get { return underlyingType.AssemblyQualifiedName; }
-        }
+        /// <inheritdoc />
+        public override string AssemblyQualifiedName => underlyingType.AssemblyQualifiedName;
 
-        public override Type BaseType
-        {
-            get { return underlyingType.BaseType; }
-        }
+        /// <inheritdoc />
+        public override Type BaseType => underlyingType.BaseType;
 
-        internal override TypeName TypeName
-        {
-            get { return underlyingType.TypeName; }
-        }
+        /// <inheritdoc />
+        internal override TypeName TypeName => underlyingType.TypeName;
 
+        /// <summary>
+        /// Gets the name of the type, escaped for use in a type name string.
+        /// </summary>
         public override string Name
-        {
             // we need to escape here, because TypeBuilder.Name does not escape
-            get { return TypeNameParser.Escape(underlyingType.__Name); }
-        }
+            => TypeNameParser.Escape(underlyingType.__Name);
 
-        public override string FullName
-        {
-            get { return GetFullName(); }
-        }
+        /// <inheritdoc />
+        public override string FullName => GetFullName();
 
-        public override TypeAttributes Attributes
-        {
-            get { return underlyingType.Attributes; }
-        }
+        /// <inheritdoc />
+        public override TypeAttributes Attributes => underlyingType.Attributes;
 
-        public override Type[] __GetDeclaredInterfaces()
-        {
-            return underlyingType.__GetDeclaredInterfaces();
-        }
+        /// <inheritdoc />
+        public override Type[] __GetDeclaredInterfaces() => underlyingType.__GetDeclaredInterfaces();
 
-        public override MethodBase[] __GetDeclaredMethods()
-        {
-            return underlyingType.__GetDeclaredMethods();
-        }
+        /// <inheritdoc />
+        public override MethodBase[] __GetDeclaredMethods() => underlyingType.__GetDeclaredMethods();
 
-        public override __MethodImplMap __GetMethodImplMap()
-        {
-            return underlyingType.__GetMethodImplMap();
-        }
+        /// <inheritdoc />
+        public override __MethodImplMap __GetMethodImplMap() => underlyingType.__GetMethodImplMap();
 
-        public override FieldInfo[] __GetDeclaredFields()
-        {
-            return underlyingType.__GetDeclaredFields();
-        }
+        /// <inheritdoc />
+        public override FieldInfo[] __GetDeclaredFields() => underlyingType.__GetDeclaredFields();
 
-        public override EventInfo[] __GetDeclaredEvents()
-        {
-            return underlyingType.__GetDeclaredEvents();
-        }
+        /// <inheritdoc />
+        public override EventInfo[] __GetDeclaredEvents() => underlyingType.__GetDeclaredEvents();
 
-        public override PropertyInfo[] __GetDeclaredProperties()
-        {
-            return underlyingType.__GetDeclaredProperties();
-        }
+        /// <inheritdoc />
+        public override PropertyInfo[] __GetDeclaredProperties() => underlyingType.__GetDeclaredProperties();
 
-        public override Type[] __GetDeclaredTypes()
-        {
-            return underlyingType.__GetDeclaredTypes();
-        }
+        /// <inheritdoc />
+        public override Type[] __GetDeclaredTypes() => underlyingType.__GetDeclaredTypes();
 
-        public override Type DeclaringType
-        {
-            get { return underlyingType.DeclaringType; }
-        }
+        /// <inheritdoc />
+        public override Type DeclaringType => underlyingType.DeclaringType;
 
-        public override bool __GetLayout(out int packingSize, out int typeSize)
-        {
-            return underlyingType.__GetLayout(out packingSize, out typeSize);
-        }
+        /// <inheritdoc />
+        public override Type[] GetGenericArguments() => underlyingType.GetGenericArguments();
 
-        public override Type[] GetGenericArguments()
-        {
-            return underlyingType.GetGenericArguments();
-        }
+        /// <inheritdoc />
+        internal override Type GetGenericTypeArgument(int index) => underlyingType.GetGenericTypeArgument(index);
 
-        internal override Type GetGenericTypeArgument(int index)
-        {
-            return underlyingType.GetGenericTypeArgument(index);
-        }
+        /// <inheritdoc />
+        public override CustomModifiers[] __GetGenericArgumentsCustomModifiers() => underlyingType.__GetGenericArgumentsCustomModifiers();
 
-        public override CustomModifiers[] __GetGenericArgumentsCustomModifiers()
-        {
-            return underlyingType.__GetGenericArgumentsCustomModifiers();
-        }
+        /// <inheritdoc />
+        public override bool IsGenericType => underlyingType.IsGenericType;
 
-        public override bool IsGenericType
-        {
-            get { return underlyingType.IsGenericType; }
-        }
+        /// <inheritdoc />
+        public override bool IsGenericTypeDefinition => underlyingType.IsGenericTypeDefinition;
 
-        public override bool IsGenericTypeDefinition
-        {
-            get { return underlyingType.IsGenericTypeDefinition; }
-        }
+        /// <inheritdoc />
+        public override bool ContainsGenericParameters => underlyingType.ContainsGenericParameters;
 
-        public override bool ContainsGenericParameters
-        {
-            get { return underlyingType.ContainsGenericParameters; }
-        }
+        /// <inheritdoc />
+        public override int MetadataToken => underlyingType.MetadataToken;
 
-        public override int MetadataToken
-        {
-            get { return underlyingType.MetadataToken; }
-        }
+        /// <inheritdoc />
+        public override Module Module => underlyingType.Module;
 
-        public override Module Module
-        {
-            get { return underlyingType.Module; }
-        }
+        /// <inheritdoc />
+        internal override int GetModuleBuilderToken() => underlyingType.GetModuleBuilderToken();
 
-        internal override int GetModuleBuilderToken()
-        {
-            return underlyingType.GetModuleBuilderToken();
-        }
+        /// <summary>
+        /// Gets a value indicating whether the type is complete, which is always <see langword="true"/>.
+        /// </summary>
+        internal override bool IsBaked => true;
 
-        internal override bool IsBaked
-        {
-            get { return true; }
-        }
-
-        protected override bool IsValueTypeImpl
-        {
-            get { return underlyingType.IsValueType; }
-        }
+        /// <inheritdoc />
+        protected override bool IsValueTypeImpl => underlyingType.IsValueType;
 
     }
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -27,125 +27,50 @@ using System.Collections.Generic;
 namespace IKVM.Reflection.Emit
 {
 
-    internal sealed class ConstructorBuilder : ConstructorInfo
+    /// <summary>
+    /// Defines and represents a constructor of a dynamic class. The constructor is backed by a
+    /// <see cref="MethodBuilder"/> that holds its definition.
+    /// </summary>
+    sealed class ConstructorBuilder : ConstructorInfo
     {
 
-        readonly MethodBuilder methodBuilder;
+        readonly MethodBuilder _methodBuilder;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="mb"></param>
+        /// <param name="mb">The method builder that defines the constructor.</param>
         internal ConstructorBuilder(MethodBuilder mb)
         {
-            this.methodBuilder = mb;
-        }
-
-        public override bool Equals(object obj)
-        {
-            ConstructorBuilder other = obj as ConstructorBuilder;
-            return other != null && other.methodBuilder.Equals(methodBuilder);
-        }
-
-        public override int GetHashCode()
-        {
-            return methodBuilder.GetHashCode();
-        }
-
-        public void __SetSignature(Type returnType, CustomModifiers returnTypeCustomModifiers, Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
-        {
-            methodBuilder.__SetSignature(returnType, returnTypeCustomModifiers, parameterTypes, parameterTypeCustomModifiers);
-        }
-
-        [Obsolete("Please use __SetSignature(Type, CustomModifiers, Type[], CustomModifiers[]) instead.")]
-        public void __SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
-        {
-            methodBuilder.SetSignature(returnType, returnTypeRequiredCustomModifiers, returnTypeOptionalCustomModifiers, parameterTypes, parameterTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers);
-        }
-
-        public ParameterBuilder DefineParameter(int position, ParameterAttributes attributes, string strParamName)
-        {
-            return methodBuilder.DefineParameter(position, attributes, strParamName);
-        }
-
-        public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
-        {
-            methodBuilder.SetCustomAttribute(customBuilder);
-        }
-
-        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-        {
-            methodBuilder.SetCustomAttribute(con, binaryAttribute);
-        }
-
-        public void __AddDeclarativeSecurity(CustomAttributeBuilder customBuilder)
-        {
-            methodBuilder.__AddDeclarativeSecurity(customBuilder);
-        }
-
-        public void AddDeclarativeSecurity(System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
-        {
-            methodBuilder.AddDeclarativeSecurity(securityAction, permissionSet);
-        }
-
-        public void SetImplementationFlags(MethodImplAttributes attributes)
-        {
-            methodBuilder.SetImplementationFlags(attributes);
-        }
-
-        public ILGenerator GetILGenerator()
-        {
-            return methodBuilder.GetILGenerator();
-        }
-
-        public ILGenerator GetILGenerator(int streamSize)
-        {
-            return methodBuilder.GetILGenerator(streamSize);
-        }
-
-        public Type ReturnType
-        {
-            get { return methodBuilder.ReturnType; }
-        }
-
-        public Module GetModule()
-        {
-            return methodBuilder.GetModule();
-        }
-
-        public MethodToken GetToken()
-        {
-            return methodBuilder.GetToken();
-        }
-
-        public bool InitLocals
-        {
-            get { return methodBuilder.InitLocals; }
-            set { methodBuilder.InitLocals = value; }
+            _methodBuilder = mb;
         }
 
         /// <summary>
-        /// Creates the body of the constructor by using a specified byte array of Microsoft intermediate language (MSIL) instructions.
+        /// Returns a value that indicates whether this instance is equal to a specified object. Two instances are equal
+        /// when they wrap equal method builders.
         /// </summary>
-        /// <param name="il"></param>
-        /// <param name="maxStack"></param>
-        /// <param name="localSignature"></param>
-        /// <param name="exceptionHandlers"></param>
-        /// <param name="tokenFixups"></param>
-        public void SetMethodBody(byte[] il, int maxStack, byte[] localSignature, IEnumerable<ExceptionHandler> exceptionHandlers, IEnumerable<int> tokenFixups)
+        /// <param name="obj">An object to compare with this instance.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> represents the same constructor; otherwise, <see langword="false"/>.</returns>
+        public override bool Equals(object obj)
         {
-            methodBuilder.SetMethodBody(il, maxStack, localSignature, exceptionHandlers, tokenFixups);
+            ConstructorBuilder other = obj as ConstructorBuilder;
+            return other != null && other._methodBuilder.Equals(_methodBuilder);
         }
 
-        internal override MethodInfo GetMethodInfo()
-        {
-            return methodBuilder;
-        }
+        /// <inheritdoc />
+        public override int GetHashCode() => _methodBuilder.GetHashCode();
 
-        internal override MethodInfo GetMethodOnTypeDefinition()
-        {
-            return methodBuilder;
-        }
+        /// <summary>
+        /// Gets an <see cref="ILGenerator"/> for this constructor.
+        /// </summary>
+        /// <returns>An <see cref="ILGenerator"/> object for this constructor.</returns>
+        public ILGenerator GetILGenerator() => _methodBuilder.GetILGenerator();
+
+        /// <summary>
+        /// Gets the method builder that defines the constructor.
+        /// </summary>
+        /// <returns>The underlying <see cref="MethodBuilder"/>.</returns>
+        internal override MethodInfo GetMethodInfo() => _methodBuilder;
 
     }
 

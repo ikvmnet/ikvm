@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009, 2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -24,134 +24,113 @@
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Represents an event of a generic type instance. Wraps the event of the generic type definition and binds its
+    /// accessor methods and handler type to the instance's type arguments.
+    /// </summary>
     sealed class GenericEventInfo : EventInfo
     {
 
-        readonly Type typeInstance;
-        readonly EventInfo eventInfo;
+        readonly Type _typeInstance;
+        readonly EventInfo _eventInfo;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="typeInstance"></param>
-        /// <param name="eventInfo"></param>
+        /// <param name="typeInstance">The generic type instance that declares the event.</param>
+        /// <param name="eventInfo">The event as declared on the generic type definition.</param>
         internal GenericEventInfo(Type typeInstance, EventInfo eventInfo)
         {
-            this.typeInstance = typeInstance;
-            this.eventInfo = eventInfo;
+            _typeInstance = typeInstance;
+            _eventInfo = eventInfo;
         }
 
+        /// <summary>
+        /// Returns whether the specified object represents the same event of the same generic type instance.
+        /// </summary>
+        /// <param name="obj">The object to compare with this instance.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> represents the same event; otherwise <see langword="false"/>.</returns>
         public override bool Equals(object obj)
         {
             var other = obj as GenericEventInfo;
-            return other != null && other.typeInstance == typeInstance && other.eventInfo == eventInfo;
+            return other != null && other._typeInstance == _typeInstance && other._eventInfo == _eventInfo;
         }
 
-        public override int GetHashCode()
-        {
-            return typeInstance.GetHashCode() * 777 + eventInfo.GetHashCode();
-        }
+        /// <inheritdoc />
+        public override int GetHashCode() => _typeInstance.GetHashCode() * 777 + _eventInfo.GetHashCode();
 
-        public override EventAttributes Attributes
-        {
-            get { return eventInfo.Attributes; }
-        }
+        /// <inheritdoc />
+        public override EventAttributes Attributes => _eventInfo.Attributes;
 
-        private MethodInfo Wrap(MethodInfo method)
+        /// <summary>
+        /// Binds an accessor method of the generic type definition to the generic type instance.
+        /// </summary>
+        /// <param name="method">The accessor method, or <see langword="null"/>.</param>
+        /// <returns>The method on the generic type instance, or <see langword="null"/> if <paramref name="method"/> is <see langword="null"/>.</returns>
+        MethodInfo Wrap(MethodInfo method)
         {
             if (method == null)
                 return null;
 
-            return new GenericMethodInstance(typeInstance, method, null);
+            return new GenericMethodInstance(_typeInstance, method, null);
         }
 
-        public override MethodInfo GetAddMethod(bool nonPublic)
-        {
-            return Wrap(eventInfo.GetAddMethod(nonPublic));
-        }
+        /// <inheritdoc />
+        public override MethodInfo GetAddMethod(bool nonPublic) => Wrap(_eventInfo.GetAddMethod(nonPublic));
 
-        public override MethodInfo GetRaiseMethod(bool nonPublic)
-        {
-            return Wrap(eventInfo.GetRaiseMethod(nonPublic));
-        }
+        /// <inheritdoc />
+        public override MethodInfo GetRaiseMethod(bool nonPublic) => Wrap(_eventInfo.GetRaiseMethod(nonPublic));
 
-        public override MethodInfo GetRemoveMethod(bool nonPublic)
-        {
-            return Wrap(eventInfo.GetRemoveMethod(nonPublic));
-        }
+        /// <inheritdoc />
+        public override MethodInfo GetRemoveMethod(bool nonPublic) => Wrap(_eventInfo.GetRemoveMethod(nonPublic));
 
+        /// <inheritdoc />
         public override MethodInfo[] GetOtherMethods(bool nonPublic)
         {
-            var others = eventInfo.GetOtherMethods(nonPublic);
-            for (int i = 0; i < others.Length; i++)
+            var others = _eventInfo.GetOtherMethods(nonPublic);
+            for (var i = 0; i < others.Length; i++)
                 others[i] = Wrap(others[i]);
 
             return others;
         }
 
-        public override MethodInfo[] __GetMethods()
-        {
-            var others = eventInfo.__GetMethods();
-            for (int i = 0; i < others.Length; i++)
-                others[i] = Wrap(others[i]);
+        /// <summary>
+        /// Gets the handler type of the event, with the type parameters of the generic type definition replaced by
+        /// the instance's type arguments.
+        /// </summary>
+        public override Type EventHandlerType => _eventInfo.EventHandlerType.BindTypeParameters(_typeInstance);
 
-            return others;
-        }
+        /// <inheritdoc />
+        public override string Name => _eventInfo.Name;
 
-        public override Type EventHandlerType
-        {
-            get { return eventInfo.EventHandlerType.BindTypeParameters(typeInstance); }
-        }
+        /// <summary>
+        /// Gets the generic type instance that declares the event.
+        /// </summary>
+        public override Type DeclaringType => _typeInstance;
 
-        public override string Name
-        {
-            get { return eventInfo.Name; }
-        }
+        /// <inheritdoc />
+        public override Module Module => _eventInfo.Module;
 
-        public override Type DeclaringType
-        {
-            get { return typeInstance; }
-        }
+        /// <inheritdoc />
+        public override int MetadataToken => _eventInfo.MetadataToken;
 
-        public override Module Module
-        {
-            get { return eventInfo.Module; }
-        }
+        /// <inheritdoc />
+        internal override EventInfo BindTypeParameters(Type type) => new GenericEventInfo(_typeInstance.BindTypeParameters(type), _eventInfo);
 
-        public override int MetadataToken
-        {
-            get { return eventInfo.MetadataToken; }
-        }
+        /// <inheritdoc />
+        internal override bool IsPublic => _eventInfo.IsPublic;
 
-        internal override EventInfo BindTypeParameters(Type type)
-        {
-            return new GenericEventInfo(typeInstance.BindTypeParameters(type), eventInfo);
-        }
+        /// <inheritdoc />
+        internal override bool IsNonPrivate => _eventInfo.IsNonPrivate;
 
-        internal override bool IsPublic
-        {
-            get { return eventInfo.IsPublic; }
-        }
+        /// <inheritdoc />
+        internal override bool IsStatic => _eventInfo.IsStatic;
 
-        internal override bool IsNonPrivate
-        {
-            get { return eventInfo.IsNonPrivate; }
-        }
+        /// <inheritdoc />
+        internal override bool IsBaked => _eventInfo.IsBaked;
 
-        internal override bool IsStatic
-        {
-            get { return eventInfo.IsStatic; }
-        }
-
-        internal override bool IsBaked
-        {
-            get { return eventInfo.IsBaked; }
-        }
-
-        internal override int GetCurrentToken()
-        {
-            return eventInfo.GetCurrentToken();
-        }
+        /// <inheritdoc />
+        internal override int GetCurrentToken() => _eventInfo.GetCurrentToken();
 
     }
 

@@ -26,76 +26,83 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Base class for types that are composed from a single element type, such as arrays, pointers and by-ref types.
+    /// </summary>
     abstract class ElementHolderType : TypeInfo
     {
 
+        /// <summary>
+        /// The type of the object encompassed or referred to by this type.
+        /// </summary>
         protected readonly Type elementType;
-        int token;
-        readonly CustomModifiers mods;
+
+        /// <summary>
+        /// The cached TypeSpec token of this type in the <see cref="ModuleBuilder"/> of the element type, or 0 if not yet imported.
+        /// </summary>
+        int _token;
+
+        readonly CustomModifiers _mods;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="elementType"></param>
-        /// <param name="mods"></param>
-        /// <param name="sigElementType"></param>
+        /// <param name="elementType">The type of the object encompassed or referred to by this type.</param>
+        /// <param name="mods">The custom modifiers applied to this type.</param>
+        /// <param name="sigElementType">The signature element type (an <c>ELEMENT_TYPE_*</c> value) of this type.</param>
         protected ElementHolderType(Type elementType, CustomModifiers mods, byte sigElementType) :
             base(sigElementType)
         {
             this.elementType = elementType;
-            this.mods = mods;
+            _mods = mods;
         }
 
+        /// <summary>
+        /// Determines whether <paramref name="other"/> has the same element type and custom modifiers as this instance.
+        /// </summary>
+        /// <param name="other">The type to compare with, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if <paramref name="other"/> is not <see langword="null"/> and has an equal element type and equal custom modifiers; otherwise, <see langword="false"/>.</returns>
         protected bool EqualsHelper(ElementHolderType other)
         {
             return other != null
                 && other.elementType.Equals(elementType)
-                && other.mods.Equals(mods);
+                && other._mods.Equals(_mods);
         }
 
-        public override CustomModifiers __GetCustomModifiers()
-        {
-            return mods;
-        }
+        /// <inheritdoc />
+        public override CustomModifiers __GetCustomModifiers() => _mods;
 
-        public sealed override string Name
-        {
-            get { return elementType.Name + GetSuffix(); }
-        }
+        /// <inheritdoc />
+        public sealed override string Name => elementType.Name + GetSuffix();
 
-        public sealed override string Namespace
-        {
-            get { return elementType.Namespace; }
-        }
+        /// <inheritdoc />
+        public sealed override string Namespace => elementType.Namespace;
 
-        public sealed override string FullName
-        {
-            get { return elementType.FullName + GetSuffix(); }
-        }
+        /// <inheritdoc />
+        public sealed override string FullName => elementType.FullName + GetSuffix();
 
-        public sealed override string ToString()
-        {
-            return elementType.ToString() + GetSuffix();
-        }
+        /// <inheritdoc />
+        public sealed override string ToString() => elementType.ToString() + GetSuffix();
 
-        public sealed override Type GetElementType()
-        {
-            return elementType;
-        }
+        /// <inheritdoc />
+        public sealed override Type GetElementType() => elementType;
 
-        public sealed override Module Module
-        {
-            get { return elementType.Module; }
-        }
+        /// <inheritdoc />
+        public sealed override Module Module => elementType.Module;
 
+        /// <summary>
+        /// Gets the TypeSpec token for this type in the <see cref="ModuleBuilder"/> of the element type, importing the type on first use.
+        /// </summary>
+        /// <returns>The metadata token of this type.</returns>
         internal sealed override int GetModuleBuilderToken()
         {
-            if (token == 0)
-                token = ((ModuleBuilder)elementType.Module).ImportType(this);
+            if (_token == 0)
+                _token = ((ModuleBuilder)elementType.Module).ImportType(this);
 
-            return token;
+            return _token;
         }
 
+        /// <inheritdoc />
         public sealed override bool ContainsGenericParameters
         {
             get
@@ -108,6 +115,7 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <inheritdoc />
         protected sealed override bool ContainsMissingTypeImpl
         {
             get
@@ -116,48 +124,57 @@ namespace IKVM.Reflection
                 while (type.HasElementType)
                     type = type.GetElementType();
 
-                return type.__ContainsMissingType || mods.ContainsMissingType;
+                return type.__ContainsMissingType || _mods.ContainsMissingType;
             }
         }
 
-        protected sealed override bool IsValueTypeImpl
-        {
-            get { return false; }
-        }
+        /// <inheritdoc />
+        protected sealed override bool IsValueTypeImpl => false;
 
+        /// <summary>
+        /// Substitutes the generic parameters of the element type and custom modifiers using <paramref name="binder"/>.
+        /// </summary>
+        /// <param name="binder">The binder that supplies the generic arguments.</param>
+        /// <returns>This instance if nothing changed; otherwise, a new type of the same kind wrapping the bound element type.</returns>
         internal sealed override Type BindTypeParameters(IGenericBinder binder)
         {
             var type = elementType.BindTypeParameters(binder);
-            var mods = this.mods.Bind(binder);
-            if (ReferenceEquals(type, elementType) && mods.Equals(this.mods))
+            var mods = _mods.Bind(binder);
+            if (ReferenceEquals(type, elementType) && mods.Equals(_mods))
                 return this;
 
             return Wrap(type, mods);
         }
 
-        internal override void CheckBaked()
-        {
-            elementType.CheckBaked();
-        }
+        /// <inheritdoc />
+        internal override void CheckBaked() => elementType.CheckBaked();
 
-        internal sealed override Universe Universe
-        {
-            get { return elementType.Universe; }
-        }
+        /// <inheritdoc />
+        internal sealed override Universe Universe => elementType.Universe;
 
-        internal sealed override bool IsBaked
-        {
-            get { return elementType.IsBaked; }
-        }
+        /// <inheritdoc />
+        internal sealed override bool IsBaked => elementType.IsBaked;
 
-        internal sealed override int GetCurrentToken()
-        {
+        /// <summary>
+        /// Gets the current metadata token of this type, which is always 0 because element holder types have no token of their own.
+        /// </summary>
+        /// <returns>Always 0.</returns>
+        internal sealed override int GetCurrentToken() =>
             // we don't have a token, so we return 0 (which is never a valid token)
-            return 0;
-        }
+            0;
 
+        /// <summary>
+        /// Gets the suffix that is appended to the element type name to form the name of this type, such as <c>[]</c>, <c>*</c> or <c>&amp;</c>.
+        /// </summary>
+        /// <returns>The type name suffix.</returns>
         internal abstract string GetSuffix();
 
+        /// <summary>
+        /// Creates a type of the same kind as this instance around a different element type.
+        /// </summary>
+        /// <param name="type">The new element type.</param>
+        /// <param name="mods">The custom modifiers of the new type.</param>
+        /// <returns>The constructed type.</returns>
         protected abstract Type Wrap(Type type, CustomModifiers mods);
 
     }

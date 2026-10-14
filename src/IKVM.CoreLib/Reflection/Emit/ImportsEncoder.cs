@@ -5,87 +5,33 @@ using System.Reflection.Metadata.Ecma335;
 namespace IKVM.Reflection.Emit
 {
 
+    /// <summary>
+    /// Encodes the imports blob of a portable PDB import scope.
+    /// </summary>
     struct ImportsEncoder
     {
 
-        readonly BlobBuilder writer;
-        int count;
+        readonly BlobBuilder _writer;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="writer"></param>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <param name="writer">The blob builder the imports are written to.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="writer"/> is <see langword="null"/>.</exception>
         public ImportsEncoder(BlobBuilder writer)
         {
-            this.writer = writer ?? throw new ArgumentNullException(nameof(writer));
+            _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         }
 
         /// <summary>
-        /// Gets the number of imports written.
+        /// Writes an import of a namespace.
         /// </summary>
-        public int Count => count;
-
-        public void AliasAssemblyReference(BlobHandle alias, AssemblyReferenceHandle assembly)
-        {
-            // <import> ::= AliasAssemblyReference <alias> <target-assembly>
-            writer.WriteByte((byte)ImportDefinitionKind.AliasAssemblyReference);
-            writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(alias));
-            writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(assembly));
-        }
-
-        public void AliasType(BlobHandle alias, EntityHandle targetType)
-        {
-            // <import> ::= AliasType <alias> <target-type>
-            writer.WriteByte((byte)ImportDefinitionKind.AliasType);
-            writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(alias));
-            writer.WriteCompressedInteger(CodedIndex.TypeDefOrRefOrSpec(targetType));
-        }
-
-        public void ImportType(EntityHandle targetType)
-        {
-            // <import> ::= AliasType <alias> <target-type>
-            writer.WriteByte((byte)ImportDefinitionKind.ImportType);
-            writer.WriteCompressedInteger(CodedIndex.TypeDefOrRefOrSpec(targetType));
-        }
-
-        public void AliasAssemblyNamespace(BlobHandle alias, AssemblyReferenceHandle targetAssembly, BlobHandle namespaceName)
-        {
-            // <import> ::= AliasAssemblyNamespace <alias> <target-assembly> <target-namespace>
-            writer.WriteByte((byte)ImportDefinitionKind.AliasAssemblyNamespace);
-            writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(alias));
-            writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(targetAssembly));
-            writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(namespaceName));
-        }
-
-        public void ImportAssemblyNamespace(AssemblyReferenceHandle targetAssembly, BlobHandle namespaceName)
-        {
-            // <import> ::= ImportAssemblyNamespace <target-assembly> <target-namespace>
-            writer.WriteByte((byte)ImportDefinitionKind.ImportAssemblyNamespace);
-            writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(targetAssembly));
-            writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(namespaceName));
-        }
-
-        public void AliasNamespace(BlobHandle alias, BlobHandle namespaceName)
-        {
-            // <import> ::= AliasNamespace <alias> <target-namespace>
-            writer.WriteByte((byte)ImportDefinitionKind.AliasNamespace);
-            writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(alias));
-            writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(namespaceName));
-        }
-
+        /// <param name="namespaceName">The blob heap handle of the UTF-8 encoded namespace name.</param>
         public void ImportNamespace(BlobHandle namespaceName)
         {
             // <import> ::= ImportNamespace <target-namespace>
-            writer.WriteByte((byte)ImportDefinitionKind.ImportNamespace);
-            writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(namespaceName));
-        }
-
-        public void ImportReferenceAlias(BlobHandle alias)
-        {
-            // <import> ::= ImportReferenceAlias <alias>
-            writer.WriteByte((byte)ImportDefinitionKind.ImportAssemblyReferenceAlias);
-            writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(alias));
+            _writer.WriteByte((byte)ImportDefinitionKind.ImportNamespace);
+            _writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(namespaceName));
         }
 
     }

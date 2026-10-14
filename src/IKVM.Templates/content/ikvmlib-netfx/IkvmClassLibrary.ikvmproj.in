@@ -1,0 +1,7 @@
+<Project Sdk="IKVM.NET.Sdk/#PackageVersion#">
+
+    <PropertyGroup>
+        <TargetFramework>net48</TargetFramework>
+    </PropertyGroup>
+
+</Project>

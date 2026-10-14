@@ -24,54 +24,53 @@
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Represents a type that is passed by reference.
+    /// </summary>
     sealed class ByRefType : ElementHolderType
     {
 
-        internal static Type Make(Type type, CustomModifiers mods)
-        {
-            return type.Universe.CanonicalizeType(new ByRefType(type, mods));
-        }
+        /// <summary>
+        /// Gets the canonical by-reference type for the specified element type and custom modifiers.
+        /// </summary>
+        /// <param name="type">The type that is passed by reference.</param>
+        /// <param name="mods">The custom modifiers applied to the by-reference type.</param>
+        /// <returns>The canonical instance of the by-reference type from the element type's universe.</returns>
+        internal static Type Make(Type type, CustomModifiers mods) => type.Universe.CanonicalizeType(new ByRefType(type, mods));
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="type"></param>
-        /// <param name="mods"></param>
+        /// <param name="type">The type that is passed by reference.</param>
+        /// <param name="mods">The custom modifiers applied to the by-reference type.</param>
         ByRefType(Type type, CustomModifiers mods) :
             base(type, mods, Signature.ELEMENT_TYPE_BYREF)
         {
 
         }
 
-        public override bool Equals(object o)
-        {
-            return EqualsHelper(o as ByRefType);
-        }
+        /// <inheritdoc />
+        public override bool Equals(object o) => EqualsHelper(o as ByRefType);
 
-        public override int GetHashCode()
-        {
-            return elementType.GetHashCode() * 3;
-        }
+        /// <inheritdoc />
+        public override int GetHashCode() => elementType.GetHashCode() * 3;
 
-        public override Type BaseType
-        {
-            get { return null; }
-        }
+        /// <summary>
+        /// Gets the type from which the current type directly inherits. By-reference types have no base type, so this
+        /// is always <see langword="null"/>.
+        /// </summary>
+        public override Type BaseType => null;
 
-        public override TypeAttributes Attributes
-        {
-            get { return 0; }
-        }
+        /// <summary>
+        /// Gets the attributes associated with the type. By-reference types have no attributes, so this is always 0.
+        /// </summary>
+        public override TypeAttributes Attributes => 0;
 
-        internal override string GetSuffix()
-        {
-            return "&";
-        }
+        /// <inheritdoc />
+        internal override string GetSuffix() => "&";
 
-        protected override Type Wrap(Type type, CustomModifiers mods)
-        {
-            return Make(type, mods);
-        }
+        /// <inheritdoc />
+        protected override Type Wrap(Type type, CustomModifiers mods) => Make(type, mods);
 
     }
 

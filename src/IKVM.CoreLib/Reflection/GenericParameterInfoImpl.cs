@@ -24,72 +24,64 @@
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// A parameter of a <see cref="GenericMethodInstance"/>: wraps the parameter of the underlying method and binds the
+    /// type parameters in its type and custom modifiers to the instance's type arguments.
+    /// </summary>
     sealed class GenericParameterInfoImpl : ParameterInfo
     {
 
-        readonly GenericMethodInstance method;
-        readonly ParameterInfo parameterInfo;
+        readonly GenericMethodInstance _method;
+        readonly ParameterInfo _parameterInfo;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="method"></param>
-        /// <param name="parameterInfo"></param>
+        /// <param name="method">The generic method instance the parameter belongs to.</param>
+        /// <param name="parameterInfo">The corresponding parameter of the underlying method.</param>
         internal GenericParameterInfoImpl(GenericMethodInstance method, ParameterInfo parameterInfo)
         {
-            this.method = method;
-            this.parameterInfo = parameterInfo;
+            _method = method;
+            _parameterInfo = parameterInfo;
         }
 
-        public override string Name
-        {
-            get { return parameterInfo.Name; }
-        }
+        /// <inheritdoc />
+        public override string Name => _parameterInfo.Name;
 
-        public override Type ParameterType
-        {
-            get { return parameterInfo.ParameterType.BindTypeParameters(method); }
-        }
+        /// <summary>
+        /// Gets the type of the parameter, with the type parameters bound to the type arguments of the method instance.
+        /// </summary>
+        public override Type ParameterType => _parameterInfo.ParameterType.BindTypeParameters(_method);
 
-        public override ParameterAttributes Attributes
-        {
-            get { return parameterInfo.Attributes; }
-        }
+        /// <inheritdoc />
+        public override ParameterAttributes Attributes => _parameterInfo.Attributes;
 
-        public override int Position
-        {
-            get { return parameterInfo.Position; }
-        }
+        /// <inheritdoc />
+        public override int Position => _parameterInfo.Position;
 
-        public override object RawDefaultValue
-        {
-            get { return parameterInfo.RawDefaultValue; }
-        }
+        /// <inheritdoc />
+        public override object RawDefaultValue => _parameterInfo.RawDefaultValue;
 
-        public override CustomModifiers __GetCustomModifiers()
-        {
-            return parameterInfo.__GetCustomModifiers().Bind(method);
-        }
+        /// <summary>
+        /// Gets the custom modifiers of the parameter, with the type parameters bound to the type arguments of the
+        /// method instance.
+        /// </summary>
+        /// <returns>The bound custom modifiers.</returns>
+        public override CustomModifiers __GetCustomModifiers() => _parameterInfo.__GetCustomModifiers().Bind(_method);
 
-        public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
-        {
-            return parameterInfo.__TryGetFieldMarshal(out fieldMarshal);
-        }
+        /// <inheritdoc />
+        public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal) => _parameterInfo.__TryGetFieldMarshal(out fieldMarshal);
 
-        public override MemberInfo Member
-        {
-            get { return method; }
-        }
+        /// <summary>
+        /// Gets the generic method instance the parameter belongs to.
+        /// </summary>
+        public override MemberInfo Member => _method;
 
-        public override int MetadataToken
-        {
-            get { return parameterInfo.MetadataToken; }
-        }
+        /// <inheritdoc />
+        public override int MetadataToken => _parameterInfo.MetadataToken;
 
-        public override Module Module
-        {
-            get { return method.Module; }
-        }
+        /// <inheritdoc />
+        public override Module Module => _method.Module;
 
     }
 

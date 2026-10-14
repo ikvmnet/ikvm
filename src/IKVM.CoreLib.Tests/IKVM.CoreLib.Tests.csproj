@@ -41,10 +41,11 @@
     </PropertyGroup>
 
     <Target Name="FindJdk">
-        <FindJdk Family="21">
+        <!-- the module tests are compiled with release 9, which any JDK from 9 on can produce -->
+        <FindJdk After="9">
             <Output TaskParameter="JdkPath" PropertyName="JdkPath" />
         </FindJdk>
-        <Error Condition=" '$(JdkPath)' == '' " Text="Failed to locate JDK. IKVM.CoreLib.Tests requires JDK version 21 available on the system." />
+        <Error Condition=" '$(JdkPath)' == '' " Text="Failed to locate JDK. IKVM.CoreLib.Tests requires JDK 9 or later available on the system." />
         <PropertyGroup>
             <JavaCompilerPath>$(JdkPath)/bin/javac$(_ExeExtension)</JavaCompilerPath>
             <JavaArchiverPath>$(JdkPath)/bin/jar$(_ExeExtension)</JavaArchiverPath>

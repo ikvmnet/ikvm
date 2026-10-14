@@ -69,6 +69,9 @@ namespace IKVM.Runtime
                     // we don't know how many instructions we will read until we read them, so first parse them into a temporary array
                     var _instructions = ArrayPool<Instruction>.Shared.Rent((int)attribute.Code.Length + 1);
 
+                    // a rented array contains whatever was left in it, and reading an instruction only sets the fields its opcode uses
+                    Array.Clear(_instructions, 0, (int)attribute.Code.Length + 1);
+
                     try
                     {
                         int instructionCount = 0;

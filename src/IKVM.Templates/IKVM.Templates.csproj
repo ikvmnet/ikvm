@@ -1,0 +1,51 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <PackageType>Template</PackageType>
+        <PackageId>IKVM.Templates</PackageId>
+        <Title>IKVM Project Templates</Title>
+        <Description>Templates for creating Java projects compiled to .NET by IKVM.NET.Sdk.</Description>
+        <PackageTags>dotnet-new;templates;java;ikvm</PackageTags>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <IncludeContentInPack>true</IncludeContentInPack>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <IncludeSymbols>false</IncludeSymbols>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <ContentTargetFolders>content</ContentTargetFolders>
+        <NoWarn>$(NoWarn);NU5128</NoWarn>
+        <NoDefaultExcludes>true</NoDefaultExcludes>
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Content Include="content\**\*" Exclude="content\**\bin\**;content\**\obj\**;content\**\*.in" PackagePath="content" />
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="README.md" Pack="true" PackagePath="." />
+    </ItemGroup>
+
+    <!-- projects created from the templates use the IKVM.NET.Sdk released with the templates -->
+    <ItemGroup>
+        <TransformValues Include="PackageVersion">
+            <Value>$(PackageVersion)</Value>
+        </TransformValues>
+    </ItemGroup>
+
+    <Target Name="SetupTransforms" BeforeTargets="Transform;PrepareForBuild">
+        <ItemGroup>
+            <_TransformInput Include="content\**\*.in" />
+            <Transform Include="@(_TransformInput)">
+                <TargetPath>$(IntermediateOutputPath)$([System.String]::Copy('%(Identity)').Substring(0, $([System.String]::Copy('%(Identity)').LastIndexOf('.in'))))</TargetPath>
+            </Transform>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="IncludeTransformedFiles" DependsOnTargets="Transform" BeforeTargets="_GetPackageFiles">
+        <ItemGroup>
+            <_TransformedContent Include="$(IntermediateOutputPath)content\**\*" Exclude="$(IntermediateOutputPath)content\**\*.in" />
+            <Content Include="@(_TransformedContent)" PackagePath="content\%(_TransformedContent.RecursiveDir)%(_TransformedContent.Filename)%(_TransformedContent.Extension)" />
+        </ItemGroup>
+    </Target>
+
+</Project>

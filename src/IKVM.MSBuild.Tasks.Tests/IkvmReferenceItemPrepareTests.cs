@@ -256,6 +256,46 @@ namespace IKVM.MSBuild.Tasks.Tests
             c.Should().Be("2.0.0.0");
         }
 
+        /// <summary>
+        /// Assigns the metadata to a copy of the hello world jar, which has no module information, under the given file name.
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        static ITaskItem AssignMetadataToJarNamed(string fileName)
+        {
+            var dir = Path.Combine("jarname", System.Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+
+            try
+            {
+                var jar = Path.Combine(dir, fileName);
+                File.Copy(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"), jar);
+                var i1 = new TaskItem(jar);
+                IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItem.Import(new[] { i1 }));
+                return i1;
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [TestMethod]
+        public void Should_get_default_assembly_name_from_unversioned_jar()
+        {
+            var i1 = AssignMetadataToJarNamed("hello-world.jar");
+            i1.GetMetadata(IkvmReferenceItemMetadata.AssemblyName).Should().Be("hello.world");
+            i1.GetMetadata(IkvmReferenceItemMetadata.AssemblyVersion).Should().BeEmpty();
+        }
+
+        [TestMethod]
+        public void Should_not_get_default_assembly_version_from_unversioned_jar()
+        {
+            var i1 = AssignMetadataToJarNamed("v2.jar");
+            i1.GetMetadata(IkvmReferenceItemMetadata.AssemblyName).Should().Be("v2");
+            i1.GetMetadata(IkvmReferenceItemMetadata.AssemblyVersion).Should().BeEmpty();
+        }
+
         [TestMethod]
         public void Should_fail_when_missing_name()
         {

@@ -19,18 +19,28 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 
 namespace IKVM.Reflection.Emit
 {
 
-    internal enum AssemblyBuilderAccess
-	{
+    /// <summary>
+    /// Defines the access modes for a dynamic assembly.
+    /// </summary>
+    enum AssemblyBuilderAccess
+    {
 
-		Save = 2,
-		ReflectionOnly = 6,
+        /// <summary>
+        /// The dynamic assembly can be saved.
+        /// </summary>
+        Save = 2,
 
-	}
+        /// <summary>
+        /// The dynamic assembly is loaded into the reflection-only context, and cannot be executed.
+        /// </summary>
+        ReflectionOnly = 6,
+
+    }
 
 }

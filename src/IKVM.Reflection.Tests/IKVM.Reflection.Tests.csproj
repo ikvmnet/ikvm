@@ -1,6 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
+        <Nullable>enable</Nullable>
+        <DefineConstants>$(DefineConstants);IKVM_REFLECTION</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>
@@ -8,8 +10,6 @@
         <PackageReference Include="Microsoft.CodeCoverage" Version="17.9.0" />
         <PackageReference Include="Microsoft.ILVerification" Version="8.0.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
-        <PackageReference Include="MSTest.TestAdapter" Version="3.2.2" />
-        <PackageReference Include="MSTest.TestFramework" Version="3.2.2" />
         <PackageReference Include="System.Reflection.MetadataLoadContext" Version="8.0.1" />
         <PackageReference Include="xunit" Version="2.7.0" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.5.7">
@@ -20,16 +20,40 @@
 
     <ItemGroup>
         <None Remove="sample.ico" />
-    </ItemGroup>
-
-    <ItemGroup>
         <EmbeddedResource Include="sample.ico" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.CoreLib\IKVM.CoreLib.csproj" />
         <ProjectReference Include="..\IKVM.Tests.Util\IKVM.Tests.Util.csproj" />
+        <ProjectReference Include="..\IKVM.Reflection.Tests.Dump\IKVM.Reflection.Tests.Dump.csproj" />
     </ItemGroup>
+
+    <!-- the IKVM.Reflection flavor of the dumper; the runtime flavor comes from IKVM.Reflection.Tests.Dump -->
+    <ItemGroup>
+        <Compile Include="..\IKVM.Reflection.Tests.Dump\ReflectionDump.cs" Link="Dump\ReflectionDump.cs" />
+    </ItemGroup>
+
+    <!-- the fixture assembly, built for every target framework so each host can load each target -->
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Reflection.Tests.Fixture\IKVM.Reflection.Tests.Fixture.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" SetTargetFramework="TargetFramework=net472" OutputItemType="FixtureAssembly" FixtureTargetFramework="net472" />
+        <ProjectReference Include="..\IKVM.Reflection.Tests.Fixture\IKVM.Reflection.Tests.Fixture.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" SetTargetFramework="TargetFramework=net6.0" OutputItemType="FixtureAssembly" FixtureTargetFramework="net6.0" />
+        <ProjectReference Include="..\IKVM.Reflection.Tests.Fixture\IKVM.Reflection.Tests.Fixture.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" SetTargetFramework="TargetFramework=net8.0" OutputItemType="FixtureAssembly" FixtureTargetFramework="net8.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="Snapshots\*.txt" CopyToOutputDirectory="PreserveNewest" />
+        <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+            <_Parameter1>ProjectDirectory</_Parameter1>
+            <_Parameter2>$(MSBuildProjectDirectory)</_Parameter2>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <Target Name="CopyFixtureAssemblies" AfterTargets="ResolveProjectReferences">
+        <ItemGroup>
+            <None Include="@(FixtureAssembly)" TargetPath="fixture\%(FixtureAssembly.FixtureTargetFramework)\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+        </ItemGroup>
+    </Target>
 
     <ItemGroup>
         <None Update="xunit.runner.json">

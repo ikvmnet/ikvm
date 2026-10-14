@@ -19,7 +19,7 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 using System;
 using System.Collections.Generic;
@@ -28,43 +28,83 @@ using System.IO;
 namespace IKVM.Reflection.Emit
 {
 
+    /// <summary>
+    /// The in-memory manifest module of an <see cref="AssemblyBuilder"/>. It holds no types and stands in as the
+    /// assembly's manifest module, mirroring the <c>RefEmit_InMemoryManifestModule</c> module of System.Reflection.Emit.
+    /// </summary>
     sealed class ManifestModule : NonPEModule
     {
 
-        readonly AssemblyBuilder assembly;
-        readonly Guid guid = Guid.NewGuid();
+        readonly AssemblyBuilder _assembly;
+        readonly Guid _guid = Guid.NewGuid();
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="assembly"></param>
+        /// <param name="assembly">The assembly builder whose manifest module this is.</param>
         internal ManifestModule(AssemblyBuilder assembly) :
             base(assembly.Universe)
         {
-            this.assembly = assembly;
+            _assembly = assembly;
         }
 
-        public override int MDStreamVersion => assembly.mdStreamVersion;
+        /// <summary>
+        /// Gets the metadata stream version of the owning assembly builder.
+        /// </summary>
+        public override int MDStreamVersion => _assembly.MdStreamVersion;
 
-        public override Assembly Assembly => assembly;
+        /// <inheritdoc />
+        public override Assembly Assembly => _assembly;
 
+        /// <summary>
+        /// Finds a type by name. The manifest module contains no types, so this always returns <see langword="null"/>.
+        /// </summary>
+        /// <param name="typeName">The name of the type to find.</param>
+        /// <returns><see langword="null"/>.</returns>
         internal override Type FindType(TypeName typeName) => null;
 
+        /// <summary>
+        /// Finds a type by name, ignoring case. The manifest module contains no types, so this always returns
+        /// <see langword="null"/>.
+        /// </summary>
+        /// <param name="lowerCaseName">The lower-cased name of the type to find.</param>
+        /// <returns><see langword="null"/>.</returns>
         internal override Type FindTypeIgnoreCase(TypeName lowerCaseName) => null;
 
+        /// <summary>
+        /// Adds the types defined in the module to a list. The manifest module contains no types, so this adds nothing.
+        /// </summary>
+        /// <param name="list">The list to add the types to.</param>
         internal override void GetTypesImpl(List<Type> list)
         {
-
         }
 
-        public override string FullyQualifiedName => Path.Combine(assembly.dir, "RefEmit_InMemoryManifestModule");
+        /// <summary>
+        /// Gets a path for the module, formed from the assembly builder's directory and the name
+        /// <c>RefEmit_InMemoryManifestModule</c>.
+        /// </summary>
+        public override string FullyQualifiedName => Path.Combine(_assembly.Dir, "RefEmit_InMemoryManifestModule");
 
+        /// <summary>
+        /// Gets the name of the module, which is always <c>&lt;In Memory Module&gt;</c>.
+        /// </summary>
         public override string Name => "<In Memory Module>";
 
-        public override Guid ModuleVersionId => guid;
+        /// <summary>
+        /// Gets a version identifier for the module, generated randomly when the instance is created.
+        /// </summary>
+        public override Guid ModuleVersionId => _guid;
 
+        /// <summary>
+        /// Gets the scope name of the module, which is always <c>RefEmit_InMemoryManifestModule</c>.
+        /// </summary>
         public override string ScopeName => "RefEmit_InMemoryManifestModule";
 
+        /// <summary>
+        /// Creates the exception thrown by operations this module does not support. Unlike the base class, the
+        /// manifest module reports these as an invalid operation.
+        /// </summary>
+        /// <returns>A new <see cref="InvalidOperationException"/>.</returns>
         protected override Exception NotSupportedException() => new InvalidOperationException();
 
     }

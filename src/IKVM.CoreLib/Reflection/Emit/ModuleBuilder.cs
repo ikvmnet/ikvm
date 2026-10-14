@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,429 +26,621 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
 using System.IO;
+using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Resources;
 using System.Runtime.InteropServices;
 
 using IKVM.Reflection.Impl;
-using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Reader;
 using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
 {
 
-    internal sealed class ModuleBuilder : Module, ITypeOwner
+    /// <summary>
+    /// Defines and represents a module in a dynamic assembly. Accumulates the metadata, IL, resources and pseudo
+    /// tokens of everything defined in the module until it is written to a PE image.
+    /// </summary>
+    sealed class ModuleBuilder : Module, ITypeOwner
     {
 
+        /// <summary>
+        /// A managed resource embedded in the module, written to the resource stream when the module is saved.
+        /// </summary>
         struct ResourceWriterRecord
         {
 
-            readonly string name;
-            readonly ResourceWriter rw;
-            readonly Stream stream;
-            readonly ResourceAttributes attributes;
+            readonly string _name;
+            readonly ResourceWriter _rw;
+            readonly Stream _stream;
+            readonly ResourceAttributes _attributes;
 
             /// <summary>
-            /// Initializes a new instance.
+            /// Initializes a new instance for a resource whose content is supplied as a stream.
             /// </summary>
-            /// <param name="name"></param>
-            /// <param name="stream"></param>
-            /// <param name="attributes"></param>
+            /// <param name="name">The name of the resource.</param>
+            /// <param name="stream">The stream that holds the content of the resource.</param>
+            /// <param name="attributes">The attributes of the resource.</param>
             internal ResourceWriterRecord(string name, Stream stream, ResourceAttributes attributes) :
                 this(name, null, stream, attributes)
             {
-
             }
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="name"></param>
-            /// <param name="rw"></param>
-            /// <param name="stream"></param>
-            /// <param name="attributes"></param>
+            /// <param name="name">The name of the resource.</param>
+            /// <param name="rw">The resource writer that generates the content into <paramref name="stream"/>, or <see langword="null"/> if the stream already holds the content.</param>
+            /// <param name="stream">The stream that holds the content of the resource.</param>
+            /// <param name="attributes">The attributes of the resource.</param>
             internal ResourceWriterRecord(string name, ResourceWriter rw, Stream stream, ResourceAttributes attributes)
             {
-                this.name = name;
-                this.rw = rw;
-                this.stream = stream;
-                this.attributes = attributes;
+                _name = name;
+                _rw = rw;
+                _stream = stream;
+                _attributes = attributes;
             }
 
-            internal readonly int GetLength() => 4 + (int)stream.Length;
-
             /// <summary>
-            /// Writes the resource to the resource stream.
+            /// Writes the resource to the resource stream and adds its ManifestResource row.
             /// </summary>
-            /// <param name="module"></param>
+            /// <param name="module">The module whose resource stream receives the resource.</param>
             internal readonly void Write(ModuleBuilder module)
             {
                 // write resource to internal stream
-                rw?.Generate();
+                _rw?.Generate();
 
                 // align the start of the resource
-                module.resourceStream.Align(8);
-                var offset = module.resourceStream.Count;
+                module._resourceStream.Align(8);
+                var offset = module._resourceStream.Count;
 
                 // resource begins with a length, followed by the data
-                module.resourceStream.WriteInt32((int)stream.Length);
-                stream.Position = 0;
+                module._resourceStream.WriteInt32((int)_stream.Length);
+                _stream.Position = 0;
                 var buffer = new byte[8192];
                 int length;
-                while ((length = stream.Read(buffer, 0, buffer.Length)) != 0)
-                    module.resourceStream.WriteBytes(buffer, 0, length);
+                while ((length = _stream.Read(buffer, 0, buffer.Length)) != 0)
+                    module._resourceStream.WriteBytes(buffer, 0, length);
 
-                // add the resource record
-                var rec = new ManifestResourceTable.Record();
-                rec.Offset = offset;
-                rec.Flags = (int)attributes;
-                rec.Name = module.GetOrAddString(name);
-                rec.Implementation = 0;
-                module.ManifestResourceTable.AddRecord(rec);
+                module.AddManifestResource(_attributes, _name, 0, offset);
             }
 
-            internal readonly void Close()
-            {
-                rw?.Close();
-            }
+            /// <summary>
+            /// Closes the resource writer, if any.
+            /// </summary>
+            internal readonly void Close() => _rw?.Close();
 
         }
 
-        internal struct VTableFixups
+        /// <summary>
+        /// A custom attribute set on this module. The parent and constructor can be pseudo tokens until the module is
+        /// written.
+        /// </summary>
+        struct CustomAttributeRow
         {
 
-            internal uint initializedDataOffset;
-            internal ushort count;
-            internal ushort type;
-
-            internal readonly int SlotWidth => (type & 0x02) == 0 ? 4 : 8;
+            internal int Parent;
+            internal int Constructor;
+            internal BlobHandle Value;
+            internal CustomAttributeBuilder Builder;
 
         }
 
-        struct InterfaceImplCustomAttribute
+        /// <summary>
+        /// A reference to a type. The resolution scope can be a pseudo token for an assembly reference until the module is
+        /// written.
+        /// </summary>
+        struct TypeRefRow
         {
 
-            internal int type;
-            internal int interfaceType;
-            internal int pseudoToken;
+            internal int ResolutionScope;
+            internal StringHandle Namespace;
+            internal StringHandle Name;
 
         }
 
+        /// <summary>
+        /// A reference to a field or method. The parent can be a pseudo token until the module is written.
+        /// </summary>
+        struct MemberRefRow
+        {
+
+            internal int Class;
+            internal StringHandle Name;
+            internal BlobHandle Signature;
+
+        }
+
+        /// <summary>
+        /// An instantiation of a generic method. The method can be a pseudo token until the module is written.
+        /// </summary>
+        struct MethodSpecRow
+        {
+
+            internal int Method;
+            internal BlobHandle Instantiation;
+
+        }
+
+        /// <summary>
+        /// A type exported from or forwarded by the assembly. The implementation can be a pseudo token for an assembly
+        /// reference until the module is written.
+        /// </summary>
+        struct ExportedTypeRow
+        {
+
+            internal TypeAttributes Flags;
+            internal int TypeDefId;
+            internal StringHandle Name;
+            internal StringHandle Namespace;
+            internal int Implementation;
+
+        }
+
+        /// <summary>
+        /// A manifest resource, embedded at an offset or stored in a file.
+        /// </summary>
+        struct ManifestResourceRow
+        {
+
+            internal ResourceAttributes Flags;
+            internal StringHandle Name;
+            internal int Implementation;
+            internal int Offset;
+
+        }
+
+        /// <summary>
+        /// Associates an accessor method with a property. The method can be a pseudo token until the module is written.
+        /// </summary>
+        struct MethodSemanticsRow
+        {
+
+            internal int Association;
+            internal short Semantics;
+            internal int Method;
+
+        }
+
+        /// <summary>
+        /// A constant of a field, parameter or property. The parent can be a pseudo token until the module is written.
+        /// </summary>
+        struct ConstantRow
+        {
+
+            internal int Parent;
+            internal object Value;
+
+        }
+
+        /// <summary>
+        /// A marshalling descriptor of a field or parameter. The parent can be a pseudo token until the module is written.
+        /// </summary>
+        struct FieldMarshalRow
+        {
+
+            internal int Parent;
+            internal byte[] NativeType;
+
+        }
+
+        /// <summary>
+        /// The P/Invoke import of a method. The method can be a pseudo token until the module is written.
+        /// </summary>
+        struct ImplMapRow
+        {
+
+            internal int Method;
+            internal ImplMapFlags Flags;
+            internal string ImportName;
+            internal string ImportScope;
+            internal ModuleReferenceHandle ImportScopeHandle;
+
+        }
+
+        /// <summary>
+        /// Identifies an imported field or method by declaring type, name and signature, so that each member is only
+        /// given one MemberRef.
+        /// </summary>
         readonly struct MemberRefKey : IEquatable<MemberRefKey>
         {
 
-            readonly Type type;
-            readonly string name;
-            readonly Signature signature;
+            readonly Type _type;
+            readonly string _name;
+            readonly Signature _signature;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="type"></param>
-            /// <param name="name"></param>
-            /// <param name="signature"></param>
+            /// <param name="type">The type that declares the member.</param>
+            /// <param name="name">The name of the member.</param>
+            /// <param name="signature">The signature of the member.</param>
             internal MemberRefKey(Type type, string name, Signature signature)
             {
-                this.type = type;
-                this.name = name;
-                this.signature = signature;
+                _type = type;
+                _name = name;
+                _signature = signature;
             }
 
-            public bool Equals(MemberRefKey other) => other.type.Equals(type) && other.name == name && other.signature.Equals(signature);
+            /// <summary>
+            /// Returns whether this key identifies the same member as another key.
+            /// </summary>
+            /// <param name="other">The key to compare with.</param>
+            /// <returns><see langword="true"/> if the declaring type, name and signature are equal; otherwise <see langword="false"/>.</returns>
+            public bool Equals(MemberRefKey other) => other._type.Equals(_type) && other._name == _name && other._signature.Equals(_signature);
 
+            /// <inheritdoc />
             public override bool Equals(object obj) => obj is MemberRefKey other && Equals(other);
 
-            public override int GetHashCode()
-            {
-                return type.GetHashCode() + name.GetHashCode() + signature.GetHashCode();
-            }
+            /// <inheritdoc />
+            public override int GetHashCode() => _type.GetHashCode() + _name.GetHashCode() + _signature.GetHashCode();
 
-            internal MethodBase LookupMethod()
-            {
-                return type.FindMethod(name, (MethodSignature)signature);
-            }
+            /// <summary>
+            /// Finds the method this key identifies on its declaring type.
+            /// </summary>
+            /// <returns>The method, or <see langword="null"/> if it is not found.</returns>
+            internal MethodBase LookupMethod() => _type.FindMethod(_name, (MethodSignature)_signature);
 
         }
 
+        /// <summary>
+        /// Identifies an imported generic method instantiation by declaring type, name, signature and type arguments,
+        /// so that each instantiation is only given one MethodSpec.
+        /// </summary>
         readonly struct MethodSpecKey : IEquatable<MethodSpecKey>
         {
 
-            readonly Type type;
-            readonly string name;
-            readonly MethodSignature signature;
-            readonly Type[] genericParameters;
+            readonly Type _type;
+            readonly string _name;
+            readonly MethodSignature _signature;
+            readonly Type[] _genericParameters;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="type"></param>
-            /// <param name="name"></param>
-            /// <param name="signature"></param>
-            /// <param name="genericParameters"></param>
+            /// <param name="type">The type that declares the method.</param>
+            /// <param name="name">The name of the method.</param>
+            /// <param name="signature">The signature of the method.</param>
+            /// <param name="genericParameters">The type arguments of the instantiation.</param>
             internal MethodSpecKey(Type type, string name, MethodSignature signature, Type[] genericParameters)
             {
-                this.type = type;
-                this.name = name;
-                this.signature = signature;
-                this.genericParameters = genericParameters;
+                _type = type;
+                _name = name;
+                _signature = signature;
+                _genericParameters = genericParameters;
             }
 
-            public bool Equals(MethodSpecKey other)
-            {
-                return other.type.Equals(type) && other.name == name && other.signature.Equals(signature) && Util.ArrayEquals(other.genericParameters, genericParameters);
-            }
+            /// <summary>
+            /// Returns whether this key identifies the same method instantiation as another key.
+            /// </summary>
+            /// <param name="other">The key to compare with.</param>
+            /// <returns><see langword="true"/> if the declaring type, name, signature and type arguments are equal; otherwise <see langword="false"/>.</returns>
+            public bool Equals(MethodSpecKey other) =>
+                other._type.Equals(_type) && other._name == _name && other._signature.Equals(_signature) && Util.ArrayEquals(other._genericParameters, _genericParameters);
 
+            /// <inheritdoc />
             public override bool Equals(object obj) => obj is MethodSpecKey other && Equals(other);
 
-            public override int GetHashCode() => type.GetHashCode() + name.GetHashCode() + signature.GetHashCode() + Util.GetHashCode(genericParameters);
+            /// <inheritdoc />
+            public override int GetHashCode() =>
+                _type.GetHashCode() + _name.GetHashCode() + _signature.GetHashCode() + Util.GetHashCode(_genericParameters);
 
         }
 
-        static readonly bool usePublicKeyAssemblyReference = false;
-
-        readonly MetadataBuilder metadata;
-        readonly BlobBuilder ilStream;
-        readonly MethodBodyStreamEncoder methodBodyEncoder;
-        readonly BlobBuilder resourceStream;
-        readonly AssemblyBuilder asm;
-        Guid mvid;
-        ReservedBlob<GuidHandle> mvidFixup;
-        uint timestamp;
-        ulong imageBaseAddress = 0;
-        uint fileAlignment = 0;
-        ulong stackReserve = 0;
-        DllCharacteristics dllCharacteristics = DllCharacteristics.DynamicBase | DllCharacteristics.NoSEH | DllCharacteristics.NXCompat | DllCharacteristics.TerminalServerAware;
-        internal readonly string moduleName;
-        internal readonly string fileName;
-        readonly TypeBuilder moduleType;
-        readonly List<TypeBuilder> types = new List<TypeBuilder>();
-        readonly Dictionary<Type, int> typeTokens = new Dictionary<Type, int>();
-        readonly Dictionary<Type, int> memberRefTypeTokens = new Dictionary<Type, int>();
-        internal readonly List<int> tokenFixupOffsets = new List<int>();
-        internal readonly BlobBuilder initializedDataStream = new BlobBuilder(512);
-        internal ModuleResourceSectionBuilder nativeResources;
-        readonly Dictionary<MemberRefKey, int> importedMemberRefs = new Dictionary<MemberRefKey, int>();
-        readonly Dictionary<MethodSpecKey, int> importedMethodSpecs = new Dictionary<MethodSpecKey, int>();
-        readonly Dictionary<Assembly, int> referencedAssemblies = new Dictionary<Assembly, int>();
-        List<AssemblyName> referencedAssemblyNames;
-        int nextPseudoToken = -1;
-        readonly List<int> resolvedTokens = new List<int>();
-        ISymbolWriter symbolWriter;
-
-        internal readonly Dictionary<StringHandle, string> strings = new();
-        internal readonly Dictionary<BlobHandle, BlobBuilder> blobs = new();
-        List<InterfaceImplCustomAttribute> interfaceImplCustomAttributes;
-        readonly List<ResourceWriterRecord> resourceWriters = new List<ResourceWriterRecord>();
-        bool saved;
+        readonly MetadataBuilder _metadata;
+        readonly BlobBuilder _ilStream;
+        readonly MethodBodyStreamEncoder _methodBodyEncoder;
+        readonly BlobBuilder _resourceStream;
+        readonly AssemblyBuilder _asm;
+        Guid _mvid;
+        readonly ReservedBlob<GuidHandle> _mvidFixup;
+        ulong _imageBaseAddress = 0;
+        uint _fileAlignment = 0;
+        DllCharacteristics _dllCharacteristics = DllCharacteristics.DynamicBase | DllCharacteristics.NoSEH | DllCharacteristics.NXCompat | DllCharacteristics.TerminalServerAware;
+        readonly string _moduleName;
 
         /// <summary>
-        /// Initializes a new instance.
+        /// The name of the file the module is written to.
         /// </summary>
-        /// <param name="asm"></param>
-        /// <param name="moduleName"></param>
-        /// <param name="fileName"></param>
-        /// <exception cref="NotSupportedException"></exception>
+        internal readonly string FileName;
+
+        readonly TypeBuilder _moduleType;
+        readonly List<TypeBuilder> _types = [];
+        readonly Dictionary<Type, int> _typeTokens = [];
+
+        /// <summary>
+        /// The TypeSpec tokens of generic type definitions used as the parent of a MemberRef.
+        /// </summary>
+        readonly Dictionary<Type, int> _memberRefTypeTokens = [];
+
+        readonly Dictionary<MemberRefKey, int> _importedMemberRefs = [];
+        readonly Dictionary<MethodSpecKey, int> _importedMethodSpecs = [];
+        readonly Dictionary<Assembly, int> _referencedAssemblies = [];
+        int _nextPseudoToken = -1;
+        int _typeCount;
+        int _propertyCount;
+        int _genericParameterCount;
+
+        /// <summary>
+        /// The real tokens of the pseudo tokens, indexed by -(pseudoToken + 1).
+        /// </summary>
+        readonly List<int> _resolvedTokens = [];
+
+        ISymbolWriter _symbolWriter;
+
+        readonly List<ResourceWriterRecord> _resourceWriters = [];
+        readonly List<CustomAttributeRow> _customAttributes = [];
+        readonly List<TypeRefRow> _typeRefs = [];
+        readonly List<MemberRefRow> _memberRefs = [];
+        readonly Dictionary<(int Class, StringHandle Name, BlobHandle Signature), int> _memberRefTokens = [];
+        readonly List<MethodSpecRow> _methodSpecs = [];
+        readonly Dictionary<(int Method, BlobHandle Instantiation), int> _methodSpecTokens = [];
+        readonly Dictionary<BlobHandle, int> _standAloneSignatureTokens = [];
+        readonly Dictionary<StringHandle, ModuleReferenceHandle> _moduleRefs = [];
+        readonly Dictionary<(StringHandle Name, Version Version, StringHandle Culture, BlobHandle PublicKeyOrToken, int Flags), AssemblyReferenceHandle> _assemblyRefs = [];
+        readonly List<ExportedTypeRow> _exportedTypes = [];
+        readonly Dictionary<(int Implementation, StringHandle Name, StringHandle Namespace), int> _exportedTypeTokens = [];
+        readonly List<ManifestResourceRow> _manifestResources = [];
+
+        /// <summary>
+        /// Set once the reference tables have been written, after which no more references can be added.
+        /// </summary>
+        bool _referencesWritten;
+
+        readonly List<MethodSemanticsRow> _methodSemantics = [];
+        readonly List<ConstantRow> _constants = [];
+        readonly List<FieldMarshalRow> _fieldMarshals = [];
+        readonly List<ImplMapRow> _implMaps = [];
+        bool _saved;
+
+        /// <summary>
+        /// Initializes a new instance. Adds the Module row and the &lt;Module&gt; type, which must be the first TypeDef.
+        /// </summary>
+        /// <param name="asm">The assembly that contains the module.</param>
+        /// <param name="moduleName">The name of the module.</param>
+        /// <param name="fileName">The name of the file the module is written to.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="asm"/> is <see langword="null"/>.</exception>
         internal ModuleBuilder(AssemblyBuilder asm, string moduleName, string fileName) :
-            base(asm.Universe)
+            base((asm ?? throw new ArgumentNullException(nameof(asm))).Universe)
         {
-            this.metadata = new MetadataBuilder();
-            this.ilStream = new BlobBuilder();
-            this.methodBodyEncoder = new MethodBodyStreamEncoder(ilStream);
-            this.resourceStream = new BlobBuilder();
+            _metadata = new MetadataBuilder();
+            _ilStream = new BlobBuilder();
+            _methodBodyEncoder = new MethodBodyStreamEncoder(_ilStream);
+            _resourceStream = new BlobBuilder();
 
-            this.asm = asm ?? throw new ArgumentNullException(nameof(asm));
-            this.metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            this.moduleName = moduleName;
-            this.fileName = fileName;
+            _asm = asm;
+            _moduleName = moduleName;
+            FileName = fileName;
 
+            // the image gets its real module version id when it is written; until then report a provisional one
             if (Universe.Deterministic == false)
-            {
-                __PEHeaderTimeDateStamp = DateTime.UtcNow;
-                mvid = Guid.NewGuid();
-            }
+                _mvid = Guid.NewGuid();
 
             // add module
-            mvidFixup = metadata.ReserveGuid();
-            ModuleTable.Add(0, GetOrAddString(moduleName), mvidFixup.Handle, default, default);
+            _mvidFixup = _metadata.ReserveGuid();
+            _metadata.AddModule(0, GetOrAddString(moduleName), _mvidFixup.Handle, default, default);
 
             // <Module> must be the first record in the TypeDef table
-            moduleType = new TypeBuilder(this, null, "<Module>");
-            types.Add(moduleType);
+            _moduleType = new TypeBuilder(this, null, "<Module>");
+            _types.Add(_moduleType);
         }
 
         /// <summary>
         /// Gets a reference to the <see cref="MetadataBuilder"/> underlying this instance.
         /// </summary>
-        internal MetadataBuilder Metadata => metadata;
+        internal MetadataBuilder Metadata => _metadata;
 
         /// <summary>
         /// Gets a reference to the <see cref="BlobBuilder"/> for the IL stream.
         /// </summary>
-        internal BlobBuilder ILStream => ilStream;
+        internal BlobBuilder ILStream => _ilStream;
 
         /// <summary>
         /// Gets a reference to the <see cref="MethodBodyStreamEncoder"/> for the IL stream.
         /// </summary>
-        internal MethodBodyStreamEncoder MethodBodyEncoder => methodBodyEncoder;
-
-        /// <summary>
-        /// Gets a reference to the <see cref="BlobBuilder"/> for the initialized data stream.
-        /// </summary>
-        internal BlobBuilder InitializedDataStream => initializedDataStream;
+        internal MethodBodyStreamEncoder MethodBodyEncoder => _methodBodyEncoder;
 
         /// <summary>
         /// Gets a reference to the <see cref="BlobBuilder"/> for the resource stream.
         /// </summary>
-        internal BlobBuilder ResourceStream => resourceStream;
+        internal BlobBuilder ResourceStream => _resourceStream;
 
         /// <summary>
-        /// Gets a new string handle from the metadata.
+        /// Adds a string to the string heap, or gets the handle of the existing entry.
         /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        internal StringHandle GetOrAddString(string value)
-        {
-            var h = metadata.GetOrAddString(value);
-            strings[h] = value;
-            return h;
-        }
+        /// <param name="value">The string to add.</param>
+        /// <returns>The handle of the string in the string heap.</returns>
+        internal StringHandle GetOrAddString(string value) => _metadata.GetOrAddString(value);
 
         /// <summary>
-        /// Gets the string value of the specified handle.
+        /// Adds a blob to the blob heap, or gets the handle of the existing entry.
         /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        internal override string GetString(StringHandle handle) => strings.TryGetValue(handle, out var value) ? value : throw new InvalidOperationException();
+        /// <param name="value">The builder holding the blob content.</param>
+        /// <returns>The handle of the blob in the blob heap.</returns>
+        internal BlobHandle GetOrAddBlob(BlobBuilder value) => _metadata.GetOrAddBlob(value);
 
         /// <summary>
-        /// Gets a new blob handle from the metadata.
+        /// Adds a blob to the blob heap, or gets the handle of the existing entry.
         /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        internal BlobHandle GetOrAddBlob(BlobBuilder value)
-        {
-            var h = metadata.GetOrAddBlob(value);
-            blobs[h] = value;
-            return h;
-        }
-
-        /// <summary>
-        /// Gets a new blob handle from the metadata.
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        internal BlobHandle GetOrAddBlob(byte[] value)
-        {
-            var b = new BlobBuilder();
-            b.WriteBytes(value);
-            return GetOrAddBlob(b);
-        }
-
-        /// <summary>
-        /// Gets a new blob handle from the metadata.
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        internal BlobHandle GetOrAddBlobUTF8(string value)
-        {
-            return metadata.GetOrAddBlobUTF8(value);
-        }
-
-        /// <summary>
-        /// Gets the blob value of the specified handle.
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        internal BlobBuilder GetBlob(BlobHandle handle) => blobs.TryGetValue(handle, out var value) ? value : throw new InvalidOperationException();
-
-        /// <summary>
-        /// Gets a <see cref="ByteReader"/> for the the specified handle.
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        internal override ByteReader GetBlobReader(BlobHandle handle)
-        {
-            var b = GetBlob(handle).ToArray();
-            return new ByteReader(b, 0, b.Length);
-        }
+        /// <param name="value">The blob content.</param>
+        /// <returns>The handle of the blob in the blob heap.</returns>
+        internal BlobHandle GetOrAddBlob(byte[] value) => _metadata.GetOrAddBlob(value);
 
         /// <summary>
         /// Sets the active symbol writer.
         /// </summary>
-        /// <param name="writer"></param>
-        internal void SetSymWriter(ISymbolWriter writer)
-        {
-            this.symbolWriter = writer;
-        }
+        /// <param name="writer">The symbol writer that receives debugging information for the module.</param>
+        internal void SetSymWriter(ISymbolWriter writer) => _symbolWriter = writer;
 
-        internal void PopulatePropertyAndEventTables()
+        /// <summary>
+        /// Writes the PropertyMap row and the properties of each type, in type order.
+        /// </summary>
+        internal void PopulatePropertyTables()
         {
             // LAMESPEC the PropertyMap and EventMap tables are not required to be sorted by the CLI spec,
             // but .NET sorts them and Mono requires them to be sorted, so we have to populate the
             // tables in the right order
-            foreach (var type in types)
-                type.PopulatePropertyAndEventTables();
+            foreach (var type in _types)
+                type.PopulatePropertyTable();
         }
 
-        internal void WriteTypeDefTable()
+        /// <summary>
+        /// Writes the TypeDef rows of all types, in the order they were defined, along with the start of each type's
+        /// field and method lists.
+        /// </summary>
+        void WriteTypeDefTable()
         {
-            int fieldList = 1;
-            int methodList = 1;
-            foreach (var type in types)
+            var fieldList = 1;
+            var methodList = 1;
+            foreach (var type in _types)
                 type.WriteTypeDefRecord(ref fieldList, ref methodList);
         }
 
-        internal void WriteMethodDefTable()
+        /// <summary>
+        /// Writes the MethodDef rows of all types, along with the start of each method's parameter list.
+        /// </summary>
+        void WriteMethodDefTable()
         {
-            int paramList = 1;
-            foreach (var type in types)
+            var paramList = 1;
+            foreach (var type in _types)
                 type.WriteMethodDefRecords(ref paramList);
         }
 
-        internal void WriteParamTable()
+        /// <summary>
+        /// Writes the Param rows of the methods of all types.
+        /// </summary>
+        void WriteParamTable()
         {
-            foreach (var type in types)
+            foreach (var type in _types)
                 type.WriteParamRecords();
         }
 
-        internal void WriteFieldTable()
+        /// <summary>
+        /// Writes the Field rows of all types.
+        /// </summary>
+        void WriteFieldTable()
         {
-            foreach (var type in types)
+            foreach (var type in _types)
                 type.WriteFieldRecords();
         }
 
-        internal int AllocPseudoToken()
+        /// <summary>
+        /// Allocates a new pseudo token. Pseudo tokens are negative and stand for a definition until its real token is
+        /// known, at which point they are resolved through <see cref="RegisterTokenFixup"/>.
+        /// </summary>
+        /// <returns>The new pseudo token.</returns>
+        internal int AllocPseudoToken() => _nextPseudoToken--;
+
+        /// <summary>
+        /// Allocates the TypeDef token of a new type. Types are written in the order they are defined.
+        /// </summary>
+        /// <returns>The TypeDef token.</returns>
+        internal int AllocTypeToken() => MetadataTokens.GetToken(MetadataTokens.TypeDefinitionHandle(++_typeCount));
+
+        /// <summary>
+        /// Gets the number of properties written so far.
+        /// </summary>
+        internal int PropertyCount => _propertyCount;
+
+        /// <summary>
+        /// Writes a property definition, returning its token. Properties are written type by type while the module is
+        /// being saved, which keeps each type's properties contiguous.
+        /// </summary>
+        /// <param name="attributes">The attributes of the property.</param>
+        /// <param name="name">The name of the property.</param>
+        /// <param name="signature">The signature of the property.</param>
+        /// <returns>The Property token.</returns>
+        internal int AddProperty(PropertyAttributes attributes, string name, PropertySignature signature)
         {
-            return nextPseudoToken--;
+            var h = _metadata.AddProperty((System.Reflection.PropertyAttributes)attributes, GetOrAddString(name), GetSignatureBlobIndex(signature));
+            Debug.Assert(MetadataTokens.GetRowNumber(h) == _propertyCount + 1);
+            _propertyCount++;
+            return MetadataTokens.GetToken(h);
         }
 
-        public TypeBuilder DefineType(string name)
+        /// <summary>
+        /// Records an accessor of a property.
+        /// </summary>
+        /// <param name="semantics">The MethodSemanticsAttributes value that says which accessor the method is.</param>
+        /// <param name="methodToken">The token or pseudo token of the accessor method.</param>
+        /// <param name="association">The token of the property the accessor belongs to.</param>
+        internal void AddMethodSemantics(short semantics, int methodToken, int association) =>
+            _methodSemantics.Add(new MethodSemanticsRow() { Semantics = semantics, Method = methodToken, Association = association });
+
+        /// <summary>
+        /// Allocates the provisional index a generic parameter reports as its token until the module is written.
+        /// </summary>
+        /// <returns>The provisional index.</returns>
+        internal int AllocGenericParameterIndex() => ++_genericParameterCount;
+
+        /// <summary>
+        /// Writes the tables that describe the structure of the types: layouts, interface implementations, method
+        /// overrides, nesting, field layouts, generic parameters and their constraints, all of which the metadata
+        /// requires to be added in sorted order.
+        /// </summary>
+        void WriteTypeStructure()
         {
-            return DefineType(name, TypeAttributes.Class);
+            foreach (var type in _types)
+                type.WriteStructure();
+
+            // generic parameters are sorted by their owner, a TypeOrMethodDef coded index, and then by number
+            var parameters = new List<GenericTypeParameterBuilder>();
+            foreach (var type in _types)
+                type.CollectGenericParameters(parameters);
+
+            var keys = new Dictionary<GenericTypeParameterBuilder, int>(parameters.Count);
+            foreach (var p in parameters)
+                keys[p] = CodedIndex.TypeOrMethodDef(MetadataTokens.EntityHandle(ResolvePseudoToken(p.OwnerToken)));
+
+            var sorted = parameters.OrderBy(p => keys[p]).ThenBy(p => p.Position).ToList();
+            for (var i = 0; i < sorted.Count; i++)
+            {
+                var p = sorted[i];
+                p.SetRow(i + 1);
+                _metadata.AddGenericParameter(MetadataTokens.EntityHandle(ResolvePseudoToken(p.OwnerToken)), (System.Reflection.GenericParameterAttributes)p.GenericParameterAttributesValue, GetOrAddString(p.Name), p.Position);
+            }
+
+            for (var i = 0; i < sorted.Count; i++)
+                foreach (var constraint in sorted[i].Constraints)
+                    _metadata.AddGenericParameterConstraint(MetadataTokens.GenericParameterHandle(i + 1), MetadataTokens.EntityHandle(constraint));
         }
 
-        public TypeBuilder DefineType(string name, TypeAttributes attr)
-        {
-            return DefineType(name, attr, null);
-        }
+        /// <summary>
+        /// Constructs a <see cref="TypeBuilder"/> for a private type with the specified name in this module.
+        /// </summary>
+        /// <param name="name">The full path of the type, including the namespace.</param>
+        /// <returns>A private type with the specified name.</returns>
+        public TypeBuilder DefineType(string name) => DefineType(name, TypeAttributes.Class);
 
-        public TypeBuilder DefineType(string name, TypeAttributes attr, Type parent)
-        {
-            return DefineType(name, attr, parent, PackingSize.Unspecified, 0);
-        }
+        /// <summary>
+        /// Constructs a <see cref="TypeBuilder"/> given the type name and the type attributes.
+        /// </summary>
+        /// <param name="name">The full path of the type.</param>
+        /// <param name="attr">The attributes of the defined type.</param>
+        /// <returns>A type created with all requested attributes.</returns>
+        public TypeBuilder DefineType(string name, TypeAttributes attr) => DefineType(name, attr, null);
 
-        public TypeBuilder DefineType(string name, TypeAttributes attr, Type parent, int typesize)
-        {
-            return DefineType(name, attr, parent, PackingSize.Unspecified, typesize);
-        }
+        /// <summary>
+        /// Constructs a <see cref="TypeBuilder"/> given type name, its attributes, and the type that the defined type
+        /// extends.
+        /// </summary>
+        /// <param name="name">The full path of the type.</param>
+        /// <param name="attr">The attributes of the defined type.</param>
+        /// <param name="parent">The type that the defined type extends.</param>
+        /// <returns>A type created with all requested attributes.</returns>
+        public TypeBuilder DefineType(string name, TypeAttributes attr, Type parent) => DefineType(name, attr, parent, PackingSize.Unspecified, 0);
 
-        public TypeBuilder DefineType(string name, TypeAttributes attr, Type parent, PackingSize packsize)
-        {
-            return DefineType(name, attr, parent, packsize, 0);
-        }
-
+        /// <summary>
+        /// Constructs a <see cref="TypeBuilder"/> given the type name, attributes, the type that the defined type
+        /// extends, and the interfaces that the defined type implements.
+        /// </summary>
+        /// <param name="name">The full path of the type.</param>
+        /// <param name="attr">The attributes to be associated with the type.</param>
+        /// <param name="parent">The type that the defined type extends.</param>
+        /// <param name="interfaces">The list of interfaces that the type implements.</param>
+        /// <returns>A type created with all requested attributes.</returns>
         public TypeBuilder DefineType(string name, TypeAttributes attr, Type parent, Type[] interfaces)
         {
             var tb = DefineType(name, attr, parent);
@@ -458,14 +650,24 @@ namespace IKVM.Reflection.Emit
             return tb;
         }
 
+        /// <summary>
+        /// Constructs a <see cref="TypeBuilder"/> given the type name, the attributes, the type that the defined type
+        /// extends, the packing size of the defined type, and the total size of the defined type.
+        /// </summary>
+        /// <param name="name">The full path of the type.</param>
+        /// <param name="attr">The attributes of the defined type.</param>
+        /// <param name="parent">The type that the defined type extends.</param>
+        /// <param name="packingSize">The packing size of the type.</param>
+        /// <param name="typesize">The total size of the type.</param>
+        /// <returns>A type created with all requested attributes.</returns>
         public TypeBuilder DefineType(string name, TypeAttributes attr, Type parent, PackingSize packingSize, int typesize)
         {
             string ns = null;
-            int lastdot = name.LastIndexOf('.');
+            var lastdot = name.LastIndexOf('.');
             if (lastdot > 0)
             {
-                ns = name.Substring(0, lastdot);
-                name = name.Substring(lastdot + 1);
+                ns = name[..lastdot];
+                name = name[(lastdot + 1)..];
             }
 
             var typeBuilder = __DefineType(ns, name);
@@ -477,81 +679,51 @@ namespace IKVM.Reflection.Emit
             return typeBuilder;
         }
 
-        public TypeBuilder __DefineType(string ns, string name)
-        {
-            return DefineType(this, ns, name);
-        }
+        /// <summary>
+        /// Defines a top-level type with the specified namespace and name, without splitting the name on dots and
+        /// without setting attributes or a parent.
+        /// </summary>
+        /// <param name="ns">The namespace of the type, or <see langword="null"/>.</param>
+        /// <param name="name">The name of the type.</param>
+        /// <returns>The new type builder.</returns>
+        public TypeBuilder __DefineType(string ns, string name) => DefineType(this, ns, name);
 
+        /// <summary>
+        /// Defines a type owned by this module or by an enclosing type, and adds it to the module's types.
+        /// </summary>
+        /// <param name="owner">The module, or the type builder for a nested type.</param>
+        /// <param name="ns">The namespace of the type, or <see langword="null"/>.</param>
+        /// <param name="name">The name of the type.</param>
+        /// <returns>The new type builder.</returns>
         internal TypeBuilder DefineType(ITypeOwner owner, string ns, string name)
         {
             var typeBuilder = new TypeBuilder(owner, ns, name);
-            types.Add(typeBuilder);
+            _types.Add(typeBuilder);
             return typeBuilder;
         }
 
-        public EnumBuilder DefineEnum(string name, TypeAttributes visibility, Type underlyingType)
-        {
-            var tb = DefineType(name, (visibility & TypeAttributes.VisibilityMask) | TypeAttributes.Sealed, Universe.System_Enum);
-            var fb = tb.DefineField("value__", underlyingType, FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
-            return new EnumBuilder(tb, fb);
-        }
+        /// <summary>
+        /// Defines a global method with the specified name, attributes, return type, and parameter types.
+        /// </summary>
+        /// <param name="name">The name of the method.</param>
+        /// <param name="attributes">The attributes of the method.</param>
+        /// <param name="returnType">The return type of the method.</param>
+        /// <param name="parameterTypes">The types of the method's parameters.</param>
+        /// <returns>The defined global method.</returns>
+        public MethodBuilder DefineGlobalMethod(string name, MethodAttributes attributes, Type returnType, Type[] parameterTypes) =>
+            _moduleType.DefineMethod(name, attributes, returnType, parameterTypes);
 
-        public FieldBuilder __DefineField(string name, Type type, CustomModifiers customModifiers, FieldAttributes attributes)
-        {
-            return moduleType.__DefineField(name, type, customModifiers, attributes);
-        }
+        /// <summary>
+        /// Completes the global function definitions and global data definitions for this dynamic module.
+        /// </summary>
+        public void CreateGlobalFunctions() => _moduleType.CreateType();
 
-        [Obsolete("Please use __DefineField(string, Type, CustomModifiers, FieldAttributes) instead.")]
-        public FieldBuilder __DefineField(string name, Type type, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers, FieldAttributes attributes)
-        {
-            return moduleType.DefineField(name, type, requiredCustomModifiers, optionalCustomModifiers, attributes);
-        }
-
-        public ConstructorBuilder __DefineModuleInitializer(MethodAttributes visibility)
-        {
-            return moduleType.DefineConstructor(visibility | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.Standard, Type.EmptyTypes);
-        }
-
-        public FieldBuilder DefineUninitializedData(string name, int size, FieldAttributes attributes)
-        {
-            return moduleType.DefineUninitializedData(name, size, attributes);
-        }
-
-        public FieldBuilder DefineInitializedData(string name, byte[] data, FieldAttributes attributes)
-        {
-            return moduleType.DefineInitializedData(name, data, attributes);
-        }
-
-        public MethodBuilder DefineGlobalMethod(string name, MethodAttributes attributes, Type returnType, Type[] parameterTypes)
-        {
-            return moduleType.DefineMethod(name, attributes, returnType, parameterTypes);
-        }
-
-        public MethodBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
-        {
-            return moduleType.DefineMethod(name, attributes, callingConvention, returnType, parameterTypes);
-        }
-
-        public MethodBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] requiredReturnTypeCustomModifiers, Type[] optionalReturnTypeCustomModifiers, Type[] parameterTypes, Type[][] requiredParameterTypeCustomModifiers, Type[][] optionalParameterTypeCustomModifiers)
-        {
-            return moduleType.DefineMethod(name, attributes, callingConvention, returnType, requiredReturnTypeCustomModifiers, optionalReturnTypeCustomModifiers, parameterTypes, requiredParameterTypeCustomModifiers, optionalParameterTypeCustomModifiers);
-        }
-
-        public MethodBuilder DefinePInvokeMethod(string name, string dllName, MethodAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, CallingConvention nativeCallConv, CharSet nativeCharSet)
-        {
-            return moduleType.DefinePInvokeMethod(name, dllName, attributes, callingConvention, returnType, parameterTypes, nativeCallConv, nativeCharSet);
-        }
-
-        public MethodBuilder DefinePInvokeMethod(string name, string dllName, string entryName, MethodAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, CallingConvention nativeCallConv, CharSet nativeCharSet)
-        {
-            return moduleType.DefinePInvokeMethod(name, dllName, entryName, attributes, callingConvention, returnType, parameterTypes, nativeCallConv, nativeCharSet);
-        }
-
-        public void CreateGlobalFunctions()
-        {
-            moduleType.CreateType();
-        }
-
+        /// <summary>
+        /// Adds an ExportedType row that forwards the specified type to its assembly, optionally including all of its
+        /// nested types.
+        /// </summary>
+        /// <param name="type">The type to forward.</param>
+        /// <param name="includeNested"><see langword="true"/> to also forward the nested types, whatever their visibility.</param>
         internal void AddTypeForwarder(Type type, bool includeNested)
         {
             ExportType(type);
@@ -567,257 +739,221 @@ namespace IKVM.Reflection.Emit
             }
         }
 
+        /// <summary>
+        /// Gets the ExportedType token for a forwarded type, adding the row, and the rows of its enclosing types, if
+        /// needed.
+        /// </summary>
+        /// <param name="type">The forwarded type.</param>
+        /// <returns>The ExportedType token.</returns>
         int ExportType(Type type)
         {
-            var rec = new ExportedTypeTable.Record();
-            if (asm.ImageRuntimeVersion == "v2.0.50727")
-            {
-                // HACK we should *not* set the TypeDefId in this case, but 2.0 and 3.5 peverify gives a warning if it is missing (4.5 doesn't)
-                rec.TypeDefId = type.MetadataToken;
-            }
+            var row = new ExportedTypeRow();
 
-            SetTypeNameAndTypeNamespace(type.TypeName, out rec.TypeName, out rec.TypeNamespace);
+            // HACK we should *not* set the TypeDefId in this case, but 2.0 and 3.5 peverify gives a warning if it is missing (4.5 doesn't)
+            if (_asm.ImageRuntimeVersion == "v2.0.50727")
+                row.TypeDefId = type.MetadataToken;
+
+            SetTypeNameAndTypeNamespace(type.TypeName, out row.Name, out row.Namespace);
             if (type.IsNested)
             {
-                rec.Flags = 0;
-                rec.Implementation = ExportType(type.DeclaringType);
+                row.Flags = 0;
+                row.Implementation = ExportType(type.DeclaringType);
             }
             else
             {
-                rec.Flags = 0x00200000; // CorTypeAttr.tdForwarder
-                rec.Implementation = ImportAssemblyRef(type.Assembly);
+                // CorTypeAttr.tdForwarder
+                row.Flags = (TypeAttributes)0x00200000;
+                row.Implementation = ImportAssemblyRef(type.Assembly);
             }
 
-            return 0x27000000 | ExportedTypeTable.FindOrAddRecord(rec);
+            var key = (row.Implementation, row.Name, row.Namespace);
+            if (_exportedTypeTokens.TryGetValue(key, out var token) == false)
+                _exportedTypeTokens.Add(key, token = AddExportedType(row));
+
+            return token;
         }
 
+        /// <summary>
+        /// Adds an ExportedType row.
+        /// </summary>
+        /// <param name="row">The row to add.</param>
+        /// <returns>The ExportedType token of the new row.</returns>
+        /// <exception cref="InvalidOperationException">The reference tables have already been written.</exception>
+        int AddExportedType(ExportedTypeRow row)
+        {
+            CheckReferencesNotWritten();
+            _exportedTypes.Add(row);
+            return MetadataTokens.GetToken(MetadataTokens.ExportedTypeHandle(_exportedTypes.Count));
+        }
+
+        /// <summary>
+        /// Adds the name and namespace of a type to the string heap.
+        /// </summary>
+        /// <param name="name">The name of the type.</param>
+        /// <param name="typeName">The handle of the type's name.</param>
+        /// <param name="typeNamespace">The handle of the type's namespace, or a nil handle if it has none.</param>
         void SetTypeNameAndTypeNamespace(TypeName name, out StringHandle typeName, out StringHandle typeNamespace)
         {
             typeName = GetOrAddString(name.Name);
             typeNamespace = name.Namespace == null ? default : GetOrAddString(name.Namespace);
         }
 
-        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-        {
-            SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
-        }
+        /// <summary>
+        /// Applies a custom attribute to this module by using a custom attribute builder.
+        /// </summary>
+        /// <param name="customBuilder">An instance of a helper class that specifies the custom attribute to apply.</param>
+        public void SetCustomAttribute(CustomAttributeBuilder customBuilder) => SetCustomAttribute(0x00000001, customBuilder);
 
-        public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
-        {
-            SetCustomAttribute(0x00000001, customBuilder);
-        }
-
+        /// <summary>
+        /// Applies a custom attribute to the metadata element with the specified token.
+        /// </summary>
+        /// <param name="token">The token or pseudo token of the element the attribute applies to.</param>
+        /// <param name="customBuilder">The custom attribute.</param>
         internal void SetCustomAttribute(int token, CustomAttributeBuilder customBuilder)
         {
-            var rec = new CustomAttributeTable.Record();
-            rec.Parent = token;
-            rec.Constructor = asm.IsWindowsRuntime ? customBuilder.Constructor.ImportTo(this) : GetConstructorToken(customBuilder.Constructor).Token;
-            rec.Value = customBuilder.WriteBlob(this);
-            CustomAttributeTable.AddRecord(rec);
-        }
-
-        void AddDeclSecurityRecord(int token, int action, BlobHandle blob)
-        {
-            var rec = new DeclSecurityTable.Record();
-            rec.Action = (short)action;
-            rec.Parent = token;
-            rec.PermissionSet = blob;
-            DeclSecurityTable.AddRecord(rec);
-        }
-
-        internal void AddDeclarativeSecurity(int token, System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
-        {
-            AddDeclSecurityRecord(token, (int)securityAction, GetOrAddBlob(System.Text.Encoding.Unicode.GetBytes(permissionSet.ToXml().ToString())));
-        }
-
-        internal void AddDeclarativeSecurity(int token, List<CustomAttributeBuilder> declarativeSecurity)
-        {
-            var ordered = new Dictionary<int, List<CustomAttributeBuilder>>();
-            foreach (var cab in declarativeSecurity)
+            _customAttributes.Add(new CustomAttributeRow()
             {
-                int action;
-                // check for HostProtectionAttribute without SecurityAction
-                if (cab.ConstructorArgumentCount == 0)
-                {
-                    action = (int)System.Security.Permissions.SecurityAction.LinkDemand;
-                }
-                else
-                {
-                    action = (int)cab.GetConstructorArgument(0);
-                }
-
-                if (cab.IsLegacyDeclSecurity)
-                {
-                    AddDeclSecurityRecord(token, action, cab.WriteLegacyDeclSecurityBlob(this));
-                    continue;
-                }
-
-                if (!ordered.TryGetValue(action, out var list))
-                {
-                    list = new List<CustomAttributeBuilder>();
-                    ordered.Add(action, list);
-                }
-
-                list.Add(cab);
-            }
-
-            foreach (KeyValuePair<int, List<CustomAttributeBuilder>> kv in ordered)
-                AddDeclSecurityRecord(token, kv.Key, WriteDeclSecurityBlob(kv.Value));
+                Parent = token,
+                Constructor = GetConstructorToken(customBuilder.Constructor).Token,
+                Value = customBuilder.WriteBlob(this),
+                Builder = customBuilder,
+            });
         }
 
-        BlobHandle WriteDeclSecurityBlob(List<CustomAttributeBuilder> list)
+        /// <summary>
+        /// Adds the custom attributes set on the given token that are assignable to <paramref name="attributeType"/>, or
+        /// all of them if it is <see langword="null"/>.
+        /// </summary>
+        /// <param name="list">The list to add to, or <see langword="null"/> to create one when a match is found.</param>
+        /// <param name="token">The token or pseudo token of the element the attributes are set on.</param>
+        /// <param name="attributeType">The attribute type to filter on, or <see langword="null"/> for all.</param>
+        /// <returns>The list, or <see langword="null"/> if <paramref name="list"/> was <see langword="null"/> and nothing matched.</returns>
+        internal List<CustomAttributeData> GetCustomAttributes(List<CustomAttributeData> list, int token, Type attributeType)
         {
-            var namedArgs = new ByteBuffer(100);
-            var bb = new ByteBuffer(list.Count * 100);
-            bb.Write((byte)'.');
-            bb.WriteCompressedUInt(list.Count);
-            foreach (var cab in list)
+            foreach (var row in _customAttributes)
+                if (row.Parent == token && (attributeType == null || attributeType.IsAssignableFrom(row.Builder.Constructor.DeclaringType)))
+                    (list ??= []).Add(row.Builder.ToData(_asm));
+
+            return list;
+        }
+
+        /// <summary>
+        /// Resolves the pseudo tokens of the custom attributes and adds them to the metadata, which sorts them.
+        /// </summary>
+        void WriteCustomAttributes()
+        {
+            for (var i = 0; i < _customAttributes.Count; i++)
             {
-                bb.Write(cab.Constructor.DeclaringType.AssemblyQualifiedName);
-                namedArgs.Clear();
-                cab.WriteNamedArgumentsForDeclSecurity(this, namedArgs);
-                bb.WriteCompressedUInt(namedArgs.Length);
-                bb.Write(namedArgs);
+                var row = _customAttributes[i];
+                row.Parent = ResolvePseudoToken(row.Parent);
+                row.Constructor = ResolvePseudoToken(row.Constructor);
+                _customAttributes[i] = row;
+                _metadata.AddCustomAttribute(MetadataTokens.EntityHandle(row.Parent), MetadataTokens.EntityHandle(row.Constructor), row.Value);
             }
-
-            return GetOrAddBlob(bb.ToArray());
         }
 
-        public void DefineManifestResource(string name, Stream stream, ResourceAttributes attribute)
-        {
-            resourceWriters.Add(new ResourceWriterRecord(name, stream, attribute));
-        }
-
-        public IResourceWriter DefineResource(string name, string description)
-        {
-            return DefineResource(name, description, ResourceAttributes.Public);
-        }
-
-        public IResourceWriter DefineResource(string name, string description, ResourceAttributes attribute)
-        {
-            // FXBUG we ignore the description, because there is no such thing
-            var mem = new MemoryStream();
-            var rw = new ResourceWriter(mem);
-            resourceWriters.Add(new ResourceWriterRecord(name, rw, mem, attribute));
-            return rw;
-        }
+        /// <summary>
+        /// Defines a binary large object (BLOB) that represents a manifest resource to be embedded in the dynamic
+        /// assembly.
+        /// </summary>
+        /// <param name="name">The case-sensitive name for the resource.</param>
+        /// <param name="stream">A stream that contains the bytes for the resource. It is read when the module is written.</param>
+        /// <param name="attribute">An enumeration value that specifies whether the resource is public or private.</param>
+        public void DefineManifestResource(string name, Stream stream, ResourceAttributes attribute) =>
+            _resourceWriters.Add(new ResourceWriterRecord(name, stream, attribute));
 
         /// <summary>
         /// Writes the defined resources to the resource blob and metadata tables.
         /// </summary>
-        /// <exception cref="NotImplementedException"></exception>
         internal void WriteResources()
         {
-            foreach (var rwr in resourceWriters)
+            foreach (var rwr in _resourceWriters)
             {
                 rwr.Write(this);
                 rwr.Close();
             }
         }
 
-        public override Assembly Assembly
-        {
-            get { return asm; }
-        }
+        /// <summary>
+        /// Gets the dynamic assembly that defined this instance of <see cref="ModuleBuilder"/>.
+        /// </summary>
+        public override Assembly Assembly => _asm;
 
+        /// <summary>
+        /// Finds a type defined in this module by name, including nested types.
+        /// </summary>
+        /// <param name="name">The name of the type.</param>
+        /// <returns>The type, or <see langword="null"/> if it is not found.</returns>
         internal override Type FindType(TypeName name)
         {
-            foreach (var type in types)
+            foreach (var type in _types)
                 if (type.TypeName == name)
                     return type;
 
             return null;
         }
 
+        /// <summary>
+        /// Finds a type defined in this module by name, ignoring case.
+        /// </summary>
+        /// <param name="lowerCaseName">The name of the type, converted to lower case.</param>
+        /// <returns>The type, or <see langword="null"/> if it is not found.</returns>
         internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
         {
-            foreach (var type in types)
+            foreach (var type in _types)
                 if (type.TypeName.ToLowerInvariant() == lowerCaseName)
                     return type;
 
             return null;
         }
 
+        /// <summary>
+        /// Adds the types defined in this module, except the &lt;Module&gt; type, to the list.
+        /// </summary>
+        /// <param name="list">The list to add to.</param>
         internal override void GetTypesImpl(List<Type> list)
         {
-            foreach (var type in types)
-                if (type != moduleType)
+            foreach (var type in _types)
+                if (type != _moduleType)
                     list.Add(type);
         }
 
+        /// <summary>
+        /// Defines a document for source.
+        /// </summary>
+        /// <param name="url">The URL for the document.</param>
+        /// <param name="language">The GUID that identifies the document language.</param>
+        /// <param name="languageVendor">The GUID that identifies the document language vendor.</param>
+        /// <param name="documentType">The GUID that identifies the document type.</param>
+        /// <returns>The defined document.</returns>
+        /// <exception cref="NotSupportedException">No symbol writer has been set for this module.</exception>
         public ISymbolDocumentWriter DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)
         {
-            if (symbolWriter != null)
-                return symbolWriter.DefineDocument(url, language, languageVendor, documentType);
+            if (_symbolWriter != null)
+                return _symbolWriter.DefineDocument(url, language, languageVendor, documentType);
             else
                 throw new NotSupportedException();
         }
 
         /// <summary>
-        /// Sets the user entry point.
+        /// Returns the token used to identify the specified type within this module.
         /// </summary>
-        /// <param name="entryPoint"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        public void SetUserEntryPoint(MethodInfo entryPoint)
-        {
-            // Set the user entry point. Compiler may generate startup stub before calling user main.
-            // The startup stub will be the entry point. While the user "main" will be the user entry
-            // point so that debugger will not step into the compiler entry point.
-
-            if (entryPoint == null)
-                throw new ArgumentNullException("entryPoint");
-
-            // Cannot set entry point when it is not a debug module
-            if (symbolWriter == null)
-                throw new InvalidOperationException("Not a debug ModuleBuilder.");
-
-            if (entryPoint.DeclaringType != null)
-            {
-                if (!entryPoint.Module.Equals(this))
-                {
-                    // you cannot pass in a MethodInfo that is not contained by this ModuleBuilder
-                    throw new InvalidOperationException("The argument passed in was not from the same ModuleBuilder.");
-                }
-            }
-            else
-            {
-                // unfortunately this check is missing for global function passed in as RuntimeMethodInfo. 
-                // The problem is that Reflection does not 
-                // allow us to get the containing module giving a global function
-                MethodBuilder mb = entryPoint as MethodBuilder;
-                if (mb != null && mb.ModuleBuilder != this)
-                {
-                    // you cannot pass in a MethodInfo that is not contained by this ModuleBuilder
-                    throw new InvalidOperationException("The argument passed in was not from the same ModuleBuilder.");
-                }
-            }
-
-            // get the metadata token value and create the SymbolStore's token value class
-            SymbolToken tkMethod = new SymbolToken(GetMethodToken(entryPoint).Token);
-
-            // set the UserEntryPoint
-            symbolWriter.SetUserEntryPoint(tkMethod);
-        }
-
-        public int __GetAssemblyToken(Assembly assembly)
-        {
-            return ImportAssemblyRef(assembly);
-        }
-
-        public TypeToken GetTypeToken(string name)
-        {
-            return new TypeToken(GetType(name, true, false).MetadataToken);
-        }
-
+        /// <param name="type">The type object that represents the class type.</param>
+        /// <returns>The token used to identify the given type within this module, importing the type if it is defined elsewhere.</returns>
         public TypeToken GetTypeToken(Type type)
         {
-            if (type.Module == this && !asm.IsWindowsRuntime)
+            if (type.Module == this)
                 return new TypeToken(type.GetModuleBuilderToken());
             else
                 return new TypeToken(ImportType(type));
         }
 
+        /// <summary>
+        /// Gets the token to use as the parent of a MemberRef on the specified type. A generic type definition is
+        /// referenced through a TypeSpec, and a module's &lt;Module&gt; type through a ModuleRef.
+        /// </summary>
+        /// <param name="type">The type that declares the member.</param>
+        /// <returns>The TypeRef, TypeDef, TypeSpec or ModuleRef token.</returns>
         internal int GetTypeTokenForMemberRef(Type type)
         {
             if (type.__IsMissing)
@@ -826,18 +962,18 @@ namespace IKVM.Reflection.Emit
             }
             else if (type.IsGenericTypeDefinition)
             {
-                if (memberRefTypeTokens.TryGetValue(type, out var token) == false)
+                if (_memberRefTypeTokens.TryGetValue(type, out var token) == false)
                 {
-                    var spec = new ByteBuffer(5);
+                    var spec = new BlobBuilder(5);
                     Signature.WriteTypeSpec(this, spec, type);
-                    token = MetadataTokens.GetToken(MetadataTokens.TypeSpecificationHandle(TypeSpecTable.AddRecord(GetOrAddBlob(spec.ToArray()))));
-                    memberRefTypeTokens.Add(type, token);
+                    token = AddTypeSpec(GetOrAddBlob(spec));
+                    _memberRefTypeTokens.Add(type, token);
                 }
                 return token;
             }
             else if (type.IsModulePseudoType)
             {
-                return MetadataTokens.GetToken(MetadataTokens.ModuleReferenceHandle(ModuleRefTable.FindOrAddRecord(GetOrAddString(type.Module.ScopeName))));
+                return MetadataTokens.GetToken(GetModuleRef(type.Module.ScopeName));
             }
             else
             {
@@ -845,12 +981,23 @@ namespace IKVM.Reflection.Emit
             }
         }
 
+        /// <summary>
+        /// Returns whether a member is declared on a generic type definition, in which case IL must reference it
+        /// through a MemberRef on the definition's TypeSpec.
+        /// </summary>
+        /// <param name="member">The member to check.</param>
+        /// <returns><see langword="true"/> if the declaring type is a generic type definition; otherwise <see langword="false"/>.</returns>
         static bool IsFromGenericTypeDefinition(MemberInfo member)
         {
             var decl = member.DeclaringType;
             return decl != null && !decl.__IsMissing && decl.IsGenericTypeDefinition;
         }
 
+        /// <summary>
+        /// Returns the token identifying the specified field within this module.
+        /// </summary>
+        /// <param name="field">The field object representing the field.</param>
+        /// <returns>The token of the field: a FieldDef token for a field defined in this module, otherwise a MemberRef token.</returns>
         public FieldToken GetFieldToken(FieldInfo field)
         {
             // NOTE for some reason, when TypeBuilder.GetFieldToken() is used on a field in a generic type definition,
@@ -867,6 +1014,11 @@ namespace IKVM.Reflection.Emit
             }
         }
 
+        /// <summary>
+        /// Returns the token identifying the specified method within this module.
+        /// </summary>
+        /// <param name="method">The method to get a token for.</param>
+        /// <returns>The token of the method: a MethodDef token for a method defined in this module, otherwise an imported token.</returns>
         public MethodToken GetMethodToken(MethodInfo method)
         {
             var mb = method as MethodBuilder;
@@ -876,25 +1028,40 @@ namespace IKVM.Reflection.Emit
                 return new MethodToken(method.ImportTo(this));
         }
 
-        public MethodToken GetMethodToken(MethodInfo method, IEnumerable<Type> optionalParameterTypes)
-        {
-            return __GetMethodToken(method, Util.ToArray(optionalParameterTypes), null);
-        }
-
+        /// <summary>
+        /// Returns a MemberRef token for a call site of the specified method, with the signature extended by the
+        /// specified vararg parameter types and custom modifiers.
+        /// </summary>
+        /// <param name="method">The method being called.</param>
+        /// <param name="optionalParameterTypes">The types of the optional (vararg) parameters, or <see langword="null"/>.</param>
+        /// <param name="customModifiers">The custom modifiers of the return type and parameters, or <see langword="null"/>.</param>
+        /// <returns>The MemberRef token.</returns>
         public MethodToken __GetMethodToken(MethodInfo method, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
         {
-            var sig = new ByteBuffer(16);
+            var sig = new BlobBuilder(16);
             method.MethodSignature.WriteMethodRef(this, sig, optionalParameterTypes, customModifiers);
 
-            var record = new MemberRefTable.Record();
-            record.Class = method.Module == this ? method.MetadataToken : GetTypeTokenForMemberRef(method.DeclaringType ?? method.Module.GetModuleType());
-            record.Name = GetOrAddString(method.Name);
-            record.Signature = GetOrAddBlob(sig.ToArray());
-            return new MethodToken(MetadataTokens.GetToken(MetadataTokens.MemberReferenceHandle(MemberRefTable.FindOrAddRecord(record))));
+            var row = new MemberRefRow
+            {
+                Class = method.Module == this ? method.MetadataToken : GetTypeTokenForMemberRef(method.DeclaringType ?? method.Module.GetModuleType()),
+                Name = GetOrAddString(method.Name),
+                Signature = GetOrAddBlob(sig)
+            };
+
+            var key = (row.Class, row.Name, row.Signature);
+            if (_memberRefTokens.TryGetValue(key, out var token) == false)
+                _memberRefTokens.Add(key, token = AddMemberRef(row));
+
+            return new MethodToken(token);
         }
 
-        // when we refer to a method on a generic type definition in the IL stream,
-        // we need to use a MemberRef (even if the method is in the same module)
+        /// <summary>
+        /// Returns the token to use for the specified method in the IL stream. A method on a generic type definition
+        /// must be referenced through a MemberRef, even if it is in this module, and a generic method definition is
+        /// referenced as its instantiation over its own type parameters.
+        /// </summary>
+        /// <param name="method">The method to get a token for.</param>
+        /// <returns>The token of the method.</returns>
         internal MethodToken GetMethodTokenForIL(MethodInfo method)
         {
             if (method.IsGenericMethodDefinition)
@@ -906,198 +1073,323 @@ namespace IKVM.Reflection.Emit
                 return GetMethodToken(method);
         }
 
-        internal int GetMethodTokenWinRT(MethodInfo method)
-        {
-            return asm.IsWindowsRuntime ? method.ImportTo(this) : GetMethodToken(method).Token;
-        }
+        /// <summary>
+        /// Returns the token used to identify the specified constructor within this module.
+        /// </summary>
+        /// <param name="constructor">The constructor to get a token for.</param>
+        /// <returns>The token used to identify the specified constructor within this module.</returns>
+        public MethodToken GetConstructorToken(ConstructorInfo constructor) => GetMethodToken(constructor.GetMethodInfo());
 
-        public MethodToken GetConstructorToken(ConstructorInfo constructor)
-        {
-            return GetMethodToken(constructor.GetMethodInfo());
-        }
-
-        public MethodToken GetConstructorToken(ConstructorInfo constructor, IEnumerable<Type> optionalParameterTypes)
-        {
-            return GetMethodToken(constructor.GetMethodInfo(), optionalParameterTypes);
-        }
-
-        public MethodToken __GetConstructorToken(ConstructorInfo constructor, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
-        {
-            return __GetMethodToken(constructor.GetMethodInfo(), optionalParameterTypes, customModifiers);
-        }
-
+        /// <summary>
+        /// Gets the MemberRef token for a field or method, adding the MemberRef the first time the member is
+        /// imported.
+        /// </summary>
+        /// <param name="declaringType">The type that declares the member.</param>
+        /// <param name="name">The name of the member.</param>
+        /// <param name="sig">The signature of the member.</param>
+        /// <returns>The MemberRef token.</returns>
         internal int ImportMethodOrField(Type declaringType, string name, Signature sig)
         {
             var key = new MemberRefKey(declaringType, name, sig);
-            if (!importedMemberRefs.TryGetValue(key, out var token))
+            if (!_importedMemberRefs.TryGetValue(key, out var token))
             {
-                var rec = new MemberRefTable.Record();
-                rec.Class = GetTypeTokenForMemberRef(declaringType);
-                rec.Name = GetOrAddString(name);
-                var bb = new ByteBuffer(16);
+                var row = new MemberRefRow
+                {
+                    Class = GetTypeTokenForMemberRef(declaringType),
+                    Name = GetOrAddString(name)
+                };
+                var bb = new BlobBuilder(16);
                 sig.Write(this, bb);
-                rec.Signature = GetOrAddBlob(bb.ToArray());
-                token = MetadataTokens.GetToken(MetadataTokens.MemberReferenceHandle(MemberRefTable.AddRecord(rec)));
-                importedMemberRefs.Add(key, token);
+                row.Signature = GetOrAddBlob(bb);
+                token = AddMemberRef(row);
+                _importedMemberRefs.Add(key, token);
             }
 
             return token;
         }
 
+        /// <summary>
+        /// Gets the MethodSpec token for an instantiation of a generic method, adding the MethodSpec the first time
+        /// the instantiation is imported.
+        /// </summary>
+        /// <param name="declaringType">The type that declares the method, which may be a generic type instance.</param>
+        /// <param name="method">The generic method definition.</param>
+        /// <param name="genericParameters">The type arguments of the instantiation.</param>
+        /// <returns>The MethodSpec token.</returns>
         internal int ImportMethodSpec(Type declaringType, MethodInfo method, Type[] genericParameters)
         {
-            Debug.Assert(method.__IsMissing || method.GetMethodOnTypeDefinition() == method);
-
             var key = new MethodSpecKey(declaringType, method.Name, method.MethodSignature, genericParameters);
-            if (!importedMethodSpecs.TryGetValue(key, out var token))
+            if (!_importedMethodSpecs.TryGetValue(key, out var token))
             {
-                var rec = new MethodSpecTable.Record();
-                var mb = method as MethodBuilder;
-                if (mb != null && mb.ModuleBuilder == this && !declaringType.IsGenericType)
-                {
-                    rec.Method = mb.MetadataToken;
-                }
+                var row = new MethodSpecRow();
+
+                // 'method' may be a MethodDef on a generic TypeDef and 'declaringType' the type instance (in other words
+                // the method and type have already been decoupled by the caller), so import it with the declaring type
+                if (method is MethodBuilder mb && mb.ModuleBuilder == this && !declaringType.IsGenericType)
+                    row.Method = mb.MetadataToken;
                 else
+                    row.Method = ImportMethodOrField(declaringType, method.Name, method.MethodSignature);
+
+                var spec = new BlobBuilder(10);
+                Signature.WriteMethodSpec(this, spec, genericParameters);
+                row.Instantiation = GetOrAddBlob(spec);
+
+                var rowKey = (row.Method, row.Instantiation);
+                if (_methodSpecTokens.TryGetValue(rowKey, out token) == false)
                 {
-                    // we're calling ImportMethodOrField directly here, because 'method' may be a MethodDef on a generic TypeDef and 'declaringType' the type instance
-                    // (in order words the method and type have already been decoupled by the caller)
-                    rec.Method = ImportMethodOrField(declaringType, method.Name, method.MethodSignature);
+                    CheckReferencesNotWritten();
+                    _methodSpecs.Add(row);
+                    _methodSpecTokens.Add(rowKey, token = MetadataTokens.GetToken(MetadataTokens.MethodSpecificationHandle(_methodSpecs.Count)));
                 }
 
-                var spec = new ByteBuffer(10);
-                Signature.WriteMethodSpec(this, spec, genericParameters);
-                rec.Instantiation = GetOrAddBlob(spec.ToArray());
-                token = MetadataTokens.GetToken(MetadataTokens.MethodSpecificationHandle(MethodSpecTable.FindOrAddRecord(rec)));
-                importedMethodSpecs.Add(key, token);
+                _importedMethodSpecs.Add(key, token);
             }
 
             return token;
         }
 
+        /// <summary>
+        /// Gets the token by which this module references a type, adding a TypeSpec for an array, pointer, by-ref,
+        /// generic instance or function pointer type, and a TypeRef otherwise.
+        /// </summary>
+        /// <param name="type">The type to reference.</param>
+        /// <returns>The TypeSpec or TypeRef token.</returns>
         internal int ImportType(Type type)
         {
-            if (typeTokens.TryGetValue(type, out var token) == false)
+            if (_typeTokens.TryGetValue(type, out var token) == false)
             {
                 if (type.HasElementType || type.IsConstructedGenericType || type.IsFunctionPointer)
                 {
-                    var spec = new ByteBuffer(5);
+                    var spec = new BlobBuilder(5);
                     Signature.WriteTypeSpec(this, spec, type);
-                    token = MetadataTokens.GetToken(MetadataTokens.TypeSpecificationHandle(TypeSpecTable.AddRecord(GetOrAddBlob(spec.ToArray()))));
+                    token = AddTypeSpec(GetOrAddBlob(spec));
                 }
                 else
                 {
-                    var rec = new TypeRefTable.Record();
+                    int scope;
                     if (type.IsNested)
-                        rec.ResolutionScope = GetTypeToken(type.DeclaringType).Token;
+                        scope = GetTypeToken(type.DeclaringType).Token;
                     else if (type.Module == this)
-                        rec.ResolutionScope = 1;
+                        scope = 1;
                     else
-                        rec.ResolutionScope = ImportAssemblyRef(type.Assembly);
+                        scope = ImportAssemblyRef(type.Assembly);
 
-                    SetTypeNameAndTypeNamespace(type.TypeName, out rec.TypeName, out rec.TypeNamespace);
-                    token = MetadataTokens.GetToken(MetadataTokens.TypeReferenceHandle(TypeRefTable.AddRecord(rec)));
+                    token = AddTypeRef(scope, type.TypeName);
                 }
 
-                typeTokens.Add(type, token);
+                _typeTokens.Add(type, token);
             }
 
             return token;
         }
 
+        /// <summary>
+        /// Gets the pseudo token that stands for the AssemblyRef of the specified assembly.
+        /// </summary>
+        /// <param name="asm">The referenced assembly.</param>
+        /// <returns>The pseudo token, resolved to an AssemblyRef token by <see cref="FillAssemblyRefTable"/>.</returns>
         int ImportAssemblyRef(Assembly asm)
         {
-            if (referencedAssemblies.TryGetValue(asm, out var token) == false)
+            if (_referencedAssemblies.TryGetValue(asm, out var token) == false)
             {
-                // We can't write the AssemblyRef record here yet, because the identity of the assembly can still change
-                // (if it's an AssemblyBuilder).
+                // we can't write the AssemblyRef record here yet, because the identity of the assembly can still change
+                // (if it's an AssemblyBuilder)
                 token = AllocPseudoToken();
-                referencedAssemblies.Add(asm, token);
+                _referencedAssemblies.Add(asm, token);
             }
 
             return token;
         }
 
+        /// <summary>
+        /// Adds the AssemblyRef rows of the referenced assemblies and resolves the pseudo tokens that stand for them.
+        /// </summary>
         internal void FillAssemblyRefTable()
         {
-            foreach (var kv in referencedAssemblies)
+            foreach (var kv in _referencedAssemblies)
                 if (IsPseudoToken(kv.Value))
-                    RegisterTokenFixup(kv.Value, FindOrAddAssemblyRef(kv.Key.GetName(), false));
+                    RegisterTokenFixup(kv.Value, FindOrAddAssemblyRef(kv.Key.GetName()));
         }
 
-        private int FindOrAddAssemblyRef(AssemblyName name, bool alwaysAdd)
+        /// <summary>
+        /// Gets the AssemblyRef token for an assembly name, adding the row if no equal reference exists.
+        /// </summary>
+        /// <param name="name">The name of the referenced assembly.</param>
+        /// <returns>The AssemblyRef token.</returns>
+        int FindOrAddAssemblyRef(AssemblyName name)
         {
-            var rec = new AssemblyRefTable.Record();
-            var ver = name.Version ?? new Version(0, 0, 0, 0);
-            rec.MajorVersion = (ushort)ver.Major;
-            rec.MinorVersion = (ushort)ver.Minor;
-            rec.BuildNumber = (ushort)ver.Build;
-            rec.RevisionNumber = (ushort)ver.Revision;
-            rec.Flags = (int)(name.Flags & ~AssemblyNameFlags.PublicKey);
+            var version = name.Version ?? new Version(0, 0, 0, 0);
+            var flags = (int)(name.Flags & ~AssemblyNameFlags.PublicKey);
             const AssemblyNameFlags afPA_Specified = (AssemblyNameFlags)0x0080;
             const AssemblyNameFlags afPA_Mask = (AssemblyNameFlags)0x0070;
             if ((name.RawFlags & afPA_Specified) != 0)
-            {
-                rec.Flags |= (int)(name.RawFlags & afPA_Mask);
-            }
+                flags |= (int)(name.RawFlags & afPA_Mask);
             if (name.ContentType == AssemblyContentType.WindowsRuntime)
-            {
-                rec.Flags |= 0x0200;
-            }
-            byte[] publicKeyOrToken = null;
-            if (usePublicKeyAssemblyReference)
-            {
-                publicKeyOrToken = name.GetPublicKey();
-            }
-            if (publicKeyOrToken == null || publicKeyOrToken.Length == 0)
-            {
-                publicKeyOrToken = name.GetPublicKeyToken() ?? Array.Empty<byte>();
-            }
-            else
-            {
-                const int PublicKey = 0x0001;
-                rec.Flags |= PublicKey;
-            }
-            rec.PublicKeyOrToken = GetOrAddBlob(publicKeyOrToken);
-            rec.Name = GetOrAddString(name.Name);
-            rec.Culture = name.CultureName == null ? default : GetOrAddString(name.CultureName);
-            if (name.hash != null)
-            {
-                rec.HashValue = GetOrAddBlob(name.hash);
-            }
-            else
-            {
-                rec.HashValue = default;
-            }
+                flags |= 0x0200;
 
-            return MetadataTokens.GetToken(MetadataTokens.AssemblyReferenceHandle(alwaysAdd ? AssemblyRefTable.AddRecord(rec) : AssemblyRefTable.FindOrAddRecord(rec)));
+            var publicKeyOrToken = GetOrAddBlob(name.GetPublicKeyToken() ?? Array.Empty<byte>());
+            var nameHandle = GetOrAddString(name.Name);
+            var culture = name.CultureName == null ? default : GetOrAddString(name.CultureName);
+
+            // references that differ only in their hash are the same reference
+            var key = (nameHandle, version, culture, publicKeyOrToken, flags);
+            if (_assemblyRefs.TryGetValue(key, out var handle) == false)
+                _assemblyRefs.Add(key, handle = _metadata.AddAssemblyReference(nameHandle, version, culture, publicKeyOrToken, (System.Reflection.AssemblyFlags)flags, name.Hash != null ? GetOrAddBlob(name.Hash) : default));
+
+            return MetadataTokens.GetToken(handle);
         }
 
+        /// <summary>
+        /// Adds a type specification, returning its token. Type specifications refer to nothing that is resolved later, so
+        /// they are written immediately.
+        /// </summary>
+        /// <param name="signature">The handle of the type specification signature.</param>
+        /// <returns>The TypeSpec token.</returns>
+        internal int AddTypeSpec(BlobHandle signature) => MetadataTokens.GetToken(_metadata.AddTypeSpecification(signature));
+
+        /// <summary>
+        /// Gets the stand alone signature with the given blob, adding it if needed.
+        /// </summary>
+        /// <param name="signature">The handle of the signature blob.</param>
+        /// <returns>The handle of the StandAloneSig row.</returns>
+        internal StandaloneSignatureHandle GetStandAloneSignature(BlobHandle signature)
+        {
+            if (_standAloneSignatureTokens.TryGetValue(signature, out var token) == false)
+                _standAloneSignatureTokens.Add(signature, token = MetadataTokens.GetToken(_metadata.AddStandaloneSignature(signature)));
+
+            return MetadataTokens.StandaloneSignatureHandle(MetadataTokens.GetRowNumber(MetadataTokens.EntityHandle(token)));
+        }
+
+        /// <summary>
+        /// Gets the module reference with the given name, adding it if needed.
+        /// </summary>
+        /// <param name="name">The name of the referenced module, or <see langword="null"/>.</param>
+        /// <returns>The handle of the ModuleRef row.</returns>
+        ModuleReferenceHandle GetModuleRef(string name)
+        {
+            var handle = name == null ? default : GetOrAddString(name);
+            if (_moduleRefs.TryGetValue(handle, out var moduleRef) == false)
+                _moduleRefs.Add(handle, moduleRef = _metadata.AddModuleReference(handle));
+
+            return moduleRef;
+        }
+
+        /// <summary>
+        /// Records a TypeRef row, to be written with the other references.
+        /// </summary>
+        /// <param name="resolutionScope">The token or pseudo token of the resolution scope.</param>
+        /// <param name="name">The name of the referenced type.</param>
+        /// <returns>The TypeRef token of the new row.</returns>
+        /// <exception cref="InvalidOperationException">The reference tables have already been written.</exception>
+        int AddTypeRef(int resolutionScope, TypeName name)
+        {
+            CheckReferencesNotWritten();
+            var row = new TypeRefRow() { ResolutionScope = resolutionScope };
+            SetTypeNameAndTypeNamespace(name, out row.Name, out row.Namespace);
+            _typeRefs.Add(row);
+            return MetadataTokens.GetToken(MetadataTokens.TypeReferenceHandle(_typeRefs.Count));
+        }
+
+        /// <summary>
+        /// Records a MemberRef row, to be written with the other references.
+        /// </summary>
+        /// <param name="row">The row to add.</param>
+        /// <returns>The MemberRef token of the new row.</returns>
+        /// <exception cref="InvalidOperationException">The reference tables have already been written.</exception>
+        int AddMemberRef(MemberRefRow row)
+        {
+            CheckReferencesNotWritten();
+            _memberRefs.Add(row);
+            return MetadataTokens.GetToken(MetadataTokens.MemberReferenceHandle(_memberRefs.Count));
+        }
+
+        /// <summary>
+        /// Records a manifest resource.
+        /// </summary>
+        /// <param name="flags">The attributes of the resource.</param>
+        /// <param name="name">The name of the resource.</param>
+        /// <param name="implementation">The token of the File or AssemblyRef that holds the resource, or 0 for a resource embedded in this module.</param>
+        /// <param name="offset">The offset of an embedded resource in the resource stream.</param>
+        /// <exception cref="InvalidOperationException">The reference tables have already been written.</exception>
+        internal void AddManifestResource(ResourceAttributes flags, string name, int implementation, int offset)
+        {
+            CheckReferencesNotWritten();
+            _manifestResources.Add(new ManifestResourceRow() { Flags = flags, Name = GetOrAddString(name), Implementation = implementation, Offset = offset });
+        }
+
+        /// <summary>
+        /// Throws if the reference tables have already been written, since rows added afterwards would be lost.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The reference tables have already been written.</exception>
+        void CheckReferencesNotWritten()
+        {
+            if (_referencesWritten)
+                throw new InvalidOperationException("A reference was added after the references of the module were written.");
+        }
+
+        /// <summary>
+        /// Resolves the pseudo tokens of the type, member and method references, exported types and manifest resources and
+        /// adds them to the metadata, in the order they were created so their tokens stay valid.
+        /// </summary>
+        void WriteReferences()
+        {
+            _referencesWritten = true;
+
+            foreach (var row in _typeRefs)
+                _metadata.AddTypeReference(MetadataTokens.EntityHandle(ResolvePseudoToken(row.ResolutionScope)), row.Namespace, row.Name);
+
+            foreach (var row in _memberRefs)
+                _metadata.AddMemberReference(MetadataTokens.EntityHandle(ResolvePseudoToken(row.Class)), row.Name, row.Signature);
+
+            foreach (var row in _methodSpecs)
+                _metadata.AddMethodSpecification(MetadataTokens.EntityHandle(ResolvePseudoToken(row.Method)), row.Instantiation);
+
+            foreach (var row in _exportedTypes)
+                _metadata.AddExportedType((System.Reflection.TypeAttributes)row.Flags, row.Namespace, row.Name, MetadataTokens.EntityHandle(ResolvePseudoToken(row.Implementation)), row.TypeDefId);
+
+            foreach (var row in _manifestResources)
+                _metadata.AddManifestResource((System.Reflection.ManifestResourceAttributes)row.Flags, row.Name, MetadataTokens.EntityHandle(ResolvePseudoToken(row.Implementation)), (uint)row.Offset);
+        }
+
+        /// <summary>
+        /// Records the real token that a pseudo token stands for.
+        /// </summary>
+        /// <param name="pseudoToken">The pseudo token.</param>
+        /// <param name="realToken">The real metadata token.</param>
         internal void RegisterTokenFixup(int pseudoToken, int realToken)
         {
-            int index = -(pseudoToken + 1);
-            while (resolvedTokens.Count <= index)
-                resolvedTokens.Add(0);
+            var index = -(pseudoToken + 1);
+            while (_resolvedTokens.Count <= index)
+                _resolvedTokens.Add(0);
 
-            resolvedTokens[index] = realToken;
+            _resolvedTokens[index] = realToken;
         }
 
-        internal static bool IsPseudoToken(int token)
-        {
-            return token < 0;
-        }
+        /// <summary>
+        /// Returns whether a token is a pseudo token, which is the case when it is negative.
+        /// </summary>
+        /// <param name="token">The token to check.</param>
+        /// <returns><see langword="true"/> if <paramref name="token"/> is a pseudo token; otherwise <see langword="false"/>.</returns>
+        internal static bool IsPseudoToken(int token) => token < 0;
 
-        internal int ResolvePseudoToken(int pseudoToken)
-        {
-            return IsPseudoToken(pseudoToken) ? resolvedTokens[-(pseudoToken + 1)] : pseudoToken;
-        }
+        /// <summary>
+        /// Returns the real token a pseudo token stands for, or the token itself if it is not a pseudo token.
+        /// </summary>
+        /// <param name="pseudoToken">The token to resolve.</param>
+        /// <returns>The real token.</returns>
+        internal int ResolvePseudoToken(int pseudoToken) => IsPseudoToken(pseudoToken) ? _resolvedTokens[-(pseudoToken + 1)] : pseudoToken;
 
+        /// <summary>
+        /// Assigns the real MethodDef, FieldDef and Param tokens of all types' members, in table order, and registers
+        /// them as the fixups of their pseudo tokens.
+        /// </summary>
         internal void FixupMethodBodyTokens()
         {
-            int methodToken = 0x06000001;
-            int fieldToken = 0x04000001;
-            int parameterToken = 0x08000001;
+            var methodToken = 0x06000001;
+            var fieldToken = 0x04000001;
+            var parameterToken = 0x08000001;
 
-            foreach (var type in types)
+            foreach (var type in _types)
                 type.ResolveMethodAndFieldTokens(ref methodToken, ref fieldToken, ref parameterToken);
         }
 
@@ -1106,28 +1398,30 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         internal void WriteMetadata()
         {
-            foreach (var table in GetTables())
-                if (table != null)
-                    table.Write(this);
+            WriteTypeDefTable();
+            WriteFieldTable();
+            WriteMethodDefTable();
+            WriteParamTable();
+            WriteTypeStructure();
+            WriteMemberData();
+            WriteReferences();
+            WriteCustomAttributes();
         }
 
-        static int StringToPaddedUTF8Length(string str)
-        {
-            return (System.Text.Encoding.UTF8.GetByteCount(str) + 4) & ~3;
-        }
+        /// <summary>
+        /// Adds ExportedType rows to the manifest module for the visible types of this module, which is a secondary
+        /// module of a multi-module assembly.
+        /// </summary>
+        /// <param name="fileToken">The File row of this module in the manifest module.</param>
+        /// <param name="manifestModule">The manifest module of the assembly.</param>
+        internal void ExportTypes(AssemblyFileHandle fileToken, ModuleBuilder manifestModule) =>
+            manifestModule.ExportTypes(_types.ToArray(), fileToken);
 
-        static byte[] StringToPaddedUTF8(string str)
-        {
-            byte[] buf = new byte[(System.Text.Encoding.UTF8.GetByteCount(str) + 4) & ~3];
-            System.Text.Encoding.UTF8.GetBytes(str, 0, str.Length, buf, 0);
-            return buf;
-        }
-
-        internal override void ExportTypes(AssemblyFileHandle fileToken, ModuleBuilder manifestModule)
-        {
-            manifestModule.ExportTypes(types.ToArray(), fileToken);
-        }
-
+        /// <summary>
+        /// Adds ExportedType rows for the visible types of another module of the assembly.
+        /// </summary>
+        /// <param name="types">The types of the other module. Enclosing types must come before their nested types.</param>
+        /// <param name="fileToken">The File row of the module that defines the types.</param>
         internal void ExportTypes(Type[] types, AssemblyFileHandle fileToken)
         {
             var declaringTypes = new Dictionary<Type, ExportedTypeHandle>();
@@ -1136,429 +1430,389 @@ namespace IKVM.Reflection.Emit
             {
                 if (type.IsModulePseudoType == false && IsVisible(type))
                 {
-                    var rec = new ExportedTypeTable.Record();
-                    rec.Flags = (int)type.Attributes;
-                    // LAMESPEC ECMA says that TypeDefId is a row index, but it should be a token
-                    rec.TypeDefId = type.MetadataToken;
-                    SetTypeNameAndTypeNamespace(type.TypeName, out rec.TypeName, out rec.TypeNamespace);
-
-                    if (type.IsNested)
-                        rec.Implementation = MetadataTokens.GetToken(declaringTypes[type.DeclaringType]);
-                    else
-                        rec.Implementation = MetadataTokens.GetToken(fileToken);
-
-                    var exportTypeToken = MetadataTokens.ExportedTypeHandle(ExportedTypeTable.AddRecord(rec));
-                    declaringTypes.Add(type, exportTypeToken);
+                    var row = new ExportedTypeRow
+                    {
+                        Flags = type.Attributes,
+                        // LAMESPEC ECMA says that TypeDefId is a row index, but it should be a token
+                        TypeDefId = type.MetadataToken
+                    };
+                    SetTypeNameAndTypeNamespace(type.TypeName, out row.Name, out row.Namespace);
+                    row.Implementation = type.IsNested ? MetadataTokens.GetToken(declaringTypes[type.DeclaringType]) : MetadataTokens.GetToken(fileToken);
+                    declaringTypes.Add(type, (ExportedTypeHandle)MetadataTokens.EntityHandle(AddExportedType(row)));
                 }
             }
         }
 
-        static bool IsVisible(Type type)
+        /// <summary>
+        /// Returns whether a type is visible outside the assembly and therefore needs an ExportedType row. Unlike
+        /// <see cref="Type.IsVisible"/>, nested types with family access count as visible.
+        /// </summary>
+        /// <param name="type">The type to check.</param>
+        /// <returns><see langword="true"/> if the type is visible outside the assembly; otherwise <see langword="false"/>.</returns>
+        static bool IsVisible(Type type) =>
+            type.IsPublic || ((type.IsNestedFamily || type.IsNestedFamORAssem || type.IsNestedPublic) && IsVisible(type.DeclaringType));
+
+        /// <summary>
+        /// Records the constant value of a field, parameter or property.
+        /// </summary>
+        /// <param name="parentToken">The token or pseudo token of the field, parameter or property.</param>
+        /// <param name="value">The constant value. A <see cref="DateTime"/> is stored as its ticks.</param>
+        /// <exception cref="ArgumentException">The value is not of a type a constant can have.</exception>
+        internal void AddConstant(int parentToken, object value)
         {
-            // NOTE this is not the same as Type.IsVisible, because that doesn't take into account family access
-            return type.IsPublic || ((type.IsNestedFamily || type.IsNestedFamORAssem || type.IsNestedPublic) && IsVisible(type.DeclaringType));
+            // metadata has no DateTime constants; like .NET, store the ticks
+            if (value is DateTime dateTime)
+                value = dateTime.Ticks;
+            else if (value is not (null or bool or char or sbyte or byte or short or ushort or int or uint or long or ulong or float or double or string))
+                throw new ArgumentException("Unsupported constant type.", nameof(value));
+
+            _constants.Add(new ConstantRow() { Parent = parentToken, Value = value });
         }
 
-        internal void AddConstant(int parentToken, object defaultValue)
+        /// <summary>
+        /// Gets the constant value recorded for the given token.
+        /// </summary>
+        /// <param name="token">The token the constant was recorded with.</param>
+        /// <returns>The constant value.</returns>
+        /// <exception cref="InvalidOperationException">No constant was recorded.</exception>
+        internal object GetConstant(int token)
         {
-            var rec = new ConstantTable.Record();
-            rec.Parent = parentToken;
-            var val = new ByteBuffer(16);
-            if (defaultValue == null)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_CLASS;
-                val.Write((int)0);
-            }
-            else if (defaultValue is bool boolValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_BOOLEAN;
-                val.Write(boolValue ? (byte)1 : (byte)0);
-            }
-            else if (defaultValue is char charValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_CHAR;
-                val.Write(charValue);
-            }
-            else if (defaultValue is sbyte sbyteValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_I1;
-                val.Write(sbyteValue);
-            }
-            else if (defaultValue is byte byteValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_U1;
-                val.Write(byteValue);
-            }
-            else if (defaultValue is short shortValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_I2;
-                val.Write(shortValue);
-            }
-            else if (defaultValue is ushort ushortValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_U2;
-                val.Write(ushortValue);
-            }
-            else if (defaultValue is int intValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_I4;
-                val.Write(intValue);
-            }
-            else if (defaultValue is uint uintValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_U4;
-                val.Write(uintValue);
-            }
-            else if (defaultValue is long longValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_I8;
-                val.Write(longValue);
-            }
-            else if (defaultValue is ulong ulongValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_U8;
-                val.Write(ulongValue);
-            }
-            else if (defaultValue is float floatValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_R4;
-                val.Write(floatValue);
-            }
-            else if (defaultValue is double doubleValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_R8;
-                val.Write(doubleValue);
-            }
-            else if (defaultValue is string stringValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_STRING;
-                foreach (var c in stringValue)
-                    val.Write(c);
-            }
-            else if (defaultValue is DateTime dateTimeValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_I8;
-                val.Write(dateTimeValue.Ticks);
-            }
-            else
-            {
-                throw new ArgumentException();
-            }
+            foreach (var row in _constants)
+                if (row.Parent == token)
+                    return row.Value;
 
-            // encode index into blobs, as well as pass along value, since SRME does not have an AddConstant override that takes a handle
-            // final blob should be deduplicated, leading to the same index value on write
-            rec.Offset = GetOrAddBlob(val.ToArray());
-            rec.Value = defaultValue;
-            ConstantTable.AddRecord(rec);
+            throw new InvalidOperationException();
         }
 
-        ModuleBuilder ITypeOwner.ModuleBuilder
+        /// <summary>
+        /// Records the marshalling descriptor of a field or parameter.
+        /// </summary>
+        /// <param name="parentToken">The token or pseudo token of the field or parameter.</param>
+        /// <param name="nativeType">The encoded marshalling descriptor.</param>
+        internal void AddFieldMarshal(int parentToken, byte[] nativeType) =>
+            _fieldMarshals.Add(new FieldMarshalRow() { Parent = parentToken, NativeType = nativeType });
+
+        /// <summary>
+        /// Gets the marshalling descriptor recorded for the given token.
+        /// </summary>
+        /// <param name="token">The token the descriptor was recorded with.</param>
+        /// <param name="nativeType">The encoded marshalling descriptor, or <see langword="null"/> if none was recorded.</param>
+        /// <returns><see langword="true"/> if a descriptor was recorded; otherwise <see langword="false"/>.</returns>
+        internal bool TryGetFieldMarshal(int token, out byte[] nativeType)
         {
-            get { return this; }
+            foreach (var row in _fieldMarshals)
+            {
+                if (row.Parent == token)
+                {
+                    nativeType = row.NativeType;
+                    return true;
+                }
+            }
+
+            nativeType = default;
+            return false;
         }
 
+        /// <summary>
+        /// Records the P/Invoke import of a method.
+        /// </summary>
+        /// <param name="methodToken">The token or pseudo token of the method.</param>
+        /// <param name="flags">The P/Invoke flags.</param>
+        /// <param name="importName">The name of the imported function.</param>
+        /// <param name="importScope">The name of the module (DLL) that exports the function.</param>
+        internal void AddImplMap(int methodToken, ImplMapFlags flags, string importName, string importScope)
+        {
+            _implMaps.Add(new ImplMapRow()
+            {
+                Method = methodToken,
+                Flags = flags,
+                ImportName = importName,
+                ImportScope = importScope,
+                ImportScopeHandle = GetModuleRef(importScope),
+            });
+        }
+
+        /// <summary>
+        /// Gets the P/Invoke import recorded for the given method token.
+        /// </summary>
+        /// <param name="token">The token the import was recorded with.</param>
+        /// <param name="flags">The P/Invoke flags.</param>
+        /// <param name="importName">The name of the imported function.</param>
+        /// <param name="importScope">The name of the module (DLL) that exports the function.</param>
+        /// <returns><see langword="true"/> if an import was recorded; otherwise <see langword="false"/>.</returns>
+        internal bool TryGetImplMap(int token, out ImplMapFlags flags, out string importName, out string importScope)
+        {
+            foreach (var row in _implMaps)
+            {
+                if (row.Method == token)
+                {
+                    flags = row.Flags;
+                    importName = row.ImportName;
+                    importScope = row.ImportScope;
+                    return true;
+                }
+            }
+
+            flags = 0;
+            importName = null;
+            importScope = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Resolves the pseudo tokens of the method semantics, constants, marshalling descriptors and P/Invoke imports
+        /// and adds them to the metadata. The metadata sorts the Constant and FieldMarshal tables, but requires ImplMap
+        /// to be added in order.
+        /// </summary>
+        void WriteMemberData()
+        {
+            foreach (var row in _methodSemantics)
+                _metadata.AddMethodSemantics(MetadataTokens.EntityHandle(row.Association), (System.Reflection.MethodSemanticsAttributes)row.Semantics, (MethodDefinitionHandle)MetadataTokens.EntityHandle(ResolvePseudoToken(row.Method)));
+
+            for (var i = 0; i < _constants.Count; i++)
+            {
+                var row = _constants[i];
+                row.Parent = ResolvePseudoToken(row.Parent);
+                _constants[i] = row;
+                _metadata.AddConstant(MetadataTokens.EntityHandle(row.Parent), row.Value);
+            }
+
+            for (var i = 0; i < _fieldMarshals.Count; i++)
+            {
+                var row = _fieldMarshals[i];
+                row.Parent = ResolvePseudoToken(row.Parent);
+                _fieldMarshals[i] = row;
+                _metadata.AddMarshallingDescriptor(MetadataTokens.EntityHandle(row.Parent), _metadata.GetOrAddBlob(row.NativeType));
+            }
+
+            for (var i = 0; i < _implMaps.Count; i++)
+            {
+                var row = _implMaps[i];
+                row.Method = ResolvePseudoToken(row.Method);
+                _implMaps[i] = row;
+            }
+
+            _implMaps.Sort((x, y) => x.Method.CompareTo(y.Method));
+            foreach (var row in _implMaps)
+                _metadata.AddMethodImport((MethodDefinitionHandle)MetadataTokens.EntityHandle(row.Method), (System.Reflection.MethodImportAttributes)row.Flags, GetOrAddString(row.ImportName), row.ImportScopeHandle);
+        }
+
+        /// <inheritdoc />
+        ModuleBuilder ITypeOwner.ModuleBuilder => this;
+
+        /// <summary>
+        /// Returns the type defined in this module with the specified TypeDef token.
+        /// </summary>
+        /// <param name="metadataToken">A TypeDef token.</param>
+        /// <param name="context">The generic context. Not used.</param>
+        /// <returns>The type with the specified token.</returns>
+        /// <exception cref="NotImplementedException">The token is not a TypeDef token.</exception>
         internal override Type ResolveType(int metadataToken, IGenericContext context)
         {
-            if (metadataToken >> 24 != TypeDefTable.Index)
+            if (metadataToken >> 24 != (int)TableIndex.TypeDef)
             {
                 throw new NotImplementedException();
             }
-            return types[(metadataToken & 0xFFFFFF) - 1];
+            return _types[(metadataToken & 0xFFFFFF) - 1];
         }
 
+        /// <summary>
+        /// Returns the method or constructor identified by the specified metadata token. Supports MemberRef tokens of
+        /// imported methods and the tokens of methods defined in this module.
+        /// </summary>
+        /// <param name="metadataToken">A metadata token that identifies a method or constructor in the module.</param>
+        /// <param name="genericTypeArguments">Must be <see langword="null"/>.</param>
+        /// <param name="genericMethodArguments">Must be <see langword="null"/>.</param>
+        /// <returns>The method, or <see langword="null"/> if it is not found.</returns>
+        /// <exception cref="NotImplementedException"><paramref name="genericTypeArguments"/> or <paramref name="genericMethodArguments"/> is not <see langword="null"/>.</exception>
         public override MethodBase ResolveMethod(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
             if (genericTypeArguments != null || genericMethodArguments != null)
-            {
                 throw new NotImplementedException();
-            }
-            // this method is inefficient, but since it isn't used we don't care
-            if ((metadataToken >> 24) == MemberRefTable.Index)
-            {
-                foreach (KeyValuePair<MemberRefKey, int> kv in importedMemberRefs)
-                {
+
+            // a member reference is found by a linear search, which is fine for how rarely this is called
+            if ((metadataToken >> 24) == (int)TableIndex.MemberRef)
+                foreach (var kv in _importedMemberRefs)
                     if (kv.Value == metadataToken)
-                    {
                         return kv.Key.LookupMethod();
-                    }
-                }
-            }
-            // HACK if we're given a SymbolToken, we need to convert back
-            if ((metadataToken & 0xFF000000) == 0x06000000)
-            {
-                metadataToken = -(metadataToken & 0x00FFFFFF);
-            }
-            foreach (Type type in types)
-            {
-                MethodBase method = ((TypeBuilder)type).LookupMethod(metadataToken);
-                if (method != null)
-                {
+
+            // the methods of a module being built are known by their pseudo tokens, and the module type is among the types
+            foreach (TypeBuilder type in _types)
+                if (type.LookupMethod(metadataToken) is { } method)
                     return method;
-                }
-            }
-            return ((TypeBuilder)moduleType).LookupMethod(metadataToken);
+
+            return null;
         }
 
-        public override FieldInfo ResolveField(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-        {
+        /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
+        public override FieldInfo ResolveField(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments) =>
             throw new NotImplementedException();
-        }
 
-        public override MemberInfo ResolveMember(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-        {
+        /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
+        public override MemberInfo ResolveMember(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments) =>
             throw new NotImplementedException();
-        }
 
-        public override string ResolveString(int metadataToken)
-        {
-            throw new NotImplementedException();
-        }
+        /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
+        public override string ResolveString(int metadataToken) => throw new NotImplementedException();
 
-        public override string FullyQualifiedName => Path.GetFullPath(Path.Combine(asm.dir, fileName));
+        /// <summary>
+        /// Gets the fully qualified name of the file the module is written to, in the assembly's directory.
+        /// </summary>
+        public override string FullyQualifiedName => Path.GetFullPath(Path.Combine(_asm.Dir, FileName));
 
-        public override string Name => fileName;
+        /// <summary>
+        /// Gets the name of the file the module is written to.
+        /// </summary>
+        public override string Name => FileName;
 
-        internal Guid GetModuleVersionIdOrEmpty()
-        {
-            return mvid;
-        }
+        /// <summary>
+        /// Gets the reserved space in the GUID heap that receives the module version id when the image is written.
+        /// </summary>
+        /// <returns>The reserved GUID blob.</returns>
+        internal ReservedBlob<GuidHandle> GetModuleVersionIdFixup() => _mvidFixup;
 
-        internal ReservedBlob<GuidHandle> GetModuleVersionIdFixup()
-        {
-            return mvidFixup;
-        }
-
+        /// <summary>
+        /// Gets the module version id. Before the image is written this is a provisional random id, which the image
+        /// replaces when it is written.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The universe is deterministic and the image has not been written yet.</exception>
         public override Guid ModuleVersionId
         {
             get
             {
                 // if a deterministic GUID is used, it can't be queried before the assembly has been written
-                if (mvid == Guid.Empty && Universe.Deterministic)
+                if (_mvid == Guid.Empty && Universe.Deterministic)
                     throw new InvalidOperationException();
 
-                return mvid;
+                return _mvid;
             }
         }
 
-        public void __SetModuleVersionId(Guid guid)
-        {
-            if (guid == Guid.Empty && Universe.Deterministic)
-            {
-                // if you want to use Guid.Empty, don't set UniverseOptions.DeterministicOutput
-                throw new ArgumentOutOfRangeException();
-            }
-            mvid = guid;
-        }
+        /// <summary>
+        /// Records the module version id the image was written with.
+        /// </summary>
+        /// <param name="value">The module version id.</param>
+        internal void SetModuleVersionId(Guid value) => _mvid = value;
 
-        internal uint GetTimeDateStamp()
-        {
-            return timestamp;
-        }
-
-        public DateTime __PEHeaderTimeDateStamp
-        {
-            get { return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(timestamp); }
-            set
-            {
-                if (value < new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) || value > new DateTime(2106, 2, 7, 6, 28, 15, DateTimeKind.Utc))
-                {
-                    throw new ArgumentOutOfRangeException();
-                }
-                timestamp = (uint)(value - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
-            }
-        }
-
-        public override Type[] __ResolveOptionalParameterTypes(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments, out CustomModifiers[] customModifiers)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override string ScopeName
-        {
-            get { return moduleName; }
-        }
+        /// <summary>
+        /// Gets a string that represents the name of the dynamic module.
+        /// </summary>
+        public override string ScopeName => _moduleName;
 
         /// <summary>
         /// Returns the symbol writer associated with this dynamic module.
         /// </summary>
-        /// <returns></returns>
-        public ISymbolWriter GetSymWriter()
-        {
-            return symbolWriter;
-        }
+        /// <returns>The symbol writer, or <see langword="null"/> if none has been set.</returns>
+        public ISymbolWriter GetSymWriter() => _symbolWriter;
 
         /// <summary>
-        /// Defines an unmanaged embedded resource given an opaque binary large object (BLOB) of bytes.
+        /// Returns the token of the given string in the module's constant pool.
         /// </summary>
-        /// <param name="resource"></param>
-        public void DefineUnmanagedResource(byte[] resource)
-        {
-            throw new NotImplementedException();
-        }
+        /// <param name="str">The string to add to the module's constant pool.</param>
+        /// <returns>The token of the added string.</returns>
+        public StringToken GetStringConstant(string str) =>
+            new StringToken(MetadataTokens.GetHeapOffset(_metadata.GetOrAddUserString(str)) | (0x70 << 24));
 
         /// <summary>
-        /// Defines an unmanaged resource given the name of Win32 resource file.
+        /// Defines a token for the signature that is defined by the specified <see cref="SignatureHelper"/>.
         /// </summary>
-        /// <param name="resourceFileName"></param>
-        public void DefineUnmanagedResource(string resourceFileName)
-        {
-            nativeResources = new ModuleResourceSectionBuilder();
-            nativeResources.ImportWin32ResourceFile(System.IO.File.ReadAllBytes(resourceFileName));
-        }
+        /// <param name="sigHelper">The signature.</param>
+        /// <returns>The token for the defined signature.</returns>
+        public SignatureToken GetSignatureToken(SignatureHelper sigHelper) =>
+            new SignatureToken(MetadataTokens.GetToken(GetStandAloneSignature(GetOrAddBlob(sigHelper.GetSignature(this)))));
 
-        public bool IsTransient()
-        {
-            return false;
-        }
+        /// <summary>
+        /// Gets the &lt;Module&gt; type, which holds the global methods and fields.
+        /// </summary>
+        /// <returns>The &lt;Module&gt; type.</returns>
+        internal override Type GetModuleType() => _moduleType;
 
-        public StringToken GetStringConstant(string str)
-        {
-            return new StringToken(MetadataTokens.GetHeapOffset(metadata.GetOrAddUserString(str)) | (0x70 << 24));
-        }
-
-        public SignatureToken GetSignatureToken(SignatureHelper sigHelper)
-        {
-            return new SignatureToken(StandAloneSigTable.FindOrAddRecord(GetOrAddBlob(sigHelper.GetSignature(this).ToArray())) | (StandAloneSigTable.Index << 24));
-        }
-
-        public SignatureToken GetSignatureToken(byte[] sigBytes, int sigLength)
-        {
-            var bb = new BlobBuilder();
-            bb.WriteBytes(sigBytes, 0, sigLength);
-            return new SignatureToken(StandAloneSigTable.FindOrAddRecord(GetOrAddBlob(bb)) | (StandAloneSigTable.Index << 24));
-        }
-
-        public unsafe SignatureToken GetSignatureToken(Span<byte> sigBytes)
-        {
-            fixed (byte* b = sigBytes)
-            {
-                var bb = new BlobBuilder();
-                bb.WriteBytes(b, sigBytes.Length);
-                return new SignatureToken(StandAloneSigTable.FindOrAddRecord(GetOrAddBlob(bb)) | (StandAloneSigTable.Index << 24));
-            }
-        }
-
-        public MethodInfo GetArrayMethod(Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
-        {
-            return new ArrayMethod(this, arrayClass, methodName, callingConvention, returnType, parameterTypes);
-        }
-
-        public MethodToken GetArrayMethodToken(Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
-        {
-            return GetMethodToken(GetArrayMethod(arrayClass, methodName, callingConvention, returnType, parameterTypes));
-        }
-
-        internal override Type GetModuleType()
-        {
-            return moduleType;
-        }
-
+        /// <summary>
+        /// Encodes a signature and adds it to the blob heap.
+        /// </summary>
+        /// <param name="sig">The signature to add.</param>
+        /// <returns>The handle of the signature in the blob heap.</returns>
         internal BlobHandle GetSignatureBlobIndex(Signature sig)
         {
-            var bb = new ByteBuffer(16);
+            var bb = new BlobBuilder(16);
             sig.Write(this, bb);
-            return GetOrAddBlob(bb.ToArray());
+            return GetOrAddBlob(bb);
         }
 
-        // non-standard API
+        /// <summary>
+        /// Gets or sets the preferred base address of the image.
+        /// </summary>
         public new ulong __ImageBase
         {
-            get { return imageBaseAddress; }
-            set { imageBaseAddress = value; }
+            get => _imageBaseAddress;
+            set => _imageBaseAddress = value;
         }
 
-        protected override ulong GetImageBaseImpl()
-        {
-            return imageBaseAddress;
-        }
-
-        public new ulong __StackReserve
-        {
-            get { return stackReserve; }
-            set { stackReserve = value; }
-        }
-
-        protected override ulong GetStackReserveImpl()
-        {
-            return stackReserve;
-        }
-
+        /// <summary>
+        /// Gets or sets the file alignment of the image sections.
+        /// </summary>
         public new uint __FileAlignment
         {
-            get { return fileAlignment; }
-            set { fileAlignment = value; }
+            get => _fileAlignment;
+            set => _fileAlignment = value;
         }
 
-        protected override uint GetFileAlignmentImpl()
-        {
-            return fileAlignment;
-        }
-
+        /// <summary>
+        /// Gets or sets the DLL characteristics written to the optional header of the image.
+        /// </summary>
         public new DllCharacteristics __DllCharacteristics
         {
-            get { return dllCharacteristics; }
-            set { dllCharacteristics = value; }
-        }
-
-        protected override DllCharacteristics GetDllCharacteristicsImpl()
-        {
-            return dllCharacteristics;
-        }
-
-        public override int MDStreamVersion
-        {
-            get { return asm.mdStreamVersion; }
-        }
-
-        private int AddTypeRefByName(int resolutionScope, string ns, string name)
-        {
-            TypeRefTable.Record rec = new TypeRefTable.Record();
-            rec.ResolutionScope = resolutionScope;
-            SetTypeNameAndTypeNamespace(new TypeName(ns, name), out rec.TypeName, out rec.TypeNamespace);
-            return 0x01000000 | this.TypeRefTable.AddRecord(rec);
+            get => _dllCharacteristics;
+            set => _dllCharacteristics = value;
         }
 
         /// <summary>
-        /// Saves the module.
+        /// Gets the metadata stream version of the assembly.
         /// </summary>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="imageFileMachine"></param>
-        public void __Save(PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
-        {
+        public override int MDStreamVersion => _asm.MdStreamVersion;
+
+        /// <summary>
+        /// Records a TypeRef row for a type given by namespace and name.
+        /// </summary>
+        /// <param name="resolutionScope">The token or pseudo token of the resolution scope.</param>
+        /// <param name="ns">The namespace of the type.</param>
+        /// <param name="name">The name of the type.</param>
+        /// <returns>The TypeRef token of the new row.</returns>
+        int AddTypeRefByName(int resolutionScope, string ns, string name) => AddTypeRef(resolutionScope, new TypeName(ns, name));
+
+        /// <summary>
+        /// Saves the module as a stand-alone module.
+        /// </summary>
+        /// <param name="portableExecutableKind">The nature of the code in the image.</param>
+        /// <param name="imageFileMachine">The platform targeted by the image.</param>
+        public void __Save(PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine) =>
             __Save(null, null, portableExecutableKind, imageFileMachine);
-        }
 
         /// <summary>
-        /// Saves the module to the specified stream.
+        /// Saves the module and its debug information to the specified streams.
         /// </summary>
-        /// <param name="peStream"></param>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="imageFileMachine"></param>
-        public void __Save(Stream peStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
-        {
-            __Save(peStream, null, portableExecutableKind, imageFileMachine);
-        }
-
-        /// <summary>
-        /// Saves the module and it's debug information to the specified streams.
-        /// </summary>
-        /// <param name="peStream"></param>
-        /// <param name="pdbStream"></param>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="imageFileMachine"></param>
-        public void __Save(Stream peStream, Stream pdbStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
-        {
+        /// <param name="peStream">The stream to write the image to.</param>
+        /// <param name="pdbStream">The stream to write the debug information to, or <see langword="null"/>.</param>
+        /// <param name="portableExecutableKind">The nature of the code in the image.</param>
+        /// <param name="imageFileMachine">The platform targeted by the image.</param>
+        /// <exception cref="ArgumentException">A stream does not support writing.</exception>
+        public void __Save(Stream peStream, Stream pdbStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine) =>
             SaveImpl(peStream, pdbStream, portableExecutableKind, imageFileMachine);
-        }
 
         /// <summary>
-        /// Implements the Save functionality.
+        /// Implements the Save functionality. The assembly's custom attributes are attached to placeholder TypeRefs
+        /// (System.Runtime.CompilerServices.AssemblyAttributesGoHere and its variants), since a module that is not
+        /// the manifest module has no Assembly row to hold them.
         /// </summary>
-        /// <param name="peStream"></param>
-        /// <param name="pdbStream"></param>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="imageFileMachine"></param>
-        /// <exception cref="ArgumentException"></exception>
+        /// <param name="peStream">The stream to write the image to.</param>
+        /// <param name="pdbStream">The stream to write the debug information to, or <see langword="null"/>.</param>
+        /// <param name="portableExecutableKind">The nature of the code in the image.</param>
+        /// <param name="imageFileMachine">The platform targeted by the image.</param>
+        /// <exception cref="ArgumentException">A stream does not support writing.</exception>
+        /// <exception cref="InvalidOperationException">The module has already been saved.</exception>
         void SaveImpl(Stream peStream, Stream pdbStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
             if (peStream != null && peStream.CanWrite == false)
@@ -1567,9 +1821,9 @@ namespace IKVM.Reflection.Emit
                 throw new ArgumentException("PDB stream must support write.", nameof(pdbStream));
 
             SetIsSaved();
-            PopulatePropertyAndEventTables();
+            PopulatePropertyTables();
 
-            var attributes = asm.GetCustomAttributesData(null);
+            var attributes = _asm.GetCustomAttributesData(null);
             if (attributes.Count > 0)
             {
                 var mscorlib = ImportAssemblyRef(Universe.CoreLib);
@@ -1606,155 +1860,43 @@ namespace IKVM.Reflection.Emit
             }
 
             FillAssemblyRefTable();
-            ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, nativeResources, default, null, peStream, null, pdbStream);
+            ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, null, default, null, peStream, null, pdbStream);
         }
 
-        public void __AddAssemblyReference(AssemblyName assemblyName)
-        {
-            __AddAssemblyReference(assemblyName, null);
-        }
+        /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
+        public override Type[] __GetExportedTypes() => throw new NotImplementedException();
 
-        public void __AddAssemblyReference(AssemblyName assemblyName, Assembly assembly)
-        {
-            referencedAssemblyNames ??= new List<AssemblyName>();
-            referencedAssemblyNames.Add((AssemblyName)assemblyName.Clone());
-            var token = FindOrAddAssemblyRef(assemblyName, true);
-            if (assembly != null)
-                referencedAssemblies.Add(assembly, token);
-        }
-
-        public override AssemblyName[] __GetReferencedAssemblies()
-        {
-            var list = new List<AssemblyName>();
-            if (referencedAssemblyNames != null)
-                foreach (var name in referencedAssemblyNames)
-                    if (list.Contains(name) == false)
-                        list.Add(name);
-
-            foreach (var asm in referencedAssemblies.Keys)
-            {
-                var name = asm.GetName();
-                if (list.Contains(name) == false)
-                    list.Add(name);
-            }
-
-            return list.ToArray();
-        }
-
-        public void __AddModuleReference(string module)
-        {
-            ModuleRefTable.FindOrAddRecord(module == null ? default : GetOrAddString(module));
-        }
-
-        public override string[] __GetReferencedModules()
-        {
-            var arr = new string[ModuleRefTable.RowCount];
-            for (int i = 0; i < arr.Length; i++)
-                arr[i] = GetString(ModuleRefTable.records[i]);
-
-            return arr;
-        }
-
-        public override Type[] __GetReferencedTypes()
-        {
-            var list = new List<Type>();
-            foreach (var kv in typeTokens)
-                if (kv.Value >> 24 == TypeRefTable.Index)
-                    list.Add(kv.Key);
-
-            return list.ToArray();
-        }
-
-        public override Type[] __GetExportedTypes()
-        {
-            throw new NotImplementedException();
-        }
-
+        /// <summary>
+        /// Adds a File row that references another file of the assembly.
+        /// </summary>
+        /// <param name="flags">The file attributes. 0x0001 (ContainsNoMetaData) marks a file that is not a module.</param>
+        /// <param name="name">The name of the file.</param>
+        /// <param name="hash">The hash of the file's contents.</param>
+        /// <returns>The File token.</returns>
         public int __AddModule(int flags, string name, byte[] hash)
         {
-            var file = new FileTable.Record();
-            file.Flags = flags;
-            file.Name = GetOrAddString(name);
-            file.HashValue = GetOrAddBlob(hash);
-            return MetadataTokens.GetToken(MetadataTokens.AssemblyFileHandle(FileTable.AddRecord(file)));
+            const int ContainsNoMetaData = 0x0001;
+            return MetadataTokens.GetToken(_metadata.AddAssemblyFile(GetOrAddString(name), GetOrAddBlob(hash), (flags & ContainsNoMetaData) == 0));
         }
 
-        public int __AddManifestResource(int offset, ResourceAttributes flags, string name, int implementation)
-        {
-            var res = new ManifestResourceTable.Record();
-            res.Offset = offset;
-            res.Flags = (int)flags;
-            res.Name = GetOrAddString(name);
-            res.Implementation = implementation;
-            return MetadataTokens.GetToken(MetadataTokens.ManifestResourceHandle(ManifestResourceTable.AddRecord(res)));
-        }
-
-        public void __SetCustomAttributeFor(int token, CustomAttributeBuilder customBuilder)
-        {
-            SetCustomAttribute(token, customBuilder);
-        }
-
-        internal void SetInterfaceImplementationCustomAttribute(TypeBuilder typeBuilder, Type interfaceType, CustomAttributeBuilder cab)
-        {
-            // NOTE since interfaceimpls are extremely common and custom attributes on them are extremely rare,
-            // we store (and resolve) the custom attributes in such away as to avoid impacting the common case performance
-            interfaceImplCustomAttributes ??= new List<InterfaceImplCustomAttribute>();
-
-            var rec = new InterfaceImplCustomAttribute();
-            rec.type = typeBuilder.MetadataToken;
-
-            var token = GetTypeToken(interfaceType).Token;
-            token = (token >> 24) switch
-            {
-                TypeDefTable.Index => (token & 0xFFFFFF) << 2 | 0,
-                TypeRefTable.Index => (token & 0xFFFFFF) << 2 | 1,
-                TypeSpecTable.Index => (token & 0xFFFFFF) << 2 | 2,
-                _ => throw new InvalidOperationException(),
-            };
-
-            rec.interfaceType = token;
-            rec.pseudoToken = AllocPseudoToken();
-            interfaceImplCustomAttributes.Add(rec);
-
-            SetCustomAttribute(rec.pseudoToken, cab);
-        }
-
-        internal void ResolveInterfaceImplPseudoTokens()
-        {
-            if (interfaceImplCustomAttributes != null)
-            {
-                foreach (var rec in interfaceImplCustomAttributes)
-                {
-                    for (int i = 0; i < InterfaceImplTable.records.Length; i++)
-                    {
-                        if (InterfaceImplTable.records[i].Class == rec.type && InterfaceImplTable.records[i].Interface == rec.interfaceType)
-                        {
-                            RegisterTokenFixup(rec.pseudoToken, MetadataTokens.GetToken(MetadataTokens.InterfaceImplementationHandle(i + 1)));
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        internal void FixupPseudoToken(ref int token)
-        {
-            if (IsPseudoToken(token))
-                token = ResolvePseudoToken(token);
-        }
-
+        /// <summary>
+        /// Marks the module as saved, after which members report their real tokens rather than their pseudo tokens.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The module has already been saved.</exception>
         internal void SetIsSaved()
         {
-            if (saved)
+            if (_saved)
                 throw new InvalidOperationException();
 
-            saved = true;
+            _saved = true;
         }
 
-        internal bool IsSaved
-        {
-            get { return saved; }
-        }
+        /// <summary>
+        /// Gets whether the module has been saved, after which members report their real tokens rather than their
+        /// pseudo tokens.
+        /// </summary>
+        internal bool IsSaved => _saved;
 
     }
 
