@@ -558,7 +558,7 @@
                 foreach (var reference in item.References)
                     references.Add(await GetReferenceLineAsync(item, reference, cycle, cancellationToken));
 
-                // sort and write the reference lines
+                // write the reference lines in the order they were given
                 foreach (var r in references.Distinct())
                     manifest.WriteLine(r);
 

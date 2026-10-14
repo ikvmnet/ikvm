@@ -226,7 +226,7 @@
         /// <returns></returns>
         async Task<List<string>> CalculateReferencesAsync(IkvmReferenceExportItem item, CancellationToken cancellationToken)
         {
-            return (await GetAssemblyReferencesAsync(item.ItemSpec, cancellationToken)).OrderBy(i => i).ToList();
+            return (await GetAssemblyReferencesAsync(item.ItemSpec, cancellationToken)).OrderBy(i => i, StringComparer.Ordinal).ToList();
         }
 
         /// <summary>
@@ -248,7 +248,7 @@
         /// <returns></returns>
         async Task<string[]> ResolveAssemblyReferencesAsync(string path, CancellationToken cancellationToken)
         {
-            var references = new SortedSet<string>() { path };
+            var references = new SortedSet<string>(StringComparer.Ordinal) { path };
             await ResolveAssemblyReferencesAsync(path, references, cancellationToken);
             return references.ToArray();
         }
@@ -310,7 +310,7 @@
 
             // gather namespaces
             if (item.Namespaces != null)
-                foreach (var ns in item.Namespaces.Distinct().OrderBy(i => i))
+                foreach (var ns in item.Namespaces.Distinct().OrderBy(i => i, StringComparer.Ordinal))
                     writer.WriteLine($"Namespace={ns}");
 
             // hash the resulting manifest and reeturn the identity
