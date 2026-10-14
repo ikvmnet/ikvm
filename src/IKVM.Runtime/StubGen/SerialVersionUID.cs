@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 
 using IKVM.Attributes;
@@ -6,7 +7,8 @@ namespace IKVM.Runtime.StubGen
 {
 
     /// <summary>
-    /// Generates a SerialVerisonUID value by hashing data related to the type.
+    /// Generates a SerialVerisonUID value by hashing data related to the type, as ObjectStreamClass.computeDefaultSUID
+    /// does. Members are ordered as Java orders them, by String.compareTo, which compares UTF-16 code units.
     /// </summary>
     static class SerialVersionUID
     {
@@ -28,9 +30,9 @@ namespace IKVM.Runtime.StubGen
             WriteConstructors(writer, javaType);
             WriteMethods(writer, javaType);
 
-            // finalize and convert to long
+            // finalize and convert the first eight bytes to a long, little-endian
             var hash = writer.Finalize();
-            var uuid = 0;
+            var uuid = 0L;
             for (var i = 7; i >= 0; i--)
             {
                 uuid <<= 8;
@@ -65,13 +67,13 @@ namespace IKVM.Runtime.StubGen
 
         static void WriteInterfaces(SHA1HashWriter writer, RuntimeJavaType javaType)
         {
-            foreach (var i in javaType.Interfaces.OrderBy(i => i.Name))
+            foreach (var i in javaType.Interfaces.OrderBy(i => i.Name, StringComparer.Ordinal))
                 writer.WriteUtf8(i.Name);
         }
 
         static void WriteFields(SHA1HashWriter writer, RuntimeJavaType javaType)
         {
-            foreach (var fw in javaType.GetFields().Where(i => !i.IsHideFromReflection).OrderBy(i => i.Name))
+            foreach (var fw in javaType.GetFields().Where(i => !i.IsHideFromReflection).OrderBy(i => i.Name, StringComparer.Ordinal))
             {
                 var mods = fw.Modifiers & (Modifiers.Public | Modifiers.Private | Modifiers.Protected | Modifiers.Static | Modifiers.Final | Modifiers.Volatile | Modifiers.Transient);
                 if (((mods & Modifiers.Private) == 0) || ((mods & (Modifiers.Static | Modifiers.Transient)) == 0))
@@ -101,7 +103,7 @@ namespace IKVM.Runtime.StubGen
         {
             var ctors = javaType.GetMethods()
                 .Where(i => i.IsConstructor && !i.IsHideFromReflection && !i.IsPrivate)
-                .OrderBy(i => i.Signature);
+                .OrderBy(i => i.Signature, StringComparer.Ordinal);
 
             foreach (var ctor in ctors)
             {
@@ -116,8 +118,8 @@ namespace IKVM.Runtime.StubGen
         {
             var methods = javaType.GetMethods()
                 .Where(i => !i.IsConstructor && !i.IsHideFromReflection && !i.IsPrivate)
-                .OrderBy(i => i.Name)
-                .ThenBy(i => i.Signature);
+                .OrderBy(i => i.Name, StringComparer.Ordinal)
+                .ThenBy(i => i.Signature, StringComparer.Ordinal);
 
             foreach (var method in methods)
             {
