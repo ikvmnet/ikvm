@@ -52,6 +52,12 @@
         protected string CurrentWorkingDirectory { get; private set; }
 
         /// <summary>
+        /// Gets how long to wait for the operation to complete before yielding the node to other work. Operations that
+        /// are expected to run long should yield immediately.
+        /// </summary>
+        protected virtual TimeSpan YieldDelay => TimeSpan.FromSeconds(5);
+
+        /// <summary>
         /// Executes the task.
         /// </summary>
         /// <returns></returns>
@@ -80,7 +86,7 @@
 
             try
             {
-                if (run.Wait(TimeSpan.FromSeconds(5)))
+                if (YieldDelay > TimeSpan.Zero && run.Wait(YieldDelay))
                     if (run.IsCompleted)
                         return run.GetAwaiter().GetResult();
             }

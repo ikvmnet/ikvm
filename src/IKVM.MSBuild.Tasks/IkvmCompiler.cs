@@ -369,9 +369,13 @@ namespace IKVM.MSBuild.Tasks
             options.NoParameterReflection = NoParameterReflection;
             options.Remap = Remap;
 
+            // the importer only accepts files as input, directories of class files are recursed
             if (Input != null)
                 foreach (var i in Input)
-                    options.Input.Add(i.ItemSpec);
+                    if (Directory.Exists(i.ItemSpec))
+                        options.Recurse.Add(i.ItemSpec);
+                    else
+                        options.Input.Add(i.ItemSpec);
 
             // kick off the launcher with the configured options
             return await new IkvmImporterLauncher(ToolPath, writer).ExecuteAsync(options, cancellationToken) == 0;

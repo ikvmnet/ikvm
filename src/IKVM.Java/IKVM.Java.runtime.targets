@@ -53,6 +53,7 @@
     
     <PropertyGroup>
         <ServiceFileOutputPath>$(IntermediateOutputPath)gensvc\</ServiceFileOutputPath>
+        <ServiceFileStampFile>$(IntermediateOutputPath)gensvc.stamp</ServiceFileStampFile>
     </PropertyGroup>
 
     <UsingTask TaskName="GenerateServiceFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
@@ -122,13 +123,30 @@
         </Task>
     </UsingTask>
 
-    <Target Name="GenerateServiceFiles">
-        <GenerateServiceFiles OpenJdkTargetOs="$(OpenJdkTargetOsDir)" SourceFile="@(ServiceFile)" TargetPath="$(ServiceFileOutputPath)">
-            <Output TaskParameter="OutputFile" ItemName="_GeneratedServiceFiles" />
-        </GenerateServiceFiles>
-    
+    <!--
+    A generated service file is named by its service, so the files are known without reading the sources, and are
+    available to the build even when GenerateServiceFiles is up to date. A missing file forces them to be generated.
+    -->
+    <Target Name="_GetGeneratedServiceFiles">
         <ItemGroup>
-            <FileWrites Include="@(_GeneratedServiceFiles)" />
+            <_GeneratedServiceFileName Remove="@(_GeneratedServiceFileName)" />
+            <_GeneratedServiceFileName Include="@(ServiceFile->'%(ServiceName)')" Condition=" '%(ServiceFile.ServiceName)' != '' " />
+            <_GeneratedServiceFileName Include="@(ServiceFile->'%(Filename)%(Extension)')" Condition=" '%(ServiceFile.ServiceName)' == '' " />
+            <_GeneratedServiceFiles Remove="@(_GeneratedServiceFiles)" />
+            <_GeneratedServiceFiles Include="@(_GeneratedServiceFileName->Distinct()->'$(ServiceFileOutputPath)%(Identity)')" />
+            <_MissingGeneratedServiceFiles Remove="@(_MissingGeneratedServiceFiles)" />
+            <_MissingGeneratedServiceFiles Include="@(_GeneratedServiceFiles)" Condition="!Exists('%(FullPath)')" />
+        </ItemGroup>
+
+        <Delete Files="$(ServiceFileStampFile)" Condition=" '@(_MissingGeneratedServiceFiles)' != '' " />
+    </Target>
+
+    <Target Name="GenerateServiceFiles" DependsOnTargets="_GetGeneratedServiceFiles" Inputs="$(MSBuildThisFileFullPath);@(ServiceFile)" Outputs="$(ServiceFileStampFile)">
+        <GenerateServiceFiles OpenJdkTargetOs="$(OpenJdkTargetOsDir)" SourceFile="@(ServiceFile)" TargetPath="$(ServiceFileOutputPath)" />
+        <Touch Files="$(ServiceFileStampFile)" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="@(_GeneratedServiceFiles);$(ServiceFileStampFile)" />
             <JavaResource Include="@(_GeneratedServiceFiles)" ResourcePath="META-INF/services/%(Filename)%(Extension)" />
         </ItemGroup>
     </Target>

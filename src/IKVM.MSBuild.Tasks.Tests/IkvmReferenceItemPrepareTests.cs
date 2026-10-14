@@ -75,12 +75,156 @@ namespace IKVM.MSBuild.Tasks.Tests
         }
 
         [TestMethod]
-        public void Should_not_add_dir_identity_to_compile()
+        public void Should_add_dir_identity_to_compile()
         {
             var i1 = new TaskItem(Path.Combine(".", "helloworld"));
             IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItem.Import(new[] { i1 }));
             var c = i1.GetMetadata(IkvmReferenceItemMetadata.Compile);
-            c.Split(IkvmReferenceItemMetadata.PropertySeparatorChar).Should().NotContain(@"helloworld");
+            c.Split(IkvmReferenceItemMetadata.PropertySeparatorChar).Should().Contain("helloworld" + Path.DirectorySeparatorChar);
+        }
+
+        [TestMethod]
+        public void Should_get_default_assembly_name_and_version_from_dir()
+        {
+            using var dir = new TempClassDirectory("my-lib-1.2");
+            var i1 = new TaskItem(dir.Path);
+            IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItem.Import(new[] { i1 }));
+            i1.GetMetadata(IkvmReferenceItemMetadata.AssemblyName).Should().Be("my.lib");
+            i1.GetMetadata(IkvmReferenceItemMetadata.AssemblyVersion).Should().Be("1.2.0.0");
+        }
+
+        [TestMethod]
+        public void Should_get_default_assembly_name_without_version_from_dir()
+        {
+            using var dir = new TempClassDirectory("classes");
+            var i1 = new TaskItem(dir.Path);
+            IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItem.Import(new[] { i1 }));
+            i1.GetMetadata(IkvmReferenceItemMetadata.AssemblyName).Should().Be("classes");
+            i1.GetMetadata(IkvmReferenceItemMetadata.AssemblyVersion).Should().BeEmpty();
+        }
+
+        [TestMethod]
+        public void Should_validate_dir_compile()
+        {
+            using var dir = new TempClassDirectory("classes");
+            var i1 = new TaskItem(dir.Path);
+            i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "1.0");
+            var items = IkvmReferenceItem.Import(new[] { i1 });
+            IkvmReferenceItemPrepare.AssignMetadata(items);
+            IkvmReferenceItemPrepare.GetDiagnostics(items[0]).Should().BeEmpty();
+        }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task Should_change_dir_identity_when_dir_contents_change()
+        {
+            using var dir = new TempClassDirectory("classes");
+
+            async System.Threading.Tasks.Task<string> GetIdentityAsync()
+            {
+                var i1 = new TaskItem(dir.Path);
+                i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "1.0");
+                var items = IkvmReferenceItem.Import(new[] { i1 });
+                IkvmReferenceItemPrepare.AssignMetadata(items);
+                return await BuildTestTask("net8.0", "1.0").CalculateIkvmIdentityAsync(items[0], new HashSet<IkvmReferenceItem>(), default);
+            }
+
+            var original = await GetIdentityAsync();
+            (await GetIdentityAsync()).Should().Be(original);
+
+            File.WriteAllBytes(System.IO.Path.Combine(dir.Path, "a", "A.class"), [0xCA, 0xFE, 0xBA, 0xBF]);
+            var modified = await GetIdentityAsync();
+            modified.Should().NotBe(original);
+
+            File.WriteAllBytes(System.IO.Path.Combine(dir.Path, "a", "B.class"), [0xCA, 0xFE, 0xBA, 0xBE]);
+            (await GetIdentityAsync()).Should().NotBe(modified);
+        }
+
+        /// <summary>
+        /// A directory of class files beneath the working directory, removed on dispose.
+        /// </summary>
+        sealed class TempClassDirectory : System.IDisposable
+        {
+
+            readonly string root;
+
+            public TempClassDirectory(string name)
+            {
+                root = System.IO.Path.Combine("dirref", System.Guid.NewGuid().ToString("N"));
+                Path = System.IO.Path.Combine(root, name);
+                Directory.CreateDirectory(System.IO.Path.Combine(Path, "a"));
+                File.WriteAllBytes(System.IO.Path.Combine(Path, "a", "A.class"), [0xCA, 0xFE, 0xBA, 0xBE]);
+                File.WriteAllText(System.IO.Path.Combine(Path, "a", "res.properties"), "key=value");
+            }
+
+            public string Path { get; }
+
+            public void Dispose()
+            {
+                if (Directory.Exists(root))
+                    Directory.Delete(root, true);
+            }
+
+        }
+
+        [TestMethod]
+        public void Should_expand_literal_path_to_normalized_relative_path()
+        {
+            IkvmReferenceItemPrepare.ExpandPath(Path.Combine(".", "helloworld", "helloworld-2.0-1", ".", "helloworld-2.0.jar")).Should().Equal(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"));
+        }
+
+        [TestMethod]
+        public void Should_expand_absolute_literal_path_to_relative_path()
+        {
+            IkvmReferenceItemPrepare.ExpandPath(Path.GetFullPath(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"))).Should().Equal(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"));
+        }
+
+        [TestMethod]
+        public void Should_expand_literal_path_with_backslashes_on_every_platform()
+        {
+            IkvmReferenceItemPrepare.ExpandPath(HELLOWORLD1_JAR).Should().Equal(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"));
+            IkvmReferenceItemPrepare.ExpandPath(@".\helloworld\helloworld-2.0-1", includeDirectories: true).Should().Equal(Path.Combine("helloworld", "helloworld-2.0-1") + Path.DirectorySeparatorChar);
+        }
+
+        [TestMethod]
+        public void Should_expand_missing_literal_path_to_nothing()
+        {
+            IkvmReferenceItemPrepare.ExpandPath(Path.Combine("helloworld", "helloworld-2.0-1", "missing.jar")).Should().BeEmpty();
+        }
+
+        [TestMethod]
+        public void Should_expand_directory_literal_path_to_nothing()
+        {
+            IkvmReferenceItemPrepare.ExpandPath(Path.Combine("helloworld", "helloworld-2.0-1")).Should().BeEmpty();
+        }
+
+        [TestMethod]
+        public void Should_expand_directory_literal_path_when_including_directories()
+        {
+            IkvmReferenceItemPrepare.ExpandPath(Path.Combine(".", "helloworld", "helloworld-2.0-1"), includeDirectories: true).Should().Equal(Path.Combine("helloworld", "helloworld-2.0-1") + Path.DirectorySeparatorChar);
+        }
+
+        [TestMethod]
+        public void Should_not_expand_glob_to_directories()
+        {
+            IkvmReferenceItemPrepare.ExpandPath(Path.Combine("helloworld", "helloworld-2.0-*"), includeDirectories: true).Should().BeEmpty();
+        }
+
+        [TestMethod]
+        public void Should_expand_filename_wildcard_in_fixed_directory_only()
+        {
+            IkvmReferenceItemPrepare.ExpandPath(Path.Combine("helloworld", "helloworld-2.0-1", "*.jar")).Should().Equal(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"));
+            IkvmReferenceItemPrepare.ExpandPath(Path.Combine("helloworld", "*.jar")).Should().BeEmpty();
+        }
+
+        [TestMethod]
+        public void Should_expand_directory_wildcard_into_subdirectories()
+        {
+            IkvmReferenceItemPrepare.ExpandPath(Path.Combine("helloworld", "**", "*.jar")).Should().BeEquivalentTo(
+                Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"),
+                Path.Combine("helloworld", "helloworld-2.0-2", "helloworld-2.0.jar"));
+            IkvmReferenceItemPrepare.ExpandPath(Path.Combine("helloworld", "helloworld-2.0-*", "helloworld-2.0.jar")).Should().BeEquivalentTo(
+                Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"),
+                Path.Combine("helloworld", "helloworld-2.0-2", "helloworld-2.0.jar"));
         }
 
         [TestMethod]
@@ -110,6 +254,46 @@ namespace IKVM.MSBuild.Tasks.Tests
             IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItem.Import(new[] { i1 }));
             var c = i1.GetMetadata(IkvmReferenceItemMetadata.AssemblyVersion);
             c.Should().Be("2.0.0.0");
+        }
+
+        /// <summary>
+        /// Assigns the metadata to a copy of the hello world jar, which has no module information, under the given file name.
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        static ITaskItem AssignMetadataToJarNamed(string fileName)
+        {
+            var dir = Path.Combine("jarname", System.Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+
+            try
+            {
+                var jar = Path.Combine(dir, fileName);
+                File.Copy(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"), jar);
+                var i1 = new TaskItem(jar);
+                IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItem.Import(new[] { i1 }));
+                return i1;
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [TestMethod]
+        public void Should_get_default_assembly_name_from_unversioned_jar()
+        {
+            var i1 = AssignMetadataToJarNamed("hello-world.jar");
+            i1.GetMetadata(IkvmReferenceItemMetadata.AssemblyName).Should().Be("hello.world");
+            i1.GetMetadata(IkvmReferenceItemMetadata.AssemblyVersion).Should().BeEmpty();
+        }
+
+        [TestMethod]
+        public void Should_not_get_default_assembly_version_from_unversioned_jar()
+        {
+            var i1 = AssignMetadataToJarNamed("v2.jar");
+            i1.GetMetadata(IkvmReferenceItemMetadata.AssemblyName).Should().Be("v2");
+            i1.GetMetadata(IkvmReferenceItemMetadata.AssemblyVersion).Should().BeEmpty();
         }
 
         [TestMethod]

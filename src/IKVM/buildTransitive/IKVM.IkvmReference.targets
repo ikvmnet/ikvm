@@ -99,6 +99,10 @@
             <Output TaskParameter="Items" ItemName="_IkvmReferenceItemWithMetadata" />
         </IkvmReferenceItemPrepare>
 
+        <ItemGroup>
+            <FileWrites Include="$(_IkvmReferenceItemPrepareStateFile)" />
+        </ItemGroup>
+
         <!-- Assign newly discovered items. -->
         <ItemGroup>
             <IkvmReferenceItem Remove="@(IkvmReferenceItem)"/>
@@ -109,7 +113,6 @@
     <PropertyGroup>
         <GetIkvmReferenceItemsDependsOn>
             $(GetIkvmReferenceItemsDependsOn);
-            ResolveIkvmFrameworkReferences;
             GetIkvmReferenceItemsFromIkvmReferences;
             _UpdateIkvmReferenceItemsMetadata;
         </GetIkvmReferenceItemsDependsOn>
@@ -121,15 +124,14 @@
     </Target>
 
     <!-- Builds the IkvmReferenceItem set into their output items within the cache. -->
-    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmFrameworkReferences" Inputs="%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)">
+    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmFrameworkReferences" Inputs="%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)" Condition=" '@(IkvmReferenceItem)' != '' ">
         <Error Text="_CompileIkvmReferences has no implementation." />
     </Target>
 
     <PropertyGroup>
         <CompileIkvmReferencesDependsOn>
-            $(CompileIkvmReferenceAssemblies);
+            $(CompileIkvmReferencesDependsOn);
             GetIkvmReferenceItems;
-            ResolveIkvmFrameworkReferences;
             _CompileIkvmReferences;
         </CompileIkvmReferencesDependsOn>
     </PropertyGroup>
