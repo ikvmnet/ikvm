@@ -1,0 +1,128 @@
+<!--
+
+    IKVM.OpenJdk.BuildTools.msbuildproj
+
+    Compiles the OpenJDK build tools: the programs from ext/openjdk/jdk/make/src/classes that generate sources and data
+    for IKVM.Java and the images. They do not depend on the target framework or runtime of the projects that run them,
+    so they are compiled once, here, instead of by each of those projects. Those projects import
+    targets/openjdk.buildtools.targets, which builds this project through GetJdkBuildTools.
+
+-->
+
+<Project>
+    <Import Project="Sdk.props" Sdk="Microsoft.Build.NoTargets" />
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <Import Project="Sdk.targets" Sdk="Microsoft.Build.NoTargets" />
+
+    <PropertyGroup>
+        <JdkBuildToolsOutputPath>$(IntermediateOutputPath)jdk_btclasses\</JdkBuildToolsOutputPath>
+        <JdkBuildToolsResponseFile>$(IntermediateOutputPath)jdk_btclasses.javac.rsp</JdkBuildToolsResponseFile>
+        <JdkBuildToolsStampFile>$(IntermediateOutputPath)jdk_btclasses.stamp</JdkBuildToolsStampFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <JdkBuildToolsSource Include="$(OpenJdkDir)jdk\make\src\classes\**\*.java" />
+        <JdkBuildToolsSource Include="$(OpenJdkDir)jdk\src\solaris\classes\sun\awt\X11\generator\**\*.java" />
+        <JdkBuildToolsResource Include="$(OpenJdkDir)jdk\src\share\classes\javax\swing\plaf\nimbus\*.template" ResourcePath="build\tools\generatenimbus\resources\%(Filename).template"/>
+        <JdkBuildToolsResource Include="$(OpenJdkDir)jdk\make\data\checkdeps\refs.allowed" ResourcePath="build\tools\deps\refs.allowed"/>
+    </ItemGroup>
+
+    <Target Name="FindJdk">
+        <FindJdk Family="8">
+            <Output TaskParameter="JdkPath" PropertyName="JdkPath" />
+        </FindJdk>
+        <Error Condition=" '$(JdkPath)' == '' " Text="Failed to locate JDK. The OpenJDK build tools require JDK version 8 available on the system." />
+    </Target>
+
+    <Target Name="ResolveJavaCompiler" DependsOnTargets="FindJdk" Condition=" '$(JavaCompilerPath)' == '' ">
+        <PropertyGroup>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JdkPath)\bin\javac') ">$([System.IO.Path]::GetFullPath('$(JdkPath)\bin\javac'))</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JdkPath)\bin\javac.exe') ">$([System.IO.Path]::GetFullPath('$(JdkPath)\bin\javac.exe'))</JavaCompilerPath>
+            <JavaCompilerArgs></JavaCompilerArgs>
+            <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">"$(JavaCompilerPath)" $(JavaCompilerArgs)</JavaCompilerExec>
+        </PropertyGroup>
+        <Message Text="Using javac executable found at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
+        <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
+    </Target>
+
+    <Target Name="ResolveJavaToolsJar" DependsOnTargets="FindJdk" Condition=" '$(JavaToolsJarPath)' == '' ">
+        <PropertyGroup>
+            <JavaToolsJarPath Condition="Exists('$(JdkPath)\lib\tools.jar')">$([System.IO.Path]::GetFullPath('$(JdkPath)\lib\tools.jar'))</JavaToolsJarPath>
+        </PropertyGroup>
+        <Message Text="Using tools.jar found at '$(JavaToolsJarPath)'." Importance="high" Condition=" '$(JavaToolsJarPath)' != '' " />
+        <Error Text="Could not locate tools.jar." Condition=" '$(JavaToolsJarPath)' == '' " />
+    </Target>
+
+    <!-- Written on every build, since it names the JDK found; it only changes, and so only causes a recompile, when its content does. -->
+    <Target Name="JdkBuildToolsResponseFile" DependsOnTargets="ResolveJavaToolsJar">
+        <Error Text="Could not locate tools.jar." Condition=" '$(JavaToolsJarPath)' == '' " />
+        <Error Text="tools.jar could not be located at '$(JavaToolsJarPath)'." Condition="!Exists('$(JavaToolsJarPath)')" />
+
+        <ItemGroup>
+            <_OpenJdkBuildToolsJavaCompilerClasspath Include="$(JavaToolsJarPath)" />
+        </ItemGroup>
+
+        <PropertyGroup>
+            <_OpenJdkBuildToolsJavaCompilerClasspathArg>@(_OpenJdkBuildToolsJavaCompilerClasspath, '$([System.IO.Path]::PathSeparator)')</_OpenJdkBuildToolsJavaCompilerClasspathArg>
+            <_OpenJdkBuildToolsJavaCompilerClasspathArg>$(_OpenJdkBuildToolsJavaCompilerClasspathArg.Replace('\', '\\'))</_OpenJdkBuildToolsJavaCompilerClasspathArg>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <_OpenJdkBuildToolsJavaCompilerArgs Include="-cp" />
+            <_OpenJdkBuildToolsJavaCompilerArgs Include="&quot;$([MSBuild]::Escape('$(_OpenJdkBuildToolsJavaCompilerClasspathArg)'))&quot;" />
+            <_OpenJdkBuildToolsJavaCompilerArgs Include="-source" />
+            <_OpenJdkBuildToolsJavaCompilerArgs Include="1.8" />
+            <_OpenJdkBuildToolsJavaCompilerArgs Include="-target" />
+            <_OpenJdkBuildToolsJavaCompilerArgs Include="1.8" />
+            <_OpenJdkBuildToolsJavaCompilerArgs Include="-nowarn" />
+            <_OpenJdkBuildToolsJavaCompilerArgs Include="-d" />
+            <_OpenJdkBuildToolsJavaCompilerArgs Include="$(JdkBuildToolsOutputPath)" />
+            <_OpenJdkBuildToolsJavaCompilerArgs Include="@(JdkBuildToolsSource->'%(FullPath)')" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(JdkBuildToolsResponseFile)" Lines="@(_OpenJdkBuildToolsJavaCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(JdkBuildToolsResponseFile)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BuildJdkBuildTools" DependsOnTargets="ResolveJavaCompiler;JdkBuildToolsResponseFile" Inputs="$(JdkBuildToolsResponseFile);@(JdkBuildToolsSource);@(JdkBuildToolsResource)" Outputs="$(JdkBuildToolsStampFile);@(JdkBuildToolsResource->'$(JdkBuildToolsOutputPath)%(ResourcePath)')">
+        <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
+        <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
+        <Exec Command="chmod +x $(JavaCompilerPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Delete Files="$(JdkBuildToolsStampFile)" />
+        <MakeDir Directories="$(JdkBuildToolsOutputPath)" />
+        <Message Text="$(JavaCompilerExec) @$(JdkBuildToolsResponseFile)" />
+        <Exec Command="$(JavaCompilerExec) @$(JdkBuildToolsResponseFile)" />
+        <Copy SourceFiles="@(JdkBuildToolsResource)" DestinationFiles="@(JdkBuildToolsResource->'$(JdkBuildToolsOutputPath)%(ResourcePath)')" />
+        <Touch Files="@(JdkBuildToolsResource->'$(JdkBuildToolsOutputPath)%(ResourcePath)')" ForceTouch="true" />
+        <Touch Files="$(JdkBuildToolsStampFile)" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(JdkBuildToolsStampFile)" />
+            <FileWrites Include="$(JdkBuildToolsOutputPath)**\*.class" />
+            <FileWrites Include="@(JdkBuildToolsResource->'$(JdkBuildToolsOutputPath)%(ResourcePath)')" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <CoreBuildDependsOn>
+            $(CoreBuildDependsOn);
+            BuildJdkBuildTools;
+        </CoreBuildDependsOn>
+    </PropertyGroup>
+
+    <!-- Builds the tools and returns the directory they are in, with the stamp file written when they last changed. -->
+    <Target Name="GetJdkBuildTools" DependsOnTargets="BuildJdkBuildTools" Returns="@(JdkBuildTools)">
+        <ItemGroup>
+            <JdkBuildTools Include="$([System.IO.Path]::GetFullPath('$(JdkBuildToolsOutputPath)'))" StampFile="$([System.IO.Path]::GetFullPath('$(JdkBuildToolsStampFile)'))" />
+        </ItemGroup>
+    </Target>
+
+</Project>

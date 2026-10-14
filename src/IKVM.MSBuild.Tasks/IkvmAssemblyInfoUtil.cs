@@ -128,7 +128,8 @@
         /// <returns></returns>
         public async System.Threading.Tasks.Task SaveStateXmlAsync(XElement root)
         {
-            foreach (var i in cache)
+            // in a stable order, so an unchanged state saves the same
+            foreach (var i in cache.OrderBy(i => i.Key, StringComparer.Ordinal))
             {
                 var info = await i.Value;
                 if (info is null)

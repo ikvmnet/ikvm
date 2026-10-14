@@ -32,6 +32,7 @@
                 <![CDATA[
 #define NETSTANDARD_2_0
 
+$([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmCleanDirCs)'))
             ]]>
             </Code>
