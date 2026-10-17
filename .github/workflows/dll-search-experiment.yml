@@ -1,0 +1,65 @@
+name: dll-search-experiment
+
+on:
+  push:
+    branches:
+    - claude/compassionate-clarke-l35ozd
+    paths:
+    - experiments/dll-search/**
+    - .github/workflows/dll-search-experiment.yml
+
+jobs:
+  experiment:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        sparse-checkout: experiments/dll-search
+    - name: Build test DLLs and harness
+      run: |
+        $b = "$env:RUNNER_TEMP\build"; New-Item -ItemType Directory -Force $b | Out-Null
+        Copy-Item experiments\dll-search\harness.c $b
+        ./experiments/dll-search/gen.ps1 -Out $b
+        cmd /c experiments\dll-search\build.cmd $b
+        if ($LASTEXITCODE) { throw "build failed" }
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Build e2e host against latest IKVM release
+      run: |
+        $v = (Invoke-RestMethod https://api.nuget.org/v3-flatcontainer/ikvm/index.json).versions | Where-Object { $_ -notmatch '-' } | Select-Object -Last 1
+        "IKVM version: $v" | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
+        dotnet build experiments\dll-search\e2e -c Release -p:IkvmVersion=$v -o "$env:RUNNER_TEMP\e2e"
+        if ($LASTEXITCODE) { throw "build failed" }
+        $jvm = Get-ChildItem "$env:RUNNER_TEMP\e2e" -Recurse -Filter jvm.dll | Select-Object -First 1
+        "IKVM_BIN=$($jvm.DirectoryName)" >> $env:GITHUB_ENV
+        Get-ChildItem $jvm.DirectoryName | Select-Object Name, Length | Format-Table | Out-String | Write-Host
+    - name: Imports of JDK DLLs
+      run: |
+        $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath
+        $dumpbin = Get-ChildItem "$vs\VC\Tools\MSVC" -Recurse -Filter dumpbin.exe | Where-Object { $_.FullName -match 'Hostx64\\x64' } | Select-Object -First 1
+        Get-ChildItem "$env:IKVM_BIN\*.dll" | ForEach-Object { & $dumpbin.FullName /nologo /dependents $_.FullName | Select-String '\.dll' }
+    - name: Loader matrix (harness)
+      run: ./experiments/dll-search/run.ps1 -Build "$env:RUNNER_TEMP\build" -Root "$env:RUNNER_TEMP\dlltest" -IkvmBin $env:IKVM_BIN
+    - name: E2E under IKVM (released jvm.dll, current flags)
+      run: |
+        $r = "$env:RUNNER_TEMP\dlltest"
+        $env:PATH = "$env:SystemRoot\system32;$env:SystemRoot;$env:SystemRoot\System32\WindowsPowerShell\v1.0;$env:ProgramFiles\dotnet;$r\X;$r\Y"
+        Push-Location "$r\W"
+        "`n### E2E: released jvm.dll (current flags)`n" | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
+        & "$env:RUNNER_TEMP\e2e\e2e.exe" "$r\H" 2>&1 | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
+        Pop-Location
+    - name: E2E under IKVM (jvm.dll patched to LOAD_WITH_ALTERED_SEARCH_PATH)
+      run: |
+        Copy-Item -Recurse "$env:RUNNER_TEMP\e2e" "$env:RUNNER_TEMP\e2e-patched"
+        $jvm = Get-ChildItem "$env:RUNNER_TEMP\e2e-patched" -Recurse -Filter jvm.dll | Where-Object { $_.FullName -match 'win-x64' } | Select-Object -First 1
+        ./experiments/dll-search/patch.ps1 -Dll $jvm.FullName
+        $r = "$env:RUNNER_TEMP\dlltest"
+        $env:PATH = "$env:SystemRoot\system32;$env:SystemRoot;$env:SystemRoot\System32\WindowsPowerShell\v1.0;$env:ProgramFiles\dotnet;$r\X;$r\Y"
+        Push-Location "$r\W"
+        "`n### E2E: patched jvm.dll (LOAD_WITH_ALTERED_SEARCH_PATH)`n" | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
+        & "$env:RUNNER_TEMP\e2e-patched\e2e.exe" "$r\H" 2>&1 | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
+        Pop-Location
