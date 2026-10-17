@@ -806,16 +806,67 @@ namespace IKVM.Runtime
             return null;
         }
 
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
+
+        /// <summary>
+        /// Set while the current thread is searching resources for a dynamically loaded class.
+        /// </summary>
+        [ThreadStatic]
+        static bool findingDynamic;
+
+#endif
+
         RuntimeJavaType LoadDynamic(string name)
         {
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
+            // searching the resources can itself load classes: building the resource URLs looks up URL stream handlers,
+            // which with java.protocol.handler.pkgs set probes for classes such as "<pkg>.file.Handler" before the handler is cached
+            // such a nested lookup cannot be satisfied by a search that has not completed, and would otherwise recurse until the stack overflows
+            if (findingDynamic)
+                return null;
+
             var classFile = name.Replace('.', '/') + ".class";
-            foreach (var res in Context.ClassLoaderFactory.GetBootstrapClassLoader().FindDelegateResources(classFile))
-                return res.Loader.DefineDynamic(name, res.URL);
-            foreach (var res in FindDelegateResources(classFile))
-                return res.Loader.DefineDynamic(name, res.URL);
-            foreach (var url in FindResources(classFile))
-                return DefineDynamic(name, url);
+            var loader = (RuntimeAssemblyClassLoader)null;
+            var url = (java.net.URL)null;
+
+            findingDynamic = true;
+            try
+            {
+                foreach (var res in Context.ClassLoaderFactory.GetBootstrapClassLoader().FindDelegateResources(classFile))
+                {
+                    loader = res.Loader;
+                    url = res.URL;
+                    break;
+                }
+
+                if (url == null)
+                {
+                    foreach (var res in FindDelegateResources(classFile))
+                    {
+                        loader = res.Loader;
+                        url = res.URL;
+                        break;
+                    }
+                }
+
+                if (url == null)
+                {
+                    foreach (var u in FindResources(classFile))
+                    {
+                        loader = this;
+                        url = u;
+                        break;
+                    }
+                }
+            }
+            finally
+            {
+                findingDynamic = false;
+            }
+
+            // defining the class happens outside of the search, so that it can load its own dynamic dependencies
+            if (url != null)
+                return loader.DefineDynamic(name, url);
 #endif
             return null;
         }
