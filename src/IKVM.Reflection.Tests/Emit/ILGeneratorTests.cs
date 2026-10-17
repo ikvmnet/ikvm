@@ -146,6 +146,43 @@ namespace IKVM.Reflection.Tests.Emit
         }
 
         /// <summary>
+        /// Checks that the <c>readonly.</c> prefix is written with its two byte encoding ahead of the <c>ldelema</c> it
+        /// applies to.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void CanEmitReadonlyPrefix(string tfm)
+        {
+            using var u = TestUniverse.Create(tfm);
+
+            var assembly = u.DefineAssembly();
+            var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
+            var type = module.DefineType("Type");
+            var method = type.DefineMethod("Exec", MethodAttributes.Public | MethodAttributes.Static, u.Import(typeof(object)), [u.Import(typeof(object[]))]);
+            var il = method.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldc_I4_0);
+            il.Emit(OpCodes.Readonly);
+            il.Emit(OpCodes.Ldelema, u.Import(typeof(object)));
+            il.Emit(OpCodes.Ldind_Ref);
+            il.Emit(OpCodes.Ret);
+            type.CreateType();
+            assembly.Save("Test.dll");
+            u.Verify("Test.dll");
+
+            OpCodes.Readonly.Name.Should().Be("readonly.");
+            OpCodes.Readonly.Size.Should().Be(2);
+
+            using var pe = new PEReader(File.OpenRead(Path.Combine(u.TempPath, "Test.dll")));
+            var md = pe.GetMetadataReader();
+            var body = pe.GetMethodBody(md.MethodDefinitions.Select(md.GetMethodDefinition).Single(i => md.GetString(i.Name) == "Exec").RelativeVirtualAddress);
+            var bytes = body.GetILBytes()!;
+            bytes.Take(4).Should().Equal(new byte[] { 0x02, 0x16, 0xFE, 0x1E });
+            bytes[4].Should().Be(0x8F, "ldelema follows the prefix");
+        }
+
+        /// <summary>
         /// Saves an assembly with a method that pushes a <see langword="null"/> argument and a zero function pointer and
         /// then emits the given <c>calli</c>.
         /// </summary>
