@@ -29,6 +29,8 @@ namespace IKVM.CoreLib.Modules
 
         public static int Compare(ModuleVersion x, ModuleVersion y) => x.CompareTo(y);
 
+        static readonly LexicographicListComparer<ModuleVersionComponent, IComparer<ModuleVersionComponent>, ImmutableArray<ModuleVersionComponent>> ComponentsComparer = new(Comparer<ModuleVersionComponent>.Default);
+
         /// <summary>
         /// Attempts to parse the specified version value.
         /// </summary>
@@ -294,7 +296,7 @@ namespace IKVM.CoreLib.Modules
         /// <returns></returns>
         readonly int CompareComponents(ImmutableArray<ModuleVersionComponent> x, ImmutableArray<ModuleVersionComponent> y)
         {
-            return LexicographicListComparer<ModuleVersionComponent, IComparer<ModuleVersionComponent>, ImmutableArray<ModuleVersionComponent>>.Default.Compare(x, y);
+            return ComponentsComparer.Compare(x, y);
         }
 
         /// <inheritdoc />
@@ -304,6 +306,10 @@ namespace IKVM.CoreLib.Modules
                 return +1;
             if (IsValid == false && other.IsValid)
                 return -1;
+
+            // invalid versions have no components, and are equal to each other
+            if (IsValid == false)
+                return 0;
 
             // initially compare sequence components
             int c = CompareComponents(_sequence, other._sequence);

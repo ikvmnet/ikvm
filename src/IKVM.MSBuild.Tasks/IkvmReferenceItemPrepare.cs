@@ -533,20 +533,20 @@
                 manifest.WriteLine("AssemblyFileVersion={0}", item.AssemblyFileVersion);
                 manifest.WriteLine("ClassLoader={0}", item.ClassLoader);
                 manifest.WriteLine("Debug={0}", Enum.GetName(typeof(IkvmReferenceItemDebug), item.Debug));
+                manifest.WriteLine("Optimize={0}", item.Optimize ? "true" : "false");
                 manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? await fileIdentityUtil.GetIdentityForFileAsync(item.KeyFile, Log, cancellationToken) : "");
                 manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
+                manifest.WriteLine("Static={0}", item.Static ? "true" : "false");
+                manifest.WriteLine("StrictFinalFieldSemantics={0}", item.StrictFinalFieldSemantics ? "true" : "false");
+                manifest.WriteLine("RemoveAssertions={0}", item.RemoveAssertions ? "true" : "false");
 
-                // each Compile item should be a jar or class file, or a directory of them
-                var compiles = new List<string>(16);
+                // each Compile item should be a jar or class file, or a directory of them, written in order since order is part of the identity
                 foreach (var path in item.Compile)
                     if (Directory.Exists(path))
-                        compiles.AddRange(await GetCompileDirectoryLinesAsync(path, cancellationToken));
+                        foreach (var line in await GetCompileDirectoryLinesAsync(path, cancellationToken))
+                            manifest.WriteLine(line);
                     else if (path.EndsWith(".jar") || path.EndsWith(".class"))
-                        compiles.Add(await GetCompileLine(item, path, cancellationToken));
-
-                // sort and write the compile lines
-                foreach (var c in compiles.OrderBy(i => i))
-                    manifest.WriteLine(c);
+                        manifest.WriteLine(await GetCompileLine(item, path, cancellationToken));
 
                 // gather reference lines
                 var references = new List<string>(16);
@@ -558,7 +558,7 @@
                 foreach (var reference in item.References)
                     references.Add(await GetReferenceLineAsync(item, reference, cycle, cancellationToken));
 
-                // sort and write the reference lines
+                // write the reference lines in the order they were given
                 foreach (var r in references.Distinct())
                     manifest.WriteLine(r);
 
@@ -609,21 +609,24 @@
 
         /// <summary>
         /// Writes a File entry for each file within the given directory, named by its path relative to the directory,
-        /// since the compiler names the classes and resources it finds there the same way.
+        /// since the compiler names the classes and resources it finds there the same way. The entries are sorted by
+        /// name, since the file system returns them in no particular order and each name occurs only once.
         /// </summary>
         /// <param name="path"></param>
         /// <param name="cancellationToken"></param>
-        async Task<string[]> GetCompileDirectoryLinesAsync(string path, CancellationToken cancellationToken)
+        async Task<IEnumerable<string>> GetCompileDirectoryLinesAsync(string path, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException($"'{nameof(path)}' cannot be null or whitespace.", nameof(path));
 
             var root = Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-            return await Task.WhenAll(Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories).Select(async file =>
+            var lines = await Task.WhenAll(Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories).Select(async file =>
             {
                 var name = file.Substring(root.Length).Replace(Path.DirectorySeparatorChar, '/');
                 return $"CompileDirectory={name}={await fileIdentityUtil.GetIdentityForFileAsync(file, Log, cancellationToken)}";
             }));
+
+            return lines.OrderBy(i => i, StringComparer.Ordinal);
         }
 
         /// <summary>

@@ -14,6 +14,8 @@ namespace IKVM.CoreLib.Modules
     internal readonly struct ModuleProvides : IComparable<ModuleProvides>
     {
 
+        static readonly LexicographicListComparer<string, StringComparer, ImmutableArray<string>> ProvidersComparer = new(StringComparer.Ordinal);
+
         readonly string _service;
         readonly ImmutableArray<string> _providers;
 
@@ -42,12 +44,12 @@ namespace IKVM.CoreLib.Modules
         public int CompareTo(ModuleProvides other)
         {
             // service
-            int c = _service.CompareTo(other._service);
+            int c = string.CompareOrdinal(_service, other._service);
             if (c != 0)
                 return c;
 
-            // targets
-            return LexicographicListComparer<string, StringComparer, ImmutableArray<string>>.Default.Compare(_providers, other._providers);
+            // providers, in the order they were declared
+            return ProvidersComparer.Compare(_providers, other._providers);
         }
 
         /// <inheritdoc />

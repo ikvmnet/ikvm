@@ -39,6 +39,7 @@
         <ItemGroup>
             <_IkvmCompilerArgs Remove="@(_IkvmCompilerArgs)" />
             <_IkvmCompilerArgs Include="-debug:%(IkvmReferenceItem.Debug)" Condition=" '%(IkvmReferenceItem.Debug)' != '' And '%(IkvmReferenceItem.Debug)' != 'none' " />
+            <_IkvmCompilerArgs Include="-optimize" Condition=" '%(IkvmReferenceItem.Optimize)' == 'true' " />
             <_IkvmCompilerArgs Include="-assembly:%(IkvmReferenceItem.AssemblyName)" />
             <_IkvmCompilerArgs Include="-version:%(IkvmReferenceItem.AssemblyVersion)" Condition=" '%(IkvmReferenceItem.AssemblyVersion)' != '' " />
             <_IkvmCompilerArgs Include="-fileversion:%(IkvmReferenceItem.AssemblyFileVersion)" Condition=" '%(IkvmReferenceItem.AssemblyFileVersion)' != '' " />
@@ -46,8 +47,8 @@
             <_IkvmCompilerArgs Include="-keyfile:%(IkvmReferenceItem.KeyFile)" Condition=" '%(IkvmReferenceItem.KeyFile)' != '' " />
             <_IkvmCompilerArgs Include="-delaysign:%(IkvmReferenceItem.DelaySign)" Condition=" '%(IkvmReferenceItem.DelaySign)' == 'true' " />
             <_IkvmCompilerArgs Include="-compressresources" />
-            <_IkvmCompilerArgs Include="-strictfinalfieldsemantics" Condition=" '$(StrictFinalFieldSemantics)' == 'true' " />
-            <_IkvmCompilerArgs Include="-removeassertions" Condition=" '$(RemoveAssertions)' == 'true' " />
+            <_IkvmCompilerArgs Include="-strictfinalfieldsemantics" Condition=" '%(IkvmReferenceItem.StrictFinalFieldSemantics)' == 'true' " />
+            <_IkvmCompilerArgs Include="-removeassertions" Condition=" '%(IkvmReferenceItem.RemoveAssertions)' == 'true' " />
             <_IkvmCompilerArgs Include="-target:library" />
             <_IkvmCompilerArgs Include="-nostdlib" />
             <_IkvmCompilerArgs Include="-static" Condition=" '%(IkvmReferenceItem.Static)' == 'true' " />
