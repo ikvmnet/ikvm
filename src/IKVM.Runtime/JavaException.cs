@@ -336,7 +336,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// The lowest class file version that can be loaded.
         /// </summary>
-        internal static readonly ClassFormatVersion MinSupportedVersion = new ClassFormatVersion(45, 3);
+        internal static readonly ClassFormatVersion MinSupportedVersion = new ClassFormatVersion(45, 0);
 
         /// <summary>
         /// The highest class file version that can be loaded.

@@ -960,6 +960,11 @@ namespace IKVM.Runtime
         public int MajorVersion => clazz.Version.Major;
 
         /// <summary>
+        /// Gets the minor version of the class.
+        /// </summary>
+        public int MinorVersion => clazz.Version.Minor;
+
+        /// <summary>
         /// Initiates linkage of this class file to the specified java type instance.
         /// </summary>
         /// <param name="thisType"></param>

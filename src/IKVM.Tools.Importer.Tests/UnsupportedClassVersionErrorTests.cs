@@ -13,13 +13,15 @@ namespace IKVM.Tools.Importer.Tests
     {
 
         [DataTestMethod]
+        [DataRow(45, 0, true)]
+        [DataRow(45, 2, true)]
         [DataRow(45, 3, true)]
         [DataRow(49, 0, true)]
         [DataRow(52, 0, true)]
-        [DataRow(45, 2, false)]
+        [DataRow(44, 0, false)]
         [DataRow(53, 0, false)]
         [DataRow(55, 0, false)]
-        public void IsSupportedShouldMatchJava8Range(int major, int minor, bool expected)
+        public void IsSupportedShouldMatchHotSpotRange(int major, int minor, bool expected)
         {
             UnsupportedClassVersionError.IsSupported(new ClassFormatVersion((ushort)major, (ushort)minor)).Should().Be(expected);
         }
@@ -48,7 +50,7 @@ namespace IKVM.Tools.Importer.Tests
         [TestMethod]
         public void MessageShouldNameSupportedMinimumForOldVersions()
         {
-            UnsupportedClassVersionError.FormatMessage(new ClassFormatVersion(45, 0)).Should().Be("Class file version 45.0 (Java 1.0) is not supported; IKVM supports class files from version 45.3 (Java 1.1) up to version 52.0 (Java 8)");
+            UnsupportedClassVersionError.FormatMessage(new ClassFormatVersion(44, 0)).Should().Be("Class file version 44.0 (unknown Java version) is not supported; IKVM supports class files from version 45.0 (Java 1.0) up to version 52.0 (Java 8)");
         }
 
         [TestMethod]
