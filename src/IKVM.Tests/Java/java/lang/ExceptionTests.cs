@@ -73,13 +73,13 @@ public final class CanGetStackTraceOfThrownExceptionFromDynamicCompilerTest {
 }
 """;
             var unit = new InMemoryCodeUnit("ikvm.tests.java.java.lang.CanGetStackTraceOfThrownExceptionFromDynamicCompilerTest", source);
-            var compiler = new InMemoryCompiler(new[] { unit });
+            var compiler = new InMemoryCompiler([unit]);
             compiler.Compile();
 
             // create an instance of the test class
             var clazz = compiler.GetClass("ikvm.tests.java.java.lang.CanGetStackTraceOfThrownExceptionFromDynamicCompilerTest");
             var ctor = clazz.getConstructor();
-            var test = (dynamic)ctor.newInstance(System.Array.Empty<object>());
+            var test = (dynamic)ctor.newInstance([]);
             test.main();
         }
 

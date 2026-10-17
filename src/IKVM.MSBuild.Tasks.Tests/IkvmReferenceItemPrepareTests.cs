@@ -444,7 +444,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t.Items = [i1];
             t.Execute().Should().BeTrue();
-            i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().NotBeUpperCased();
+            i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().BeLowerCased();
             i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().HaveLength(32);
         }
 
@@ -455,7 +455,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t.Items = [i1];
             t.Execute().Should().BeTrue();
-            i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().NotBeUpperCased();
+            i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().BeLowerCased();
             i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().HaveLength(32);
         }
 
@@ -466,7 +466,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t.Items = [i1];
             t.Execute().Should().BeTrue();
-            i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().NotBeUpperCased();
+            i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().BeLowerCased();
             i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().HaveLength(32);
         }
 

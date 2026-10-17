@@ -95,8 +95,8 @@ namespace IKVM.Tools.Runner.Importer
                 }
             }
 
-            if (options.Platform is not null)
-                w.WriteLine($"-platform {options.Platform.ToString().ToLowerInvariant()}");
+            if (options.Platform is IkvmImporterPlatform platform)
+                w.WriteLine($"-platform {platform.ToString().ToLowerInvariant()}");
 
             if (options.KeyFile is not null)
                 w.WriteLine($"-keyfile \"{options.KeyFile}\"");

@@ -22,7 +22,7 @@ namespace IKVM.Tests.Java.com.sun.management
         [TestMethod]
         public void CanGetAvailableProcessors()
         {
-            mbean.getAvailableProcessors().Should().BeGreaterOrEqualTo(1);
+            mbean.getAvailableProcessors().Should().BeGreaterThanOrEqualTo(1);
         }
 
         [TestMethod]
@@ -34,43 +34,43 @@ namespace IKVM.Tests.Java.com.sun.management
         [TestMethod]
         public void CanGetProcessCpuTime()
         {
-            mbean.getProcessCpuTime().Should().BeGreaterOrEqualTo(0);
+            mbean.getProcessCpuTime().Should().BeGreaterThanOrEqualTo(0);
         }
 
         [TestMethod]
         public void CanGetSystemLoadAverage()
         {
-            mbean.getProcessCpuLoad().Should().BeGreaterOrEqualTo(0);
+            mbean.getProcessCpuLoad().Should().BeGreaterThanOrEqualTo(0);
         }
 
         [TestMethod]
         public void CanGetTotalPhysicalMemorySize()
         {
-            mbean.getTotalPhysicalMemorySize().Should().BeGreaterOrEqualTo(0);
+            mbean.getTotalPhysicalMemorySize().Should().BeGreaterThanOrEqualTo(0);
         }
 
         [TestMethod]
         public void CanGetFreePhysicalMemorySize()
         {
-            mbean.getFreePhysicalMemorySize().Should().BeGreaterOrEqualTo(0);
+            mbean.getFreePhysicalMemorySize().Should().BeGreaterThanOrEqualTo(0);
         }
 
         [TestMethod]
         public void CanGetTotalSwapSpaceSize()
         {
-            mbean.getTotalSwapSpaceSize().Should().BeGreaterOrEqualTo(0);
+            mbean.getTotalSwapSpaceSize().Should().BeGreaterThanOrEqualTo(0);
         }
 
         [TestMethod]
         public void CanGetFreeSwapSpaceSize()
         {
-            mbean.getFreeSwapSpaceSize().Should().BeGreaterOrEqualTo(0);
+            mbean.getFreeSwapSpaceSize().Should().BeGreaterThanOrEqualTo(0);
         }
 
         [TestMethod]
         public void CanGetCommittedVirtualMemorySize()
         {
-            mbean.getCommittedVirtualMemorySize().Should().BeGreaterOrEqualTo(0);
+            mbean.getCommittedVirtualMemorySize().Should().BeGreaterThanOrEqualTo(0);
         }
 
     }

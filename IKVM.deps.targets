@@ -4,7 +4,7 @@
         <PackageReference Include="System.Collections.Immutable" Version="8.0.0" GeneratePathProperty="true" />
         <PackageReference Include="System.Memory" Version="4.6.3" GeneratePathProperty="true" />
         <PackageReference Include="System.Reflection.Metadata" Version="8.0.1" GeneratePathProperty="true" />
-        <PackageReference Include="System.Text.Json" Version="8.0.5" GeneratePathProperty="true" />
+        <PackageReference Include="System.Text.Json" Version="8.0.6" GeneratePathProperty="true" />
         <PackageReference Include="IKVM.ByteCode" Version="9.3.13" GeneratePathProperty="true" />
     </ItemGroup>
 
@@ -19,19 +19,19 @@
                 <PackageReference Include="System.IO.Compression.ZipFile" Version="4.3.0" />
                 <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
                 <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
-                <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+                <PackageReference Include="System.ValueTuple" Version="4.6.1" />
             </ItemGroup>
         </When>
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
             <ItemGroup>
-                <PackageReference Include="System.Data.Odbc" Version="8.0.0" />
+                <PackageReference Include="System.Data.Odbc" Version="8.0.1" />
                 <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="8.0.2" />
             </ItemGroup>
         </When>
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">
             <ItemGroup>
-                <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
-                <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.1" />
+                <PackageReference Include="System.Data.Odbc" Version="6.0.2" />
+                <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.2" />
             </ItemGroup>
         </When>
     </Choose>

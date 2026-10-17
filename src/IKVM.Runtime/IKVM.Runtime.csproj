@@ -6,7 +6,15 @@
         <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+        <PolyUseEmbeddedAttribute>true</PolyUseEmbeddedAttribute>
     </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Polyfill" Version="9.3.4">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.CoreLib\IKVM.CoreLib.csproj" />

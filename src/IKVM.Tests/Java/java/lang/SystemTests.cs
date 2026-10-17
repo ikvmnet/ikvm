@@ -42,7 +42,7 @@ namespace IKVM.Tests.Java.java.lang
             var startTime = global::java.lang.System.nanoTime();
             Thread.Sleep(TimeSpan.FromSeconds(1.1));
             var totalTime = global::java.lang.System.nanoTime() - startTime;
-            totalTime.Should().BeGreaterOrEqualTo(1000000000L);
+            totalTime.Should().BeGreaterThanOrEqualTo(1000000000L);
         }
 
     }
