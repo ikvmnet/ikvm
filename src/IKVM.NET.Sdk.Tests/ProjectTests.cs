@@ -147,7 +147,7 @@ namespace IKVM.NET.Sdk.Tests
 
         public TestContext TestContext { get; set; }
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow(EnvironmentPreference.Core, "net472", "win-x86", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Core, "net472", "win-x64", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Core, "net472", "win-arm64", "{0}.exe", "{0}.dll")]

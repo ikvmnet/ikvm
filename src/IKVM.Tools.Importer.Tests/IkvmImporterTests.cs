@@ -24,7 +24,7 @@ namespace IKVM.Tools.Importer.Tests
 
         static readonly string TESTBASE = Path.GetDirectoryName(typeof(IkvmImporterTests).Assembly.Location);
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow("net472", "net472", ".NETFramework", "4.7.2")]
         [DataRow("net472", "net481", ".NETFramework", "4.8.1")]
         [DataRow("net6.0", "net6.0", ".NET", "6.0")]
@@ -67,7 +67,7 @@ namespace IKVM.Tools.Importer.Tests
             new FileInfo(asm).Length.Should().BeGreaterThanOrEqualTo(128);
         }
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow("net472", "net472", ".NETFramework", "4.7.2")]
         [DataRow("net8.0", "net8.0", ".NET", "8.0")]
         public async Task DeterministicImportIsReproducible(string ikvmFramework, string targetFramework, string targetFrameworkIdentifier, string targetFrameworkVersion)

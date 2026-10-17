@@ -72,7 +72,7 @@ namespace IKVM.Tools.Tests.Runner.Diagnostics
             e.Location.EndColumn.Should().Be(4);
         }
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow("\"trace\"", IkvmToolDiagnosticEventLevel.Trace)]
         [DataRow("\"info\"", IkvmToolDiagnosticEventLevel.Info)]
         [DataRow("\"warning\"", IkvmToolDiagnosticEventLevel.Warning)]

@@ -67,7 +67,7 @@
     </PropertyGroup>
 
     <PropertyGroup Label="Build Info">
-        <LangVersion Condition=" '$(LangVersion)' == '' ">12.0</LangVersion>
+        <LangVersion Condition=" '$(LangVersion)' == '' ">14</LangVersion>
         <NoWarn>$(NoWarn);1591;1573;CS8002;NU5100;NU5118;NU5128;MSB3245;NETSDK1023;NETSDK1138</NoWarn>
         <AutoGenerateBindingRedirects Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</AutoGenerateBindingRedirects>
         <GenerateBindingRedirectsOutputType Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</GenerateBindingRedirectsOutputType>
@@ -102,7 +102,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="IKVM.Core.MSBuild" Version="0.1.106">
+        <PackageReference Include="IKVM.Core.MSBuild" Version="0.1.108">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
