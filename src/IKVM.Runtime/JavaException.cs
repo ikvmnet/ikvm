@@ -378,7 +378,7 @@ namespace IKVM.Runtime
         }
 
         /// <summary>
-        /// Formats the message describing why a class file of the given version cannot be loaded.
+        /// Formats the diagnostic message the importer reports when a class file of the given version cannot be compiled.
         /// </summary>
         /// <param name="version"></param>
         /// <returns></returns>
@@ -391,12 +391,27 @@ namespace IKVM.Runtime
         }
 
         /// <summary>
+        /// Formats the message of the exception thrown to Java code, which matches the message produced by HotSpot. HotSpot
+        /// uses the same wording for versions that are too old.
+        /// </summary>
+        /// <param name="version"></param>
+        /// <param name="className">The binary name of the class being defined, or <c>null</c> if it was not given.</param>
+        /// <returns></returns>
+        internal static string FormatJavaMessage(ClassFormatVersion version, string className)
+        {
+            if (className == null)
+                return $"Unsupported class file version {version}, this version of the Java Runtime only recognizes class file versions up to {MaxSupportedVersion}";
+            else
+                return $"{className.Replace('.', '/')} has been compiled by a more recent version of the Java Runtime (class file version {version}), this version of the Java Runtime only recognizes class file versions up to {MaxSupportedVersion}";
+        }
+
+        /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="version"></param>
-        /// <param name="className"></param>
+        /// <param name="className">The binary name of the class being defined, or <c>null</c> if it was not given.</param>
         internal UnsupportedClassVersionError(ClassFormatVersion version, string className = null) :
-            base(className != null ? className + ": " + FormatMessage(version) : FormatMessage(version))
+            base(FormatJavaMessage(version, className))
         {
             Version = version;
         }

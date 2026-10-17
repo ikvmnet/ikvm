@@ -52,11 +52,18 @@ namespace IKVM.Tools.Importer.Tests
         }
 
         [TestMethod]
-        public void ExceptionMessageShouldIncludeClassName()
+        public void ExceptionMessageShouldMatchHotSpot()
         {
             var e = new UnsupportedClassVersionError(new ClassFormatVersion(55, 0), "foo.Bar");
-            e.Message.Should().Be("foo.Bar: Class file version 55.0 (Java 11) is not supported; IKVM supports class files up to version 52.0 (Java 8)");
+            e.Message.Should().Be("foo/Bar has been compiled by a more recent version of the Java Runtime (class file version 55.0), this version of the Java Runtime only recognizes class file versions up to 52.0");
             e.Version.Should().Be(new ClassFormatVersion(55, 0));
+        }
+
+        [TestMethod]
+        public void ExceptionMessageWithoutClassNameShouldMatchHotSpot()
+        {
+            var e = new UnsupportedClassVersionError(new ClassFormatVersion(55, 0));
+            e.Message.Should().Be("Unsupported class file version 55.0, this version of the Java Runtime only recognizes class file versions up to 52.0");
         }
 
     }

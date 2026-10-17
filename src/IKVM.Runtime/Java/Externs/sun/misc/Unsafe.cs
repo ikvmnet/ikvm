@@ -1555,7 +1555,17 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 var tw = RuntimeJavaType.FromClass(hostClass);
                 var cl = tw.ClassLoader;
-                var cf = new IKVM.Runtime.ClassFile(JVM.Context, JVM.Context.Diagnostics, ReadClass(data), "<Unknown>", cl.ClassFileParseOptions, cpPatches);
+                var clazz = ReadClass(data);
+
+                // HotSpot parses anonymous classes without a name, so the error does not name the class
+                if (UnsupportedClassVersionError.IsSupported(clazz.Version) == false)
+                {
+                    var version = clazz.Version;
+                    clazz.Dispose();
+                    throw new UnsupportedClassVersionError(version);
+                }
+
+                var cf = new IKVM.Runtime.ClassFile(JVM.Context, JVM.Context.Diagnostics, clazz, "<Unknown>", cl.ClassFileParseOptions, cpPatches);
 
                 // if this happens, the OpenJDK is probably trying to load an OpenJDK class file as a resource,
                 // make sure the build process includes the original class file as a resource in that case
@@ -1590,7 +1600,7 @@ namespace IKVM.Java.Externs.sun.misc
             }
             catch (UnsupportedClassVersionException e)
             {
-                throw new global::java.lang.UnsupportedClassVersionError(UnsupportedClassVersionError.FormatMessage(e.Version));
+                throw new global::java.lang.UnsupportedClassVersionError(UnsupportedClassVersionError.FormatJavaMessage(e.Version, null));
             }
             catch (ByteCodeException e)
             {

@@ -63,7 +63,7 @@ namespace IKVM.Java.Externs.java.lang
 #else
             var buf = new byte[len];
             Array.Copy(b, off, buf, 0, len);
-            return DefineClass(self, name, ReadClass(buf), pd, null);
+            return DefineClass(self, name, ReadClass(buf, name), pd, null);
 #endif
         }
 
@@ -86,7 +86,7 @@ namespace IKVM.Java.Externs.java.lang
 #else
             var buf = new byte[len];
             Array.Copy(b, off, buf, 0, len);
-            return DefineClass(self, name, ReadClass(buf), pd, source);
+            return DefineClass(self, name, ReadClass(buf, name), pd, source);
 #endif
         }
 
@@ -108,7 +108,7 @@ namespace IKVM.Java.Externs.java.lang
 #else
             var buf = new byte[bb.remaining()];
             bb.get(buf);
-            return DefineClass(self, name, ReadClass(buf), pd, source);
+            return DefineClass(self, name, ReadClass(buf, name), pd, source);
 #endif
         }
 
@@ -118,8 +118,9 @@ namespace IKVM.Java.Externs.java.lang
         /// Attempts to read the class, handling exceptions.
         /// </summary>
         /// <param name="buffer"></param>
+        /// <param name="name"></param>
         /// <returns></returns>
-        static IKVM.ByteCode.Decoding.ClassFile ReadClass(byte[] buffer)
+        static IKVM.ByteCode.Decoding.ClassFile ReadClass(byte[] buffer, string name)
         {
             try
             {
@@ -131,7 +132,7 @@ namespace IKVM.Java.Externs.java.lang
             }
             catch (UnsupportedClassVersionException e)
             {
-                throw new global::java.lang.UnsupportedClassVersionError(UnsupportedClassVersionError.FormatMessage(e.Version));
+                throw new global::java.lang.UnsupportedClassVersionError(UnsupportedClassVersionError.FormatJavaMessage(e.Version, name));
             }
             catch (ByteCodeException e)
             {
