@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -25,54 +25,64 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-using IKVM.Reflection.Metadata;
-
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// Represents an assembly read from metadata, consisting of a manifest module and any other modules listed in its
+    /// File table.
+    /// </summary>
     sealed class AssemblyReader : Assembly
     {
 
-        const int ContainsNoMetaData = 0x0001;
+        readonly string _location;
+        readonly ModuleReader _manifestModule;
 
-        readonly string location;
-        readonly ModuleReader manifestModule;
-        readonly Module[] externalModules;
+        /// <summary>
+        /// The modules listed in the manifest's File table, indexed by row, loaded on demand.
+        /// </summary>
+        readonly Module[] _externalModules;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="location"></param>
-        /// <param name="manifestModule"></param>
+        /// <param name="location">The path the assembly was loaded from, or <see langword="null"/> if it was not loaded from a file.</param>
+        /// <param name="manifestModule">The module that contains the assembly manifest.</param>
         internal AssemblyReader(string location, ModuleReader manifestModule) :
             base(manifestModule.Universe)
         {
-            this.location = location;
-            this.manifestModule = manifestModule;
-            externalModules = new Module[manifestModule.FileTable.records.Length];
+            _location = location;
+            _manifestModule = manifestModule;
+            _externalModules = new Module[manifestModule.FileCount];
         }
 
-        public override string Location
-        {
-            get { return location ?? ""; }
-        }
+        /// <summary>
+        /// Gets the full path of the file that contains the manifest, or an empty string if the assembly was not loaded
+        /// from a file.
+        /// </summary>
+        public override string Location => _location ?? "";
 
+        /// <summary>
+        /// Gets an <see cref="AssemblyName"/> for this assembly, built from the manifest's Assembly table row and the
+        /// image's PE kind and machine.
+        /// </summary>
+        /// <returns>An object that contains the fully parsed display name for this assembly.</returns>
         public override AssemblyName GetName()
         {
-            return GetNameImpl(ref manifestModule.AssemblyTable.records[0]);
-        }
+            var definition = _manifestModule.Metadata.GetAssemblyDefinition();
+            var flags = (int)definition.Flags;
 
-        AssemblyName GetNameImpl(ref AssemblyTable.Record rec)
-        {
-            var name = new AssemblyName();
-            name.Name = manifestModule.GetString(rec.Name);
-            name.Version = new Version(rec.MajorVersion, rec.MinorVersion, rec.BuildNumber, rec.RevisionNumber);
-            name.SetPublicKey(rec.PublicKey.IsNil == false ? manifestModule.GetBlobCopy(rec.PublicKey) : Array.Empty<byte>());
-            name.CultureName = rec.Culture.IsNil == false ? manifestModule.GetString(rec.Culture) : "";
-            name.HashAlgorithm = (AssemblyHashAlgorithm)rec.HashAlgId;
+            var name = new AssemblyName
+            {
+                Name = _manifestModule.GetString(definition.Name),
+                Version = definition.Version
+            };
+            name.SetPublicKey(definition.PublicKey.IsNil == false ? _manifestModule.GetBlobCopy(definition.PublicKey) : Array.Empty<byte>());
+            name.CultureName = definition.Culture.IsNil == false ? _manifestModule.GetString(definition.Culture) : "";
+            name.HashAlgorithm = (AssemblyHashAlgorithm)(int)definition.HashAlgorithm;
             name.CodeBase = CodeBase;
 
-            manifestModule.GetPEKind(out var peKind, out var machine);
+            _manifestModule.GetPEKind(out var peKind, out var machine);
 
             switch (machine)
             {
@@ -80,8 +90,9 @@ namespace IKVM.Reflection.Reader
                     // FXBUG we copy the .NET bug that Preferred32Bit implies x86
                     if ((peKind & (PortableExecutableKinds.Required32Bit | PortableExecutableKinds.Preferred32Bit)) != 0)
                         name.ProcessorArchitecture = ProcessorArchitecture.X86;
-                    else if ((rec.Flags & 0x70) == 0x70)
-                        name.ProcessorArchitecture = ProcessorArchitecture.None; // it's a reference assembly
+                    // it's a reference assembly
+                    else if ((flags & 0x70) == 0x70)
+                        name.ProcessorArchitecture = ProcessorArchitecture.None;
                     else
                         name.ProcessorArchitecture = ProcessorArchitecture.MSIL;
                     break;
@@ -99,14 +110,15 @@ namespace IKVM.Reflection.Reader
                     break;
             }
 
-            name.RawFlags = (AssemblyNameFlags)rec.Flags;
+            name.RawFlags = (AssemblyNameFlags)flags;
             return name;
         }
 
+        /// <inheritdoc />
         public override Type[] GetTypes()
         {
-            if (externalModules.Length == 0)
-                return manifestModule.GetTypes();
+            if (_externalModules.Length == 0)
+                return _manifestModule.GetTypes();
 
             var list = new List<Type>();
             foreach (var module in GetModules(false))
@@ -115,63 +127,76 @@ namespace IKVM.Reflection.Reader
             return list.ToArray();
         }
 
+        /// <summary>
+        /// Finds a type by name in the manifest module, then in each other module that contains metadata.
+        /// </summary>
+        /// <param name="typeName">The name of the type to find.</param>
+        /// <returns>The type, or <see langword="null"/> if no module defines it.</returns>
         internal override Type FindType(TypeName typeName)
         {
-            var type = manifestModule.FindType(typeName);
-            for (int i = 0; type == null && i < externalModules.Length; i++)
-                if ((manifestModule.FileTable.records[i].Flags & ContainsNoMetaData) == 0)
+            var type = _manifestModule.FindType(typeName);
+            for (var i = 0; type == null && i < _externalModules.Length; i++)
+                if (_manifestModule.FileContainsMetadata(i))
                     type = GetModule(i).FindType(typeName);
 
             return type;
         }
 
+        /// <summary>
+        /// Finds a type by case-insensitive name in the manifest module, then in each other module that contains
+        /// metadata.
+        /// </summary>
+        /// <param name="lowerCaseName">The lower-case name of the type to find.</param>
+        /// <returns>The type, or <see langword="null"/> if no module defines it.</returns>
         internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
         {
-            var type = manifestModule.FindTypeIgnoreCase(lowerCaseName);
-            for (int i = 0; type == null && i < externalModules.Length; i++)
-                if ((manifestModule.FileTable.records[i].Flags & ContainsNoMetaData) == 0)
+            var type = _manifestModule.FindTypeIgnoreCase(lowerCaseName);
+            for (var i = 0; type == null && i < _externalModules.Length; i++)
+                if (_manifestModule.FileContainsMetadata(i))
                     type = GetModule(i).FindTypeIgnoreCase(lowerCaseName);
 
             return type;
         }
 
-        public override string ImageRuntimeVersion
-        {
-            get { return manifestModule.__ImageRuntimeVersion; }
-        }
+        /// <inheritdoc />
+        public override string ImageRuntimeVersion => _manifestModule.__ImageRuntimeVersion;
 
-        public override Module ManifestModule
-        {
-            get { return manifestModule; }
-        }
+        /// <inheritdoc />
+        public override Module ManifestModule => _manifestModule;
 
+        /// <summary>
+        /// Gets all the loaded modules that are part of this assembly: the manifest module and any other modules that
+        /// have been loaded so far.
+        /// </summary>
+        /// <param name="getResourceModules">Ignored; loaded resource modules are always included.</param>
+        /// <returns>An array of modules.</returns>
         public override Module[] GetLoadedModules(bool getResourceModules)
         {
-            List<Module> list = new List<Module>();
-            list.Add(manifestModule);
-            foreach (Module m in externalModules)
-            {
-                if (m != null)
-                {
-                    list.Add(m);
-                }
-            }
+            List<Module> list = [_manifestModule];
+            foreach (var module in _externalModules)
+                if (module != null && (getResourceModules || module.IsResource() == false))
+                    list.Add(module);
+
             return list.ToArray();
         }
 
+        /// <summary>
+        /// Gets all the modules that are part of this assembly, loading any that have not been loaded yet.
+        /// </summary>
+        /// <param name="getResourceModules"><see langword="true"/> to include resource modules; otherwise, <see langword="false"/>.</param>
+        /// <returns>An array of modules.</returns>
         public override Module[] GetModules(bool getResourceModules)
         {
-            if (externalModules.Length == 0)
+            if (_externalModules.Length == 0)
             {
-                return new Module[] { manifestModule };
+                return new Module[] { _manifestModule };
             }
             else
             {
-                List<Module> list = new List<Module>();
-                list.Add(manifestModule);
-                for (int i = 0; i < manifestModule.FileTable.records.Length; i++)
+                List<Module> list = [_manifestModule];
+                for (var i = 0; i < _manifestModule.FileCount; i++)
                 {
-                    if (getResourceModules || (manifestModule.FileTable.records[i].Flags & ContainsNoMetaData) == 0)
+                    if (getResourceModules || _manifestModule.FileContainsMetadata(i))
                     {
                         list.Add(GetModule(i));
                     }
@@ -180,10 +205,15 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <summary>
+        /// Gets the specified module in this assembly.
+        /// </summary>
+        /// <param name="name">The name of the module requested, compared case-insensitively.</param>
+        /// <returns>The module being requested, or <see langword="null"/> if the module is not found.</returns>
         public override Module GetModule(string name)
         {
-            if (name.Equals(manifestModule.ScopeName, StringComparison.OrdinalIgnoreCase))
-                return manifestModule;
+            if (name.Equals(_manifestModule.ScopeName, StringComparison.OrdinalIgnoreCase))
+                return _manifestModule;
 
             var index = GetModuleIndex(name);
             if (index != -1)
@@ -192,112 +222,85 @@ namespace IKVM.Reflection.Reader
             return null;
         }
 
+        /// <summary>
+        /// Finds the File table row of a module by file name.
+        /// </summary>
+        /// <param name="name">The file name of the module, compared case-insensitively.</param>
+        /// <returns>The zero-based index of the module in the File table, or -1 if it is not listed.</returns>
         int GetModuleIndex(string name)
         {
-            for (int i = 0; i < manifestModule.FileTable.records.Length; i++)
-                if (name.Equals(manifestModule.GetString(manifestModule.FileTable.records[i].Name), StringComparison.OrdinalIgnoreCase))
+            for (var i = 0; i < _manifestModule.FileCount; i++)
+                if (name.Equals(_manifestModule.GetFileName(i), StringComparison.OrdinalIgnoreCase))
                     return i;
 
             return -1;
         }
 
+        /// <summary>
+        /// Gets the module listed at a File table index, loading it on first use.
+        /// </summary>
+        /// <param name="index">The zero-based index of the module in the File table.</param>
+        /// <returns>The module.</returns>
         Module GetModule(int index)
         {
-            if (externalModules[index] != null)
-                return externalModules[index];
+            if (_externalModules[index] != null)
+                return _externalModules[index];
 
-            return LoadModule(index, null, manifestModule.GetString(manifestModule.FileTable.records[index].Name));
+            return LoadModule(index);
         }
 
-        private Module LoadModule(int index, byte[] rawModule, string name)
+        /// <summary>
+        /// Loads the module stored in the file at the specified index of the File table, from the directory of the
+        /// manifest module.
+        /// </summary>
+        /// <param name="index">The index of the file in the File table.</param>
+        /// <returns>The module, a <see cref="ResourceModule"/> for a file without metadata, or a <see cref="MissingModule"/> when the file does not exist and missing members are resolved.</returns>
+        /// <exception cref="FileNotFoundException">The file does not exist and missing members are not resolved.</exception>
+        Module LoadModule(int index)
         {
-            var location = name == null ? null : Path.Combine(Path.GetDirectoryName(this.location), name);
-            if ((manifestModule.FileTable.records[index].Flags & ContainsNoMetaData) != 0)
+            var location = Path.Combine(Path.GetDirectoryName(_location), _manifestModule.GetFileName(index));
+            if (_manifestModule.FileContainsMetadata(index) == false)
+                return _externalModules[index] = new ResourceModule(_manifestModule, index, location);
+
+            byte[] image;
+            try
             {
-                return externalModules[index] = new ResourceModule(manifestModule, index, location);
+                image = File.ReadAllBytes(location);
             }
-            else
+            catch (FileNotFoundException) when (Universe.MissingMemberResolution)
             {
-                if (rawModule == null)
-                {
-                    try
-                    {
-                        rawModule = File.ReadAllBytes(location);
-                    }
-                    catch (FileNotFoundException)
-                    {
-                        if (resolvers != null)
-                        {
-                            var arg = new ResolveEventArgs(name, this);
-                            foreach (var resolver in resolvers)
-                            {
-                                var module = resolver(this, arg);
-                                if (module != null)
-                                    return module;
-                            }
-                        }
-
-                        if (Universe.MissingMemberResolution)
-                            return externalModules[index] = new MissingModule(this, index);
-
-                        throw;
-                    }
-                }
-                return externalModules[index] = new ModuleReader(this, manifestModule.Universe, new MemoryStream(rawModule), location, false);
+                return _externalModules[index] = new MissingModule(this, index);
             }
+
+            return _externalModules[index] = new ModuleReader(this, _manifestModule.Universe, new MemoryStream(image), location, false);
         }
 
-        public override Module LoadModule(string moduleName, byte[] rawModule)
-        {
-            int index = GetModuleIndex(moduleName);
-            if (index == -1)
-                throw new ArgumentException();
+        public override MethodInfo EntryPoint => _manifestModule.GetEntryPoint();
 
-            if (externalModules[index] != null)
-                return externalModules[index];
+        /// <inheritdoc />
+        public override ManifestResourceInfo GetManifestResourceInfo(string resourceName) => _manifestModule.GetManifestResourceInfo(resourceName);
 
-            return LoadModule(index, rawModule, null);
-        }
+        /// <inheritdoc />
+        public override Stream GetManifestResourceStream(string resourceName) => _manifestModule.GetManifestResourceStream(resourceName);
 
-        public override MethodInfo EntryPoint
-        {
-            get { return manifestModule.GetEntryPoint(); }
-        }
+        /// <inheritdoc />
+        public override AssemblyName[] GetReferencedAssemblies() => _manifestModule.__GetReferencedAssemblies();
 
-        public override string[] GetManifestResourceNames()
-        {
-            return manifestModule.GetManifestResourceNames();
-        }
+        /// <summary>
+        /// Gets the simple name of the assembly from the manifest's Assembly table row, without building a full
+        /// <see cref="AssemblyName"/>.
+        /// </summary>
+        internal string Name => _manifestModule.GetString(_manifestModule.Metadata.GetAssemblyDefinition().Name);
 
-        public override ManifestResourceInfo GetManifestResourceInfo(string resourceName)
-        {
-            return manifestModule.GetManifestResourceInfo(resourceName);
-        }
+        /// <summary>
+        /// Gets the custom attributes applied to the assembly, which are those whose parent is the Assembly table row
+        /// (token 0x20000001).
+        /// </summary>
+        /// <param name="attributeType">The attribute type to filter by, or <see langword="null"/> for all attributes.</param>
+        /// <returns>The matching custom attributes.</returns>
+        internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType) =>
+            CustomAttributeData.GetCustomAttributesImpl(null, _manifestModule, 0x20000001, attributeType) ?? CustomAttributeData.EmptyList;
 
-        public override Stream GetManifestResourceStream(string resourceName)
-        {
-            return manifestModule.GetManifestResourceStream(resourceName);
-        }
-
-        public override AssemblyName[] GetReferencedAssemblies()
-        {
-            return manifestModule.__GetReferencedAssemblies();
-        }
-
-        protected override AssemblyNameFlags GetAssemblyFlags()
-        {
-            return (AssemblyNameFlags)manifestModule.AssemblyTable.records[0].Flags;
-        }
-
-        internal string Name
-        {
-            get { return manifestModule.GetString(manifestModule.AssemblyTable.records[0].Name); }
-        }
-
-        internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-        {
-            return CustomAttributeData.GetCustomAttributesImpl(null, manifestModule, 0x20000001, attributeType) ?? CustomAttributeData.EmptyList;
-        }
     }
 
 }

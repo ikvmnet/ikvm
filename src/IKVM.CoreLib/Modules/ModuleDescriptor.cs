@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -662,7 +661,7 @@ namespace IKVM.CoreLib.Modules
         /// <returns></returns>
         public readonly int CompareTo(ModuleDescriptor other)
         {
-            int c = _name.CompareTo(other._name);
+            int c = string.CompareOrdinal(_name, other._name);
             if (c != 0)
                 return c;
 
@@ -674,31 +673,31 @@ namespace IKVM.CoreLib.Modules
             if (c != 0)
                 return c;
 
-            c = CompareTo(_requires, other._requires);
+            c = CompareTo(_requires, other._requires, Comparer<ModuleRequires>.Default);
             if (c != 0)
                 return c;
 
-            c = CompareTo(_packages, other._packages);
+            c = CompareTo(_packages, other._packages, StringComparer.Ordinal);
             if (c != 0)
                 return c;
 
-            c = CompareTo(_exports, other._exports);
+            c = CompareTo(_exports, other._exports, Comparer<ModuleExports>.Default);
             if (c != 0)
                 return c;
 
-            c = CompareTo(_opens, other._opens);
+            c = CompareTo(_opens, other._opens, Comparer<ModuleOpens>.Default);
             if (c != 0)
                 return c;
 
-            c = CompareTo(_uses, other._uses);
+            c = CompareTo(_uses, other._uses, StringComparer.Ordinal);
             if (c != 0)
                 return c;
 
-            c = CompareTo(_provides, other._provides);
+            c = CompareTo(_provides, other._provides, Comparer<ModuleProvides>.Default);
             if (c != 0)
                 return c;
 
-            c = Comparer.Default.Compare(_mainClass, other._mainClass);
+            c = string.CompareOrdinal(_mainClass, other._mainClass);
             if (c != 0)
                 return c;
 
@@ -706,19 +705,20 @@ namespace IKVM.CoreLib.Modules
         }
 
         /// <summary>
-        /// Lexicographically compares the two sets. 
+        /// Lexicographically compares the two sets, each sorted by the given comparer.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="s1"></param>
         /// <param name="s2"></param>
+        /// <param name="comparer"></param>
         /// <returns></returns>
-        static int CompareTo<T>(ImmutableHashSet<T> s1, ImmutableHashSet<T> s2)
+        static int CompareTo<T>(ImmutableHashSet<T> s1, ImmutableHashSet<T> s2, IComparer<T> comparer)
         {
             var a1 = s1.ToArray();
             var a2 = s2.ToArray();
-            Array.Sort(a1);
-            Array.Sort(a2);
-            return LexicographicListComparer<T, IComparer<T>, T[]>.Default.Compare(a1, a2);
+            Array.Sort(a1, comparer);
+            Array.Sort(a2, comparer);
+            return new LexicographicListComparer<T, IComparer<T>, T[]>(comparer).Compare(a1, a2);
         }
 
         /// <inheritdoc />
@@ -757,9 +757,9 @@ namespace IKVM.CoreLib.Modules
             hc.AddRange(_requires);
             hc.AddRange(_exports);
             hc.AddRange(_opens);
-            hc.AddRange(_uses);
+            hc.AddRange(_uses, StringComparer.Ordinal);
             hc.AddRange(_provides);
-            hc.AddRange(_packages);
+            hc.AddRange(_packages, StringComparer.Ordinal);
             hc.Add(_mainClass);
             return hc.ToHashCode();
         }

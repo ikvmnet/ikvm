@@ -68,6 +68,11 @@ namespace IKVM.MSBuild.Tasks
         public int Timeout { get; set; } = System.Threading.Timeout.Infinite;
 
         /// <summary>
+        /// Tools run long, so the node is yielded to other work immediately.
+        /// </summary>
+        protected override TimeSpan YieldDelay => TimeSpan.Zero;
+
+        /// <summary>
         /// Executes the task.
         /// </summary>
         /// <returns></returns>

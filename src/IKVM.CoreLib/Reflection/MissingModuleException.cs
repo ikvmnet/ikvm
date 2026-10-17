@@ -26,35 +26,22 @@ using System;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// The exception that is thrown when an operation is attempted on a <see cref="MissingModule"/> that requires
+    /// information the missing module cannot provide.
+    /// </summary>
     [Serializable]
-    internal sealed class MissingModuleException : InvalidOperationException
+    sealed class MissingModuleException : InvalidOperationException
     {
-
-        [NonSerialized]
-        readonly MissingModule module;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
+        /// <param name="module">The missing module on which the operation was attempted.</param>
         internal MissingModuleException(MissingModule module) :
             base("Module from missing assembly '" + module.Assembly.FullName + "' does not support the requested operation.")
         {
-            this.module = module;
         }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="info"></param>
-        /// <param name="context"></param>
-        MissingModuleException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) :
-            base(info, context)
-        {
-
-        }
-
-        public Module Module => module;
 
     }
 

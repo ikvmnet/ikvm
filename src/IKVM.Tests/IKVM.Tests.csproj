@@ -15,11 +15,13 @@
     <ItemGroup>
         <None Remove="**\*.java" />
         <None Remove="Runtime\Vfs\VfsTestResource.txt" />
+        <None Remove="Runtime\CompilerSnapshots\*.il" />
     </ItemGroup>
 
     <ItemGroup>
         <EmbeddedResource Include="**\*.java" />
         <EmbeddedResource Include="Runtime\Vfs\VfsTestResource.txt" />
+        <EmbeddedResource Include="Runtime\CompilerSnapshots\*.il" LogicalName="CompilerSnapshots/%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>

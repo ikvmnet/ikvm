@@ -9,6 +9,7 @@
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.CoreLib.Tests" />
         <InternalsVisibleTo Include="IKVM.Runtime" />
+        <InternalsVisibleTo Include="IKVM.Tests" />
         <InternalsVisibleTo Include="IKVM.Tools.Core" />
         <InternalsVisibleTo Include="IKVM.Tools.Importer" />
         <InternalsVisibleTo Include="IKVM.Tools.Importer.Tests" />
@@ -23,7 +24,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="IKVM.ByteCode" Version="9.3.11" />
         <PackageReference Include="IKVM.ByteCode" Version="9.3.13" />
         <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />

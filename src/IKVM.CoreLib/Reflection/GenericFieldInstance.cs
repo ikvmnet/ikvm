@@ -24,6 +24,9 @@
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Represents a field of a constructed generic type, wrapping the field of the generic type definition.
+    /// </summary>
     sealed class GenericFieldInstance : FieldInfo
     {
 
@@ -33,89 +36,65 @@ namespace IKVM.Reflection
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="declaringType"></param>
-        /// <param name="field"></param>
+        /// <param name="declaringType">The constructed generic type that declares the field.</param>
+        /// <param name="field">The field of the generic type definition.</param>
         internal GenericFieldInstance(Type declaringType, FieldInfo field)
         {
-            this._declaringType = declaringType;
-            this._field = field;
+            _declaringType = declaringType;
+            _field = field;
         }
 
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
             var other = obj as GenericFieldInstance;
             return other != null && other._declaringType.Equals(_declaringType) && other._field.Equals(_field);
         }
 
-        public override int GetHashCode()
-        {
-            return _declaringType.GetHashCode() * 3 ^ _field.GetHashCode();
-        }
+        /// <inheritdoc />
+        public override int GetHashCode() => _declaringType.GetHashCode() * 3 ^ _field.GetHashCode();
 
-        public override FieldAttributes Attributes
-        {
-            get { return _field.Attributes; }
-        }
+        /// <inheritdoc />
+        public override FieldAttributes Attributes => _field.Attributes;
 
-        public override string Name
-        {
-            get { return _field.Name; }
-        }
+        /// <inheritdoc />
+        public override string Name => _field.Name;
 
-        public override Type DeclaringType
-        {
-            get { return _declaringType; }
-        }
+        /// <inheritdoc />
+        public override Type DeclaringType => _declaringType;
 
-        public override Module Module
-        {
-            get { return _declaringType.Module; }
-        }
+        /// <inheritdoc />
+        public override Module Module => _declaringType.Module;
 
-        public override int MetadataToken
-        {
-            get { return _field.MetadataToken; }
-        }
+        /// <inheritdoc />
+        public override int MetadataToken => _field.MetadataToken;
 
-        public override object GetRawConstantValue()
-        {
-            return _field.GetRawConstantValue();
-        }
+        /// <inheritdoc />
+        public override object GetRawConstantValue() => _field.GetRawConstantValue();
 
-        public override bool __TryGetFieldOffset(out int offset)
-        {
-            return _field.__TryGetFieldOffset(out offset);
-        }
+        /// <inheritdoc />
+        public override bool __TryGetFieldOffset(out int offset) => _field.__TryGetFieldOffset(out offset);
 
-        public override FieldInfo __GetFieldOnTypeDefinition()
-        {
-            return _field;
-        }
+        /// <summary>
+        /// Gets the signature of the field, with the generic type parameters replaced by the type arguments of the declaring type.
+        /// </summary>
+        internal override FieldSignature FieldSignature => _field.FieldSignature.ExpandTypeParameters(_declaringType);
 
-        internal override FieldSignature FieldSignature
-        {
-            get { return _field.FieldSignature.ExpandTypeParameters(_declaringType); }
-        }
+        /// <summary>
+        /// Imports the field into <paramref name="module"/> as a MemberRef on the constructed declaring type.
+        /// </summary>
+        /// <param name="module">The module to import the field into.</param>
+        /// <returns>The metadata token of the field reference in <paramref name="module"/>.</returns>
+        internal override int ImportTo(Emit.ModuleBuilder module) => module.ImportMethodOrField(_declaringType, _field.Name, _field.FieldSignature);
 
-        internal override int ImportTo(Emit.ModuleBuilder module)
-        {
-            return module.ImportMethodOrField(_declaringType, _field.Name, _field.FieldSignature);
-        }
+        /// <inheritdoc />
+        internal override FieldInfo BindTypeParameters(Type type) => new GenericFieldInstance(_declaringType.BindTypeParameters(type), _field);
 
-        internal override FieldInfo BindTypeParameters(Type type)
-        {
-            return new GenericFieldInstance(_declaringType.BindTypeParameters(type), _field);
-        }
+        /// <inheritdoc />
+        internal override int GetCurrentToken() => _field.GetCurrentToken();
 
-        internal override int GetCurrentToken()
-        {
-            return _field.GetCurrentToken();
-        }
-
-        internal override bool IsBaked
-        {
-            get { return _field.IsBaked; }
-        }
+        /// <inheritdoc />
+        internal override bool IsBaked => _field.IsBaked;
 
     }
 

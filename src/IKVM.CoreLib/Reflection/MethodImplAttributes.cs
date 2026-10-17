@@ -26,29 +26,94 @@ using System;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Specifies flags for the attributes of a method implementation.
+    /// </summary>
     [Flags]
-    internal enum MethodImplAttributes
-	{
+    enum MethodImplAttributes
+    {
 
-		CodeTypeMask		= 0x0003,
-		IL					= 0x0000,
-		Native				= 0x0001,
-		OPTIL				= 0x0002,
-		Runtime				= 0x0003,
-		ManagedMask			= 0x0004,
-		Unmanaged			= 0x0004,
-		Managed				= 0x0000,
+        /// <summary>
+        /// Specifies flags about code type.
+        /// </summary>
+        CodeTypeMask = 0x0003,
 
-		ForwardRef			= 0x0010,
-		PreserveSig			= 0x0080,
-		InternalCall		= 0x1000,
-		Synchronized		= 0x0020,
-		NoInlining			= 0x0008,
-		NoOptimization		= 0x0040,
-		AggressiveInlining  = 0x0100,
+        /// <summary>
+        /// Specifies that the method implementation is in Microsoft intermediate language (MSIL).
+        /// </summary>
+        IL = 0x0000,
 
-		MaxMethodImplVal	= 0xffff,
+        /// <summary>
+        /// Specifies that the method implementation is native.
+        /// </summary>
+        Native = 0x0001,
 
-	}
+        /// <summary>
+        /// Specifies that the method implementation is in Optimized Intermediate Language (OPTIL).
+        /// </summary>
+        OPTIL = 0x0002,
+
+        /// <summary>
+        /// Specifies that the method implementation is provided by the runtime.
+        /// </summary>
+        Runtime = 0x0003,
+
+        /// <summary>
+        /// Specifies whether the method is implemented in managed or unmanaged code.
+        /// </summary>
+        ManagedMask = 0x0004,
+
+        /// <summary>
+        /// Specifies that the method is implemented in unmanaged code.
+        /// </summary>
+        Unmanaged = 0x0004,
+
+        /// <summary>
+        /// Specifies that the method is implemented in managed code.
+        /// </summary>
+        Managed = 0x0000,
+
+        /// <summary>
+        /// Specifies that the method is not defined.
+        /// </summary>
+        ForwardRef = 0x0010,
+
+        /// <summary>
+        /// Specifies that the method signature is exported exactly as declared.
+        /// </summary>
+        PreserveSig = 0x0080,
+
+        /// <summary>
+        /// Specifies an internal call.
+        /// </summary>
+        InternalCall = 0x1000,
+
+        /// <summary>
+        /// Specifies that the method is single-threaded through the body.
+        /// </summary>
+        Synchronized = 0x0020,
+
+        /// <summary>
+        /// Specifies that the method cannot be inlined.
+        /// </summary>
+        NoInlining = 0x0008,
+
+        /// <summary>
+        /// Specifies that the method is not optimized by the just-in-time (JIT) compiler or by native code generation
+        /// when debugging possible code generation problems.
+        /// </summary>
+        NoOptimization = 0x0040,
+
+        /// <summary>
+        /// Specifies that the method should be inlined wherever possible.
+        /// </summary>
+        AggressiveInlining = 0x0100,
+
+        /// <summary>
+        /// Specifies a range check value.
+        /// </summary>
+        MaxMethodImplVal = 0xffff,
+
+    }
 
 }

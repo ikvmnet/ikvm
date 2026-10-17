@@ -4,127 +4,130 @@ using System.Diagnostics.SymbolStore;
 namespace IKVM.Reflection.Emit
 {
 
-    internal sealed class LocalSymInfo
+    /// <summary>
+    /// Tracks the debugging information of the local variables, and the namespaces in use, within one lexical scope of
+    /// a method body, and emits it to a symbol writer.
+    /// </summary>
+    sealed class LocalSymInfo
     {
 
-        // This class tracks the local variable's debugging information
-        // and namespace information with a given active lexical scope.
-
         #region Internal Data Members
-        internal string[] m_strName = null!;  // All these arrys initialized in helper method
-        internal byte[][] m_ubSignature = null!;
-        internal int[] m_iLocalSlot = null!;
-        internal int[] m_iStartOffset = null!;
-        internal int[] m_iEndOffset = null!;
-        internal int m_iLocalSymCount;         // how many entries in the arrays are occupied
-        internal string[] m_namespace = null!;
-        internal int m_iNameSpaceCount;
+
+        // the per-local arrays are allocated and grown by EnsureCapacity
+        string[] _name = null!;
+        byte[][] _signature = null!;
+        int[] _localSlot = null!;
+        int[] _startOffset = null!;
+        int[] _endOffset = null!;
+        int _localSymCount; // how many entries in the arrays are occupied
+
+        /// <summary>
+        /// The initial capacity of the per-local arrays.
+        /// </summary>
         internal const int InitialSize = 16;
+
         #endregion
 
         #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         internal LocalSymInfo()
         {
-            // initialize data variables
-            m_iLocalSymCount = 0;
-            m_iNameSpaceCount = 0;
+            _localSymCount = 0;
         }
+
         #endregion
 
         #region Private Members
-        private void EnsureCapacityNamespace()
-        {
-            if (m_iNameSpaceCount == 0)
-            {
-                m_namespace = new string[InitialSize];
-            }
-            else if (m_iNameSpaceCount == m_namespace.Length)
-            {
-                string[] strTemp = new string[checked(m_iNameSpaceCount * 2)];
-                Array.Copy(m_namespace, strTemp, m_iNameSpaceCount);
-                m_namespace = strTemp;
-            }
-        }
 
-        private void EnsureCapacity()
+        /// <summary>
+        /// Makes sure the per-local arrays have room for one more entry, allocating them on first use and doubling them
+        /// when full.
+        /// </summary>
+        void EnsureCapacity()
         {
-            if (m_iLocalSymCount == 0)
+            if (_localSymCount == 0)
             {
-                // First time. Allocate the arrays.
-                m_strName = new string[InitialSize];
-                m_ubSignature = new byte[InitialSize][];
-                m_iLocalSlot = new int[InitialSize];
-                m_iStartOffset = new int[InitialSize];
-                m_iEndOffset = new int[InitialSize];
+                // first time, allocate the arrays
+                _name = new string[InitialSize];
+                _signature = new byte[InitialSize][];
+                _localSlot = new int[InitialSize];
+                _startOffset = new int[InitialSize];
+                _endOffset = new int[InitialSize];
             }
-            else if (m_iLocalSymCount == m_strName.Length)
+            else if (_localSymCount == _name.Length)
             {
-                // the arrays are full. Enlarge the arrays
-                // why aren't we just using lists here?
-                int newSize = checked(m_iLocalSymCount * 2);
-                int[] temp = new int[newSize];
-                Array.Copy(m_iLocalSlot, temp, m_iLocalSymCount);
-                m_iLocalSlot = temp;
+                // the arrays are full, so double their size
+                var newSize = checked(_localSymCount * 2);
+                var temp = new int[newSize];
+                Array.Copy(_localSlot, temp, _localSymCount);
+                _localSlot = temp;
 
                 temp = new int[newSize];
-                Array.Copy(m_iStartOffset, temp, m_iLocalSymCount);
-                m_iStartOffset = temp;
+                Array.Copy(_startOffset, temp, _localSymCount);
+                _startOffset = temp;
 
                 temp = new int[newSize];
-                Array.Copy(m_iEndOffset, temp, m_iLocalSymCount);
-                m_iEndOffset = temp;
+                Array.Copy(_endOffset, temp, _localSymCount);
+                _endOffset = temp;
 
-                string[] strTemp = new string[newSize];
-                Array.Copy(m_strName, strTemp, m_iLocalSymCount);
-                m_strName = strTemp;
+                var strTemp = new string[newSize];
+                Array.Copy(_name, strTemp, _localSymCount);
+                _name = strTemp;
 
-                byte[][] ubTemp = new byte[newSize][];
-                Array.Copy(m_ubSignature, ubTemp, m_iLocalSymCount);
-                m_ubSignature = ubTemp;
+                var ubTemp = new byte[newSize][];
+                Array.Copy(_signature, ubTemp, _localSymCount);
+                _signature = ubTemp;
             }
         }
 
         #endregion
 
         #region Internal Members
+
+        /// <summary>
+        /// Records the debugging information of a local variable.
+        /// </summary>
+        /// <param name="strName">The name of the local variable.</param>
+        /// <param name="signature">The signature of the local variable.</param>
+        /// <param name="slot">The index of the local variable in the method's local variable signature.</param>
+        /// <param name="startOffset">The IL offset at which the variable's scope begins.</param>
+        /// <param name="endOffset">The IL offset at which the variable's scope ends.</param>
         internal void AddLocalSymInfo(string strName, byte[] signature, int slot, int startOffset, int endOffset)
         {
-            // make sure that arrays are large enough to hold addition info
+            // make sure that arrays are large enough to hold the additional info
             EnsureCapacity();
-            m_iStartOffset[m_iLocalSymCount] = startOffset;
-            m_iEndOffset[m_iLocalSymCount] = endOffset;
-            m_iLocalSlot[m_iLocalSymCount] = slot;
-            m_strName[m_iLocalSymCount] = strName;
-            m_ubSignature[m_iLocalSymCount] = signature;
-            checked { m_iLocalSymCount++; }
+            _startOffset[_localSymCount] = startOffset;
+            _endOffset[_localSymCount] = endOffset;
+            _localSlot[_localSymCount] = slot;
+            _name[_localSymCount] = strName;
+            _signature[_localSymCount] = signature;
+            checked
+            { _localSymCount++; }
         }
 
-        internal void AddUsingNamespace(string strNamespace)
-        {
-            EnsureCapacityNamespace();
-            m_namespace[m_iNameSpaceCount] = strNamespace;
-            checked { m_iNameSpaceCount++; }
-        }
+        /// <summary>
+        /// Writes the recorded local variables and namespaces to the symbol writer.
+        /// </summary>
+        /// <param name="symWriter">The symbol writer to write to.</param>
         internal void EmitLocalSymInfo(ISymbolWriter symWriter)
         {
             int i;
 
-            for (i = 0; i < m_iLocalSymCount; i++)
+            for (i = 0; i < _localSymCount; i++)
             {
                 symWriter.DefineLocalVariable(
-                            m_strName[i],
+                            _name[i],
                             System.Reflection.FieldAttributes.PrivateScope,
-                            m_ubSignature[i],
+                            _signature[i],
                             SymAddressKind.ILOffset,
-                            m_iLocalSlot[i],
+                            _localSlot[i],
                             0,          // addr2 is not used yet
                             0,          // addr3 is not used
-                            m_iStartOffset[i],
-                            m_iEndOffset[i]);
-            }
-            for (i = 0; i < m_iNameSpaceCount; i++)
-            {
-                symWriter.UsingNamespace(m_namespace[i]);
+                            _startOffset[i],
+                            _endOffset[i]);
             }
         }
 

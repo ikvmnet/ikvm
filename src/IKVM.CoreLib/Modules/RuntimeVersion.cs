@@ -272,17 +272,18 @@ namespace IKVM.CoreLib.Modules
                 if (other._pre is null)
                     return -1;
 
-                if (Regex.IsMatch(_pre, "\\d+"))
+                // a pre-release of only digits is numeric, as with Java's String.matches, which matches the whole string
+                if (Regex.IsMatch(_pre, "^[0-9]+$"))
                 {
-                    return Regex.IsMatch(other._pre, "\\d+")
+                    return Regex.IsMatch(other._pre, "^[0-9]+$")
                         ? (BigInteger.Parse(_pre)).CompareTo(BigInteger.Parse(other._pre))
                         : -1;
                 }
                 else
                 {
-                    return Regex.IsMatch(other._pre, "\\d+")
+                    return Regex.IsMatch(other._pre, "^[0-9]+$")
                         ? 1
-                        : _pre.CompareTo(other._pre);
+                        : string.CompareOrdinal(_pre, other._pre);
                 }
             }
 
@@ -327,7 +328,7 @@ namespace IKVM.CoreLib.Modules
                 if (other._optional is null)
                     return 1;
 
-                return _optional.CompareTo(other._optional);
+                return string.CompareOrdinal(_optional, other._optional);
             }
 
             return 0;

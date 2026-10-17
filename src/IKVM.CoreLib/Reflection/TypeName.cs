@@ -26,79 +26,109 @@ using System;
 namespace IKVM.Reflection
 {
 
-    // this respresents a type name as in metadata:
-    // - ns will be null for empty the namespace (never the empty string)
-    // - the strings are not escaped
+    /// <summary>
+    /// Represents a type name as it appears in metadata: a namespace and a name, neither of them escaped. The namespace
+    /// is <see langword="null"/> for the empty namespace, never the empty string.
+    /// </summary>
     readonly struct TypeName : IEquatable<TypeName>
     {
 
-        public static bool operator ==(TypeName o1, TypeName o2)
-        {
-            return o1.ns == o2.ns && o1.name == o2.name;
-        }
+        /// <summary>
+        /// Determines whether two type names have the same namespace and name, compared ordinally.
+        /// </summary>
+        /// <param name="o1">The first type name to compare.</param>
+        /// <param name="o2">The second type name to compare.</param>
+        /// <returns><see langword="true"/> if the type names are equal; otherwise, <see langword="false"/>.</returns>
+        public static bool operator ==(TypeName o1, TypeName o2) => o1._ns == o2._ns && o1._name == o2._name;
 
-        public static bool operator !=(TypeName o1, TypeName o2)
-        {
-            return o1.ns != o2.ns || o1.name != o2.name;
-        }
+        /// <summary>
+        /// Determines whether two type names differ in namespace or name, compared ordinally.
+        /// </summary>
+        /// <param name="o1">The first type name to compare.</param>
+        /// <param name="o2">The second type name to compare.</param>
+        /// <returns><see langword="true"/> if the type names are not equal; otherwise, <see langword="false"/>.</returns>
+        public static bool operator !=(TypeName o1, TypeName o2) => o1._ns != o2._ns || o1._name != o2._name;
 
-        readonly string ns;
-        readonly string name;
+        readonly string _ns;
+        readonly string _name;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="ns"></param>
-        /// <param name="name"></param>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <param name="ns">The unescaped namespace, or <see langword="null"/> for the empty namespace.</param>
+        /// <param name="name">The unescaped name of the type.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>.</exception>
         internal TypeName(string ns, string name)
         {
-            this.ns = ns;
-            this.name = name ?? throw new ArgumentNullException("name");
+            _ns = ns;
+            _name = name ?? throw new ArgumentNullException("name");
         }
 
-        internal string Name => name;
+        /// <summary>
+        /// Gets the unescaped name of the type.
+        /// </summary>
+        internal string Name => _name;
 
-        internal string Namespace => ns;
+        /// <summary>
+        /// Gets the unescaped namespace of the type, or <see langword="null"/> for the empty namespace.
+        /// </summary>
+        internal string Namespace => _ns;
 
-        public override int GetHashCode() => ns == null ? name.GetHashCode() : ns.GetHashCode() * 37 + name.GetHashCode();
+        /// <inheritdoc />
+        public override int GetHashCode() => _ns == null ? _name.GetHashCode() : _ns.GetHashCode() * 37 + _name.GetHashCode();
 
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
             var other = obj as TypeName?;
             return other != null && other.Value == this;
         }
 
-        public override string ToString()
-        {
-            return ns == null ? name : ns + "." + name;
-        }
+        /// <summary>
+        /// Returns the full name of the type: the namespace and name joined by a dot, or only the name when the type is
+        /// in the empty namespace.
+        /// </summary>
+        /// <returns>The unescaped full name of the type.</returns>
+        public override string ToString() => _ns == null ? _name : _ns + "." + _name;
 
-        bool IEquatable<TypeName>.Equals(TypeName other)
-        {
-            return this == other;
-        }
+        /// <inheritdoc />
+        bool IEquatable<TypeName>.Equals(TypeName other) => this == other;
 
+        /// <summary>
+        /// Determines whether this type name matches the specified unescaped full name, compared ordinally.
+        /// </summary>
+        /// <param name="fullName">The full name, namespace and name joined by a dot, to compare with.</param>
+        /// <returns><see langword="true"/> if <paramref name="fullName"/> names this type; otherwise, <see langword="false"/>.</returns>
         internal bool Matches(string fullName)
         {
-            if (ns == null)
-                return name == fullName;
+            if (_ns == null)
+                return _name == fullName;
 
-            if (ns.Length + 1 + name.Length == fullName.Length)
-                return fullName.StartsWith(ns, StringComparison.Ordinal) && fullName[ns.Length] == '.' && fullName.EndsWith(name, StringComparison.Ordinal);
+            if (_ns.Length + 1 + _name.Length == fullName.Length)
+                return fullName.StartsWith(_ns, StringComparison.Ordinal) && fullName[_ns.Length] == '.' && fullName.EndsWith(_name, StringComparison.Ordinal);
 
             return false;
         }
 
-        internal TypeName ToLowerInvariant() => new TypeName(ns?.ToLowerInvariant(), name.ToLowerInvariant());
+        /// <summary>
+        /// Returns a copy of this type name with the namespace and name converted to lower case using the invariant
+        /// culture, for case-insensitive lookups.
+        /// </summary>
+        /// <returns>The lower-cased type name.</returns>
+        internal TypeName ToLowerInvariant() => new(_ns?.ToLowerInvariant(), _name.ToLowerInvariant());
 
+        /// <summary>
+        /// Splits an unescaped full type name into namespace and name at the last dot.
+        /// </summary>
+        /// <param name="name">The unescaped full name of the type.</param>
+        /// <returns>The type name, with a <see langword="null"/> namespace if <paramref name="name"/> contains no dot.</returns>
         internal static TypeName Split(string name)
         {
-            int dot = name.LastIndexOf('.');
+            var dot = name.LastIndexOf('.');
             if (dot == -1)
                 return new TypeName(null, name);
             else
-                return new TypeName(name.Substring(0, dot), name.Substring(dot + 1));
+                return new TypeName(name[..dot], name[(dot + 1)..]);
         }
 
     }

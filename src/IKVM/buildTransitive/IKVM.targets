@@ -4,7 +4,7 @@
     </PropertyGroup>
 
     <Target Name="ResolveIkvmRuntimeIdentifier">
-        <IkvmResolveNearestRuntimeIdentifier AvailableRuntimeIdentifiers="@(IkvmAvailableRuntimeIdentifiers, ';')" TargetRuntimeIdentifier="$(RuntimeIdentifier)">
+        <IkvmResolveNearestRuntimeIdentifier AvailableRuntimeIdentifiers="@(IkvmAvailableRuntimeIdentifiers, ';')" TargetRuntimeIdentifier="$(RuntimeIdentifier)" Condition=" '$(RuntimeIdentifier)' != '' ">
             <Output TaskParameter="NearestRuntimeIdentifier" PropertyName="_IkvmRuntimeIdentifier" />
         </IkvmResolveNearestRuntimeIdentifier>
         <ItemGroup>

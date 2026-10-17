@@ -15,6 +15,8 @@ namespace IKVM.CoreLib.Modules
     internal readonly struct ModuleOpens : IComparable<ModuleOpens>
     {
 
+        static readonly LexicographicListComparer<string, StringComparer, string[]> TargetsComparer = new(StringComparer.Ordinal);
+
         readonly ModuleOpensFlag _modifiers;
         readonly string _source;
         readonly ImmutableHashSet<string> _targets;
@@ -51,7 +53,7 @@ namespace IKVM.CoreLib.Modules
         /// <inheritdoc />
         public int CompareTo(ModuleOpens other)
         {
-            int c = _source.CompareTo(other._source);
+            int c = string.CompareOrdinal(_source, other._source);
             if (c != 0)
                 return c;
 
@@ -63,9 +65,9 @@ namespace IKVM.CoreLib.Modules
             // targets
             var t1 = _targets.ToArray();
             var t2 = other._targets.ToArray();
-            Array.Sort(t1);
-            Array.Sort(t2);
-            return LexicographicListComparer<string, StringComparer, string[]>.Default.Compare(t1, t2);
+            Array.Sort(t1, StringComparer.Ordinal);
+            Array.Sort(t2, StringComparer.Ordinal);
+            return TargetsComparer.Compare(t1, t2);
         }
 
         /// <inheritdoc />

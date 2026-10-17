@@ -147,9 +147,13 @@ namespace IKVM.Runtime.JNI
                         // someone beat us to it...
                     }
                 }
-                var threadGroup = JNIGlobalRefTable.Unwrap(pAttachArgs->group);
-                if (threadGroup != null)
-                    IKVM.Java.Externs.java.lang.Thread.AttachThreadFromJni(threadGroup);
+                // the group is a global reference, or NULL for the default group
+                if (pAttachArgs->group != IntPtr.Zero)
+                {
+                    var threadGroup = JNIGlobalRefTable.Unwrap(pAttachArgs->group);
+                    if (threadGroup != null)
+                        IKVM.Java.Externs.java.lang.Thread.AttachThreadFromJni(threadGroup);
+                }
             }
 
             *penv = JNIEnv.CreateJNIEnv(JVM.Context);

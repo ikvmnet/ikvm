@@ -26,19 +26,56 @@ using System;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Specifies flags that control binding and the way in which the search for members and types is conducted by
+    /// reflection.
+    /// </summary>
     [Flags]
-    internal enum BindingFlags
-	{
+    enum BindingFlags
+    {
 
-		Default = 0,
-		IgnoreCase = 1,
-		DeclaredOnly = 2,
-		Instance = 4,
-		Static = 8,
-		Public = 16,
-		NonPublic = 32,
-		FlattenHierarchy = 64,
+        /// <summary>
+        /// Specifies that no binding flags are defined.
+        /// </summary>
+        Default = 0,
 
-	}
+        /// <summary>
+        /// Specifies that the case of the member name should not be considered when binding.
+        /// </summary>
+        IgnoreCase = 1,
+
+        /// <summary>
+        /// Specifies that only members declared at the level of the supplied type's hierarchy should be considered.
+        /// Inherited members are not considered.
+        /// </summary>
+        DeclaredOnly = 2,
+
+        /// <summary>
+        /// Specifies that instance members are to be included in the search.
+        /// </summary>
+        Instance = 4,
+
+        /// <summary>
+        /// Specifies that static members are to be included in the search.
+        /// </summary>
+        Static = 8,
+
+        /// <summary>
+        /// Specifies that public members are to be included in the search.
+        /// </summary>
+        Public = 16,
+
+        /// <summary>
+        /// Specifies that non-public members are to be included in the search.
+        /// </summary>
+        NonPublic = 32,
+
+        /// <summary>
+        /// Specifies that public and protected static members up the hierarchy should be returned. Private static
+        /// members in inherited classes are not returned.
+        /// </summary>
+        FlattenHierarchy = 64,
+
+    }
 
 }

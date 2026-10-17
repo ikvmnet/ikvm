@@ -26,36 +26,13 @@ using System;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// The exception that is thrown when an assembly being written exceeds a limit imposed by the metadata or PE file
+    /// format. The importer catches it to report the failure; nothing in IKVM.Reflection currently throws it.
+    /// </summary>
     [Serializable]
-    internal sealed class FileFormatLimitationExceededException : InvalidOperationException
+    sealed class FileFormatLimitationExceededException : InvalidOperationException
     {
-
-        public const int META_E_STRINGSPACE_FULL = unchecked((int)0x80131198);
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="hresult"></param>
-        public FileFormatLimitationExceededException(string message, int hresult) :
-            base(message)
-        {
-            HResult = hresult;
-        }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="info"></param>
-        /// <param name="context"></param>
-        FileFormatLimitationExceededException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) :
-            base(info, context)
-        {
-
-        }
-
-        public int ErrorCode => HResult;
-
     }
 
 }

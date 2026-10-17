@@ -31,6 +31,8 @@
         const string XML_ASSEMBLY_INFO_STATE_ELEMENT_NAME = "AssemblyInfoState";
         const string XML_FILE_IDENTITY_STATE_ELEMENT_NAME = "FileIdentityState";
 
+        static readonly char[] GlobWildcards = ['*', '?'];
+
         /// <summary>
         /// Topologically sorts the <see cref="IkvmReferenceItem"/> set.
         /// </summary>
@@ -249,11 +251,7 @@
                 await fileIdentityUtil.SaveStateXmlAsync(fileIdentityStateXml);
                 root.Add(fileIdentityStateXml);
 
-                var dir = Path.GetDirectoryName(StateFile);
-                if (Directory.Exists(dir) == false)
-                    Directory.CreateDirectory(dir);
-
-                root.Save(StateFile);
+                IkvmTaskUtil.SaveXmlIfChanged(root, StateFile);
             }
         }
 
@@ -354,7 +352,7 @@
         {
             var l = new List<string>();
             foreach (var c in item.Compile)
-                l.AddRange(ExpandPath(c));
+                l.AddRange(ExpandPath(c, includeDirectories: true));
 
             item.Compile = l;
         }
@@ -376,7 +374,8 @@
         /// Expands the path to real underlying files.
         /// </summary>
         /// <param name="path"></param>
-        internal static IEnumerable<string> ExpandPath(string path)
+        /// <param name="includeDirectories">Whether a path that names a directory is kept. Globs only ever match files.</param>
+        internal static IEnumerable<string> ExpandPath(string path, bool includeDirectories = false)
         {
             // if the path is a glob, we're going to match items, else skip
             var glob = MSBuildGlob.Parse(path);
@@ -387,14 +386,28 @@
                 yield break;
             }
 
+            // a path without wildcards can only match the one file it names, so don't search for it
+            if (path.IndexOfAny(GlobWildcards) < 0)
+            {
+                // separators are taken as MSBuild takes them, and as the glob below would
+                var literal = Path.DirectorySeparatorChar == '\\' ? path : path.Replace('\\', Path.DirectorySeparatorChar);
+                if (File.Exists(literal))
+                    yield return IkvmTaskUtil.GetRelativePath(Environment.CurrentDirectory, Path.GetFullPath(literal));
+                else if (includeDirectories && Directory.Exists(literal))
+                    yield return IkvmTaskUtil.GetRelativePath(Environment.CurrentDirectory, Path.GetFullPath(literal).TrimEnd(Path.DirectorySeparatorChar)) + Path.DirectorySeparatorChar;
+
+                yield break;
+            }
+
             // no fixed directory, nothing to match
             if (Directory.Exists(glob.FixedDirectoryPart) == false)
                 yield break;
 
-            // enumerate all files in the fixed part, and match them against the glob
-            // results are our expanded options
-            foreach (var i in Directory.EnumerateFileSystemEntries(glob.FixedDirectoryPart, "*", SearchOption.AllDirectories))
-                if (File.Exists(i) && glob.IsMatch(i))
+            // enumerate the files in the fixed part, and match them against the glob
+            // only descend into subdirectories when the glob has a wildcard directory part
+            var searchOption = string.IsNullOrEmpty(glob.WildcardDirectoryPart) ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories;
+            foreach (var i in Directory.EnumerateFiles(glob.FixedDirectoryPart, "*", searchOption))
+                if (glob.IsMatch(i))
                     yield return IkvmTaskUtil.GetRelativePath(Environment.CurrentDirectory, i);
         }
 
@@ -475,6 +488,9 @@
             {
                 if (path.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) && File.Exists(path))
                     return JarFileUtil.GetModuleInfo(path);
+
+                if (Directory.Exists(path))
+                    return JarFileUtil.GetModuleInfoFromDirectory(path);
             }
             catch (Exception e)
             {
@@ -519,18 +535,20 @@
                 manifest.WriteLine("AssemblyFileVersion={0}", item.AssemblyFileVersion);
                 manifest.WriteLine("ClassLoader={0}", item.ClassLoader);
                 manifest.WriteLine("Debug={0}", Enum.GetName(typeof(IkvmReferenceItemDebug), item.Debug));
+                manifest.WriteLine("Optimize={0}", item.Optimize ? "true" : "false");
                 manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? await fileIdentityUtil.GetIdentityForFileAsync(item.KeyFile, Log, cancellationToken) : "");
                 manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
+                manifest.WriteLine("Static={0}", item.Static ? "true" : "false");
+                manifest.WriteLine("StrictFinalFieldSemantics={0}", item.StrictFinalFieldSemantics ? "true" : "false");
+                manifest.WriteLine("RemoveAssertions={0}", item.RemoveAssertions ? "true" : "false");
 
-                // each Compile item should be a jar or class file
-                var compiles = new List<string>(16);
+                // each Compile item should be a jar or class file, or a directory of them, written in order since order is part of the identity
                 foreach (var path in item.Compile)
-                    if (path.EndsWith(".jar") || path.EndsWith(".class"))
-                        compiles.Add(await GetCompileLine(item, path, cancellationToken));
-
-                // sort and write the compile lines
-                foreach (var c in compiles.OrderBy(i => i))
-                    manifest.WriteLine(c);
+                    if (Directory.Exists(path))
+                        foreach (var line in await GetCompileDirectoryLinesAsync(path, cancellationToken))
+                            manifest.WriteLine(line);
+                    else if (path.EndsWith(".jar") || path.EndsWith(".class"))
+                        manifest.WriteLine(await GetCompileLine(item, path, cancellationToken));
 
                 // gather reference lines
                 var references = new List<string>(16);
@@ -542,7 +560,7 @@
                 foreach (var reference in item.References)
                     references.Add(await GetReferenceLineAsync(item, reference, cycle, cancellationToken));
 
-                // sort and write the reference lines
+                // write the reference lines in the order they were given
                 foreach (var r in references.Distinct())
                     manifest.WriteLine(r);
 
@@ -584,6 +602,28 @@
                 throw new FileNotFoundException($"Cannot generate hash for missing file '{path}' on '{item.ItemSpec}'.");
 
             return $"Compile={await fileIdentityUtil.GetIdentityForFileAsync(path, Log, cancellationToken)}";
+        }
+
+        /// <summary>
+        /// Writes a File entry for each file within the given directory, named by its path relative to the directory,
+        /// since the compiler names the classes and resources it finds there the same way. The entries are sorted by
+        /// name, since the file system returns them in no particular order and each name occurs only once.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="cancellationToken"></param>
+        async Task<IEnumerable<string>> GetCompileDirectoryLinesAsync(string path, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException($"'{nameof(path)}' cannot be null or whitespace.", nameof(path));
+
+            var root = Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var lines = await Task.WhenAll(Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories).Select(async file =>
+            {
+                var name = file.Substring(root.Length).Replace(Path.DirectorySeparatorChar, '/');
+                return $"CompileDirectory={name}={await fileIdentityUtil.GetIdentityForFileAsync(file, Log, cancellationToken)}";
+            }));
+
+            return lines.OrderBy(i => i, StringComparer.Ordinal);
         }
 
         /// <summary>
@@ -649,80 +689,68 @@
         {
             var valid = true;
 
-            if (string.IsNullOrWhiteSpace(item.AssemblyName))
+            foreach (var diagnostic in GetDiagnostics(item))
             {
-                Log.LogErrorWithCodeFromResources("Error.IkvmMissingAssemblyName", item.ItemSpec);
+                Log.LogErrorWithCodeFromResources(diagnostic.Resource, diagnostic.Args);
                 valid = false;
             }
+
+            return valid;
+        }
+
+        /// <summary>
+        /// Gets the problems that keep the item from being built.
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns></returns>
+        internal static List<IkvmReferenceItemDiagnostic> GetDiagnostics(IkvmReferenceItem item)
+        {
+            var diagnostics = new List<IkvmReferenceItemDiagnostic>();
+
+            if (string.IsNullOrWhiteSpace(item.AssemblyName))
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmMissingAssemblyName", item.ItemSpec));
 
             if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
-            {
-                Log.LogErrorWithCodeFromResources("Error.IkvmMissingAssemblyVersion", item.ItemSpec);
-                valid = false;
-            }
-            else
-            {
-                if (Version.TryParse(item.AssemblyVersion, out _) == false)
-                {
-                    Log.LogErrorWithCodeFromResources("Error.IkvmInvalidAssemblyVersion", item.ItemSpec, item.AssemblyVersion);
-                    valid = false;
-                }
-            }
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmMissingAssemblyVersion", item.ItemSpec));
+            else if (Version.TryParse(item.AssemblyVersion, out _) == false)
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmInvalidAssemblyVersion", item.ItemSpec, item.AssemblyVersion));
 
             if (string.IsNullOrWhiteSpace(item.AssemblyFileVersion))
-            {
-                Log.LogErrorWithCodeFromResources("Error.IkvmMissingAssemblyFileVersion", item.ItemSpec);
-                valid = false;
-            }
-            else
-            {
-                if (Version.TryParse(item.AssemblyFileVersion, out _) == false)
-                {
-                    Log.LogErrorWithCodeFromResources("Error.IkvmInvalidAssemblyFileVersion", item.ItemSpec, item.AssemblyFileVersion);
-                    valid = false;
-                }
-            }
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmMissingAssemblyFileVersion", item.ItemSpec));
+            else if (Version.TryParse(item.AssemblyFileVersion, out _) == false)
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmInvalidAssemblyFileVersion", item.ItemSpec, item.AssemblyFileVersion));
 
             if (item.Compile.Count == 0)
             {
-                Log.LogErrorWithCodeFromResources("Error.IkvmRequiresCompile", item.ItemSpec);
-                valid = false;
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmRequiresCompile", item.ItemSpec));
             }
             else
             {
                 foreach (var compile in item.Compile)
                 {
+                    // directories of class files are compiled recursively
+                    if (Directory.Exists(compile))
+                        continue;
+
                     if (Path.GetExtension(compile) is not ".jar" and not ".class")
-                    {
-                        Log.LogErrorWithCodeFromResources("Error.IkvmInvalidCompile", item.ItemSpec, compile);
-                        valid = false;
-                    }
+                        diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmInvalidCompile", item.ItemSpec, compile));
 
                     if (File.Exists(compile) == false)
-                    {
-                        Log.LogErrorWithCodeFromResources("Error.IkvmMissingCompile", item.ItemSpec, compile);
-                        valid = false;
-                    }
+                        diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmMissingCompile", item.ItemSpec, compile));
                 }
             }
 
             foreach (var source in item.Sources)
             {
                 if (Path.GetExtension(source) is not ".java" && Path.GetExtension(source) is not ".jar")
-                {
-                    Log.LogErrorWithCodeFromResources("Error.IkvmInvalidSources", item.ItemSpec, source);
-                    valid = false;
-                }
+                    diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmInvalidSources", item.ItemSpec, source));
                 else if (File.Exists(source) == false)
-                {
-                    Log.LogErrorWithCodeFromResources("Error.IkvmMissingSources", item.ItemSpec, source);
-                    valid = false;
-                }
+                    diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmMissingSources", item.ItemSpec, source));
             }
 
             // bail out early, no need to add more if these are already broken
-            if (valid == false)
-                return false;
+            if (diagnostics.Count > 0)
+                return diagnostics;
 
             try
             {
@@ -730,23 +758,16 @@
             }
             catch (Exception)
             {
-                Log.LogErrorWithCodeFromResources("Error.IkvmInvalidAssemblyInfo", item.ItemSpec, item.AssemblyName, item.AssemblyVersion);
-                valid = false;
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmInvalidAssemblyInfo", item.ItemSpec, item.AssemblyName, item.AssemblyVersion));
             }
 
             if (string.IsNullOrWhiteSpace(item.KeyFile) == false && File.Exists(item.KeyFile) == false)
-            {
-                Log.LogErrorWithCodeFromResources("Error.IkvmMissingKeyFile", item.ItemSpec, item.KeyFile);
-                valid = false;
-            }
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmMissingKeyFile", item.ItemSpec, item.KeyFile));
 
             if (item.DelaySign && string.IsNullOrWhiteSpace(item.KeyFile))
-            {
-                Log.LogErrorWithCodeFromResources("Error.IkvmDelaySignRequiresKey", item.ItemSpec);
-                valid = false;
-            }
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmDelaySignRequiresKey", item.ItemSpec));
 
-            return valid;
+            return diagnostics;
         }
 
         /// <summary>
@@ -777,6 +798,9 @@
             item.StagePath = Path.Combine(StageDir, item.IkvmIdentity, item.AssemblyName + ".dll");
             item.StageSymbolsPath = Path.Combine(StageDir, item.IkvmIdentity, item.AssemblyName + ".pdb");
             item.Save();
+
+            // keep the cache entry from being cleaned while it is in use
+            IkvmTaskUtil.MarkCacheEntryUsed(Path.Combine(CacheDir, item.IkvmIdentity));
         }
 
         /// <summary>

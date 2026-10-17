@@ -5,6 +5,7 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Security.Cryptography;
     using System.Text.RegularExpressions;
     using System.Threading;
@@ -72,7 +73,8 @@
         /// <returns></returns>
         public async System.Threading.Tasks.Task SaveStateXmlAsync(XElement root)
         {
-            foreach (var i in cache)
+            // in a stable order, so an unchanged state saves the same
+            foreach (var i in cache.OrderBy(i => i.Key, StringComparer.Ordinal))
             {
                 var (lastWriteTimeUtc, identity) = await i.Value;
 

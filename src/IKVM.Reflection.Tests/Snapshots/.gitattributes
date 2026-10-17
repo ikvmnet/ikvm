@@ -1,0 +1,2 @@
+# snapshots are compared byte for byte against renderings that use LF
+*.txt text eol=lf

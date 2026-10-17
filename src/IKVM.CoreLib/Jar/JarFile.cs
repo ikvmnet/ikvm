@@ -94,7 +94,7 @@ namespace IKVM.CoreLib.Jar
         /// <param name="releaseVersion"></param>
         /// <param name="dispose"></param>
         public JarFile(Stream stream, RuntimeVersion releaseVersion, bool dispose = true) :
-            this(new ZipArchive(stream, ZipArchiveMode.Read, dispose), releaseVersion, dispose)
+            this(new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: dispose == false), releaseVersion, dispose)
         {
 
         }

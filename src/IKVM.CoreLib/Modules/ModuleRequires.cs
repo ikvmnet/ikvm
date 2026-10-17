@@ -46,7 +46,7 @@ namespace IKVM.CoreLib.Modules
         /// <inheritdoc />
         public readonly int CompareTo(ModuleRequires other)
         {
-            int c = _name.CompareTo(other._name);
+            int c = string.CompareOrdinal(_name, other._name);
             if (c != 0)
                 return c;
 

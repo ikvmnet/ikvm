@@ -128,7 +128,8 @@
         /// <returns></returns>
         public async System.Threading.Tasks.Task SaveStateXmlAsync(XElement root)
         {
-            foreach (var i in cache)
+            // in a stable order, so an unchanged state saves the same
+            foreach (var i in cache.OrderBy(i => i.Key, StringComparer.Ordinal))
             {
                 var info = await i.Value;
                 if (info is null)
@@ -184,7 +185,7 @@
                         using var fsstm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                         using var perdr = new PEReader(fsstm);
                         var mrdr = perdr.GetMetadataReader();
-                        return new AssemblyInfo(path, lastWriteTimeUtc, mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).OrderBy(i => i).ToArray());
+                        return new AssemblyInfo(path, lastWriteTimeUtc, mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).OrderBy(i => i, StringComparer.Ordinal).ToArray());
                     }
                     catch (Exception e)
                     {
