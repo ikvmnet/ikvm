@@ -28,6 +28,8 @@ using System.Diagnostics;
 using IKVM.Attributes;
 
 using System.Text;
+using IKVM.CoreLib.Runtime;
+
 
 
 #if IMPORTER || EXPORTER
@@ -152,7 +154,7 @@ namespace IKVM.Runtime
 
                     if (RuntimePrimitiveJavaType.IsPrimitiveType(context, t))
                     {
-                        sb.Append(context.ClassLoaderFactory.GetJavaTypeFromType(t).SigName);
+                        sb.Append(context.ClassLoaderFactory.GetJavaTypeFromType(t).SignatureName);
                     }
                     else
                     {
@@ -373,7 +375,7 @@ namespace IKVM.Runtime
                             name = "_" + name;
 
                         var val = EnumHelper.GetPrimitiveValue(Context, underlyingType, fields[i].GetRawConstantValue());
-                        fieldsList.Add(new RuntimeConstantJavaField(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], val, MemberFlags.None));
+                        fieldsList.Add(new RuntimeConstantJavaField(this, fieldType, name, fieldType.SignatureName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], val, MemberFlags.None));
                     }
                 }
                 fieldsList.Add(new EnumValueJavaField(this, fieldType));
@@ -661,14 +663,14 @@ namespace IKVM.Runtime
 
                 var tw = Context.ClassLoaderFactory.GetJavaTypeFromType(type);
                 args[i] = tw;
-                sb.Append(tw.SigName);
+                sb.Append(tw.SignatureName);
             }
             sb.Append(')');
             if (mb is ConstructorInfo)
             {
                 ret = Context.PrimitiveJavaTypeFactory.VOID;
                 name = mb.IsStatic ? "<clinit>" : "<init>";
-                sb.Append(ret.SigName);
+                sb.Append(ret.SignatureName);
                 sig = sb.ToString();
                 return true;
             }
@@ -683,7 +685,7 @@ namespace IKVM.Runtime
                     return false;
                 }
                 ret = Context.ClassLoaderFactory.GetJavaTypeFromType(type);
-                sb.Append(ret.SigName);
+                sb.Append(ret.SignatureName);
                 name = mb.Name;
                 sig = sb.ToString();
                 return true;
@@ -786,9 +788,9 @@ namespace IKVM.Runtime
         {
             var type = Context.ClassLoaderFactory.GetJavaTypeFromType(fieldType);
             if (field.IsLiteral)
-                return new RuntimeConstantJavaField(this, type, name, type.SigName, modifiers, field, null, MemberFlags.None);
+                return new RuntimeConstantJavaField(this, type, name, type.SignatureName, modifiers, field, null, MemberFlags.None);
             else
-                return RuntimeJavaField.Create(this, type, field, name, type.SigName, new ExModifiers(modifiers, false));
+                return RuntimeJavaField.Create(this, type, field, name, type.SignatureName, new ExModifiers(modifiers, false));
         }
 
         /// <summary>

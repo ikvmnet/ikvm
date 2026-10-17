@@ -29,13 +29,9 @@ using System.Runtime.CompilerServices;
 
 using IKVM.Attributes;
 using IKVM.ByteCode;
+using IKVM.CoreLib.Runtime;
 
 #if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-using IKVM.Tools.Importer;
-
-using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
 #endif
@@ -44,6 +40,7 @@ using System.Reflection;
 
 using IKVM.Java.Externs.java.lang.invoke;
 using IKVM.Runtime.Accessors.Java.Lang;
+using IKVM.CoreLib.Exceptions;
 
 #endif
 
@@ -53,7 +50,7 @@ namespace IKVM.Runtime
     public static class ByteCodeHelper
     {
 
-#if FIRST_PASS == false && EXPORTER == FALSE
+#if FIRST_PASS == false && EXPORTER == false
 
         static ObjectAccessor objectAccessor;
 
@@ -219,9 +216,9 @@ namespace IKVM.Runtime
                 wrapper.Finish();
                 return wrapper;
             }
-            catch (RetargetableJavaException e)
+            catch (TranslatableJavaException e)
             {
-                throw e.ToJava();
+                throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
             }
 #endif
         }
@@ -300,9 +297,9 @@ namespace IKVM.Runtime
 
                 Interlocked.CompareExchange(ref cache, global::java.lang.invoke.MethodType.methodType(loader.RetTypeWrapperFromSig(sig, LoadMode.LoadOrThrow).ClassObject, ptypes), null);
             }
-            catch (RetargetableJavaException e)
+            catch (TranslatableJavaException e)
             {
-                throw e.ToJava();
+                throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
             }
 #endif
         }
@@ -351,9 +348,9 @@ namespace IKVM.Runtime
                         return global::java.lang.invoke.MethodHandleNatives.linkMethodHandleConstant(callerID.getCallerClass(), kind, refc, name, mt);
                 }
             }
-            catch (RetargetableJavaException x)
+            catch (TranslatableJavaException e)
             {
-                throw x.ToJava();
+                throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
             }
 #endif
         }
@@ -414,16 +411,15 @@ namespace IKVM.Runtime
 							global::java.lang.invoke.MethodHandles.foldArguments(global::java.lang.invoke.MethodHandles.throwException(methodType.returnType(), exception.type().returnType()), exception),
 							0, methodType.parameterArray()).vmtarget, "Invoke");
 #else
-                MethodInfo invoke = delegateType.GetMethod("Invoke");
-                ParameterInfo[] parameters = invoke.GetParameters();
-                Type[] parameterTypes = new Type[parameters.Length + 1];
+                var invoke = delegateType.GetMethod("Invoke");
+                var parameters = invoke.GetParameters();
+                var parameterTypes = new Type[parameters.Length + 1];
                 parameterTypes[0] = typeof(object);
                 for (int i = 0; i < parameters.Length; i++)
-                {
                     parameterTypes[i + 1] = parameters[i].ParameterType;
-                }
-                System.Reflection.Emit.DynamicMethod dm = new System.Reflection.Emit.DynamicMethod("Invoke", invoke.ReturnType, parameterTypes);
-                CodeEmitter ilgen = JVM.Context.CodeEmitterFactory.Create(dm);
+
+                var dm = new System.Reflection.Emit.DynamicMethod("Invoke", invoke.ReturnType, parameterTypes);
+                var ilgen = JVM.Context.CodeEmitterFactory.Create(dm);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, tw.Name + ".Invoke" + sig);
                 JVM.Context.ClassLoaderFactory.GetBootstrapClassLoader()
                     .LoadClassByName(mw == null || mw.IsStatic ? "global::java.lang.AbstractMethodError" : "global::java.lang.IllegalAccessError")

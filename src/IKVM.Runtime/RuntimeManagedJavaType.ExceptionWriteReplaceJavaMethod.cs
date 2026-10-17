@@ -44,7 +44,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="declaringType"></param>
             internal ExceptionWriteReplaceJavaMethod(RuntimeJavaType declaringType) :
-                base(declaringType, "writeReplace", "()Ljava.lang.Object;", null, declaringType.Context.JavaBase.TypeOfJavaLangObject, Array.Empty<RuntimeJavaType>(), Modifiers.Private, MemberFlags.None)
+                base(declaringType, "writeReplace", "()Ljava.lang.Object;", null, declaringType.Context.JavaBase.TypeOfJavaLangObject, [], Modifiers.Private, MemberFlags.None)
             {
 
             }

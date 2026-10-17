@@ -28,6 +28,9 @@ using System.Diagnostics.SymbolStore;
 
 using IKVM.Attributes;
 using IKVM.ByteCode;
+using IKVM.CoreLib.Runtime;
+using IKVM.CoreLib.Linking;
+using IKVM.ByteCode.Decoding;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -39,11 +42,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-using ExceptionTableEntry = IKVM.Runtime.ClassFile.Method.ExceptionTableEntry;
-using LocalVariableTableEntry = IKVM.Runtime.ClassFile.Method.LocalVariableTableEntry;
-using Instruction = IKVM.Runtime.ClassFile.Method.Instruction;
-using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
-
 namespace IKVM.Runtime
 {
 
@@ -54,7 +52,7 @@ namespace IKVM.Runtime
         readonly RuntimeByteCodeJavaType clazz;
         readonly RuntimeJavaMethod mw;
         readonly ClassFile classFile;
-        readonly ClassFile.Method m;
+        readonly Method m;
         readonly CodeEmitter ilGenerator;
         readonly CodeInfo ma;
         readonly UntangledExceptionTable exceptions;
@@ -83,7 +81,7 @@ namespace IKVM.Runtime
         /// <param name="m"></param>
         /// <param name="ilGenerator"></param>
         /// <param name="classLoader"></param>
-        Compiler(RuntimeByteCodeJavaType.FinishContext finish, RuntimeJavaType host, RuntimeByteCodeJavaType clazz, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, RuntimeClassLoader classLoader)
+        Compiler(RuntimeByteCodeJavaType.FinishContext finish, RuntimeJavaType host, RuntimeByteCodeJavaType clazz, RuntimeJavaMethod mw, ClassFile classFile, Method m, CodeEmitter ilGenerator, RuntimeClassLoader classLoader)
         {
             this.finish = finish;
             this.clazz = clazz;
@@ -98,6 +96,7 @@ namespace IKVM.Runtime
                 var finalize = clazz.GetMethod(StringConstants.FINALIZE, StringConstants.SIG_VOID, true);
                 keepAlive = finalize != null && finalize.DeclaringType != finish.Context.JavaBase.TypeOfJavaLangObject && finalize.DeclaringType != finish.Context.JavaBase.TypeOfCliSystemObject && finalize.DeclaringType != finish.Context.JavaBase.TypeOfjavaLangThrowable && finalize.DeclaringType != finish.Context.JavaBase.TypeOfCliSystemException;
             }
+
 #if IMPORTER
             replacedMethodWrappers = clazz.GetReplacedMethodsFor(mw);
 #endif
@@ -117,10 +116,8 @@ namespace IKVM.Runtime
             try
             {
                 if (classFile.MajorVersion < 51 && m.HasJsr)
-                {
                     JsrInliner.InlineJsrs(classLoader, mw, classFile, m);
-                }
-                MethodAnalyzer verifier = finish.Context.MethodAnalyzerFactory.Create(host, clazz, mw, classFile, m, classLoader);
+                var verifier = finish.Context.MethodAnalyzerFactory.Create(host, clazz, mw, classFile, m, classLoader);
                 exceptions = MethodAnalyzer.UntangleExceptionBlocks(finish.Context, classFile, m);
                 ma = verifier.GetCodeInfoAndErrors(exceptions, out harderrors);
                 localVars = new LocalVarInfo(ma, classFile, m, exceptions, mw, classLoader);
@@ -130,7 +127,7 @@ namespace IKVM.Runtime
                 Profiler.Leave("MethodAnalyzer");
             }
 
-            if (m.LineNumberTableAttribute != null)
+            if (m.LineNumberTable.Count > 0)
             {
                 if (classLoader.EmitSymbols)
                 {
@@ -138,30 +135,30 @@ namespace IKVM.Runtime
                 }
                 else if (classLoader.EmitStackTraceInfo)
                 {
-                    InstructionFlags[] flags = ComputePartialReachability(0, false);
+                    var flags = ComputePartialReachability(0, false);
                     for (int i = 0; i < m.Instructions.Length; i++)
                     {
                         if ((flags[i] & InstructionFlags.Reachable) == 0)
                         {
                             // skip unreachable instructions
                         }
-                        else if (m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__getfield && RuntimeVerifierJavaType.IsThis(ma.GetRawStackTypeWrapper(i, 0)))
+                        else if (m.Instructions[i].NormalizedOpCode == NormalizedOpCode.GetField && RuntimeVerifierJavaType.IsThis(ma.GetRawStackTypeWrapper(i, 0)))
                         {
                             // loading a field from the current object cannot throw
                         }
-                        else if (m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__putfield && RuntimeVerifierJavaType.IsThis(ma.GetRawStackTypeWrapper(i, 1)))
+                        else if (m.Instructions[i].NormalizedOpCode == NormalizedOpCode.PutField && RuntimeVerifierJavaType.IsThis(ma.GetRawStackTypeWrapper(i, 1)))
                         {
                             // storing a field in the current object cannot throw
                         }
-                        else if (m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__getstatic && classFile.GetFieldref(m.Instructions[i].Arg1).GetClassType() == clazz)
+                        else if (m.Instructions[i].NormalizedOpCode == NormalizedOpCode.GetStatic && classFile.GetFieldref(checked((ushort)m.Instructions[i].Arg1)).GetClassType() == clazz)
                         {
                             // loading a field from the current class cannot throw
                         }
-                        else if (m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__putstatic && classFile.GetFieldref(m.Instructions[i].Arg1).GetClassType() == clazz)
+                        else if (m.Instructions[i].NormalizedOpCode == NormalizedOpCode.PutStatic && classFile.GetFieldref(checked((ushort)m.Instructions[i].Arg1)).GetClassType() == clazz)
                         {
                             // storing a field to the current class cannot throw
                         }
-                        else if (ByteCodeMetaData.CanThrowException(m.Instructions[i].NormalizedOpCode))
+                        else if (OpCodeMetaData.CanThrowException(m.Instructions[i].NormalizedOpCode))
                         {
                             emitLineNumbers = true;
                             break;
@@ -170,12 +167,13 @@ namespace IKVM.Runtime
                 }
             }
 
-            LocalVar[] locals = localVars.GetAllLocalVars();
-            foreach (LocalVar v in locals)
+            var locals = localVars.GetAllLocalVars();
+            foreach (var v in locals)
             {
                 if (v.isArg)
                 {
                     int arg = m.ArgMap[v.local];
+
                     RuntimeJavaType tw;
                     if (m.IsStatic)
                     {
@@ -189,13 +187,13 @@ namespace IKVM.Runtime
                     {
                         tw = args[arg - 1];
                     }
+
                     if (!tw.IsUnloadable && (v.type != tw || tw.TypeAsLocalOrStackType != tw.TypeAsSignatureType))
                     {
                         v.builder = ilGenerator.DeclareLocal(GetLocalBuilderType(v.type));
                         if (debug && v.name != null)
-                        {
                             v.builder.SetLocalSymInfo(v.name);
-                        }
+
                         v.isArg = false;
                         ilGenerator.EmitLdarg(arg);
                         tw.EmitConvSignatureTypeToStackType(ilGenerator);
@@ -206,9 +204,7 @@ namespace IKVM.Runtime
 
             // if we're emitting debugging information, we need to use scopes for local variables
             if (debug)
-            {
                 SetupLocalVariableScopes();
-            }
 
             Workaroundx64JitBug(args);
         }
@@ -216,12 +212,12 @@ namespace IKVM.Runtime
         // workaround for x64 JIT bug
         // https://connect.microsoft.com/VisualStudio/feedback/details/636466/variable-is-not-incrementing-in-c-release-x64#details
         // (see also https://sourceforge.net/mailarchive/message.php?msg_id=28250469)
-        private void Workaroundx64JitBug(RuntimeJavaType[] args)
+        void Workaroundx64JitBug(RuntimeJavaType[] args)
         {
             if (args.Length > (m.IsStatic ? 4 : 3) && m.ExceptionTable.Length != 0)
             {
                 bool[] workarounds = null;
-                InstructionFlags[] flags = ComputePartialReachability(0, false);
+                var flags = ComputePartialReachability(0, false);
                 for (int i = 0; i < m.Instructions.Length; i++)
                 {
                     if ((flags[i] & InstructionFlags.Reachable) == 0)
@@ -232,25 +228,23 @@ namespace IKVM.Runtime
                     {
                         switch (m.Instructions[i].NormalizedOpCode)
                         {
-                            case NormalizedByteCode.__iinc:
-                            case NormalizedByteCode.__astore:
-                            case NormalizedByteCode.__istore:
-                            case NormalizedByteCode.__lstore:
-                            case NormalizedByteCode.__fstore:
-                            case NormalizedByteCode.__dstore:
+                            case NormalizedOpCode.Iinc:
+                            case NormalizedOpCode.Astore:
+                            case NormalizedOpCode.Istore:
+                            case NormalizedOpCode.Lstore:
+                            case NormalizedOpCode.Fstore:
+                            case NormalizedOpCode.Dstore:
                                 int arg = m.IsStatic ? m.Instructions[i].Arg1 : m.Instructions[i].Arg1 - 1;
                                 if (arg >= 3 && arg < args.Length)
                                 {
-                                    if (workarounds == null)
-                                    {
-                                        workarounds = new bool[args.Length + 1];
-                                    }
+                                    workarounds ??= new bool[args.Length + 1];
                                     workarounds[m.Instructions[i].Arg1] = true;
                                 }
                                 break;
                         }
                     }
                 }
+
                 if (workarounds != null)
                 {
                     for (int i = 0; i < workarounds.Length; i++)
@@ -266,10 +260,10 @@ namespace IKVM.Runtime
             }
         }
 
-        private void SetupLocalVariableScopes()
+        void SetupLocalVariableScopes()
         {
-            LocalVariableTableEntry[] lvt = m.LocalVariableTableAttribute;
-            if (lvt != null)
+            var lvt = m.LocalVariableTable;
+            if (lvt.Count > 0)
             {
                 scopeBegin = new int[m.Instructions.Length];
                 scopeClose = new int[m.Instructions.Length];
@@ -280,10 +274,10 @@ namespace IKVM.Runtime
                 scopeBegin[0]++;
                 scopeClose[m.Instructions.Length - 1]++;
 
-                for (int i = 0; i < lvt.Length; i++)
+                for (int i = 0; i < lvt.Count; i++)
                 {
-                    int startIndex = SafeFindPcIndex(lvt[i].start_pc);
-                    int endIndex = SafeFindPcIndex(lvt[i].start_pc + lvt[i].length);
+                    int startIndex = SafeFindPcIndex(lvt[i].StartPc);
+                    int endIndex = SafeFindPcIndex(lvt[i].StartPc + lvt[i].Length);
                     if (startIndex != -1 && endIndex != -1 && startIndex < endIndex)
                     {
                         if (startIndex > 0)
@@ -292,12 +286,11 @@ namespace IKVM.Runtime
                             // following the store that first initializes the local, so we have to
                             // detect that case and adjust our local scope (because we'll be creating
                             // the local when we encounter the first store).
-                            LocalVar v = localVars.GetLocalVar(startIndex - 1);
-                            if (v != null && v.local == lvt[i].index)
-                            {
+                            var v = localVars.GetLocalVar(startIndex - 1);
+                            if (v != null && v.local == lvt[i].Slot)
                                 startIndex--;
-                            }
                         }
+
                         scopeBegin[startIndex]++;
                         scopeClose[endIndex]++;
                     }
@@ -305,22 +298,20 @@ namespace IKVM.Runtime
             }
         }
 
-        private int SafeFindPcIndex(int pc)
+        int SafeFindPcIndex(int pc)
         {
             for (int i = 0; i < m.Instructions.Length; i++)
-            {
                 if (m.Instructions[i].PC >= pc)
-                {
                     return i;
-                }
-            }
+
             return -1;
         }
 
-        private sealed class ReturnCookie
+        sealed class ReturnCookie
         {
-            private readonly CodeEmitterLabel stub;
-            private readonly CodeEmitterLocal local;
+
+            readonly CodeEmitterLabel stub;
+            readonly CodeEmitterLocal local;
 
             internal ReturnCookie(CodeEmitterLabel stub, CodeEmitterLocal local)
             {
@@ -332,15 +323,16 @@ namespace IKVM.Runtime
             {
                 ilgen.MarkLabel(stub);
                 if (local != null)
-                {
                     ilgen.Emit(OpCodes.Ldloc, local);
-                }
+
                 ilgen.Emit(OpCodes.Ret);
             }
+
         }
 
-        private sealed class BranchCookie
+        sealed class BranchCookie
         {
+
             // NOTE Stub gets used for both the push stub (inside the exception block) as well as the pop stub (outside the block)
             internal CodeEmitterLabel Stub;
             internal CodeEmitterLabel TargetLabel;
@@ -360,11 +352,13 @@ namespace IKVM.Runtime
                 this.Stub = label;
                 this.TargetIndex = targetIndex;
             }
+
         }
 
-        private struct DupHelper
+        readonly struct DupHelper
         {
-            private enum StackType : byte
+
+            enum StackType : byte
             {
                 Null,
                 New,
@@ -373,73 +367,69 @@ namespace IKVM.Runtime
                 FaultBlockException,
                 Other
             }
-            private readonly Compiler compiler;
-            private readonly StackType[] types;
-            private readonly CodeEmitterLocal[] locals;
 
+            readonly Compiler _compiler;
+            readonly StackType[] _types;
+            readonly CodeEmitterLocal[] _locals;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="compiler"></param>
+            /// <param name="count"></param>
             internal DupHelper(Compiler compiler, int count)
             {
-                this.compiler = compiler;
-                types = new StackType[count];
-                locals = new CodeEmitterLocal[count];
+                _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
+                _types = new StackType[count];
+                _locals = new CodeEmitterLocal[count];
             }
 
-            internal void Release()
+            internal readonly void Release()
             {
-                foreach (CodeEmitterLocal lb in locals)
-                {
+                foreach (var lb in _locals)
                     if (lb != null)
-                    {
-                        compiler.ilGenerator.ReleaseTempLocal(lb);
-                    }
-                }
+                        _compiler.ilGenerator.ReleaseTempLocal(lb);
             }
 
-            internal int Count
-            {
-                get
-                {
-                    return types.Length;
-                }
-            }
+            internal readonly int Count => _types.Length;
 
-            internal void SetType(int i, RuntimeJavaType type)
+            internal readonly void SetType(int i, RuntimeJavaType type)
             {
-                if (type == compiler.finish.Context.VerifierJavaTypeFactory.Null)
+                if (type == _compiler.finish.Context.VerifierJavaTypeFactory.Null)
                 {
-                    types[i] = StackType.Null;
+                    _types[i] = StackType.Null;
                 }
                 else if (RuntimeVerifierJavaType.IsNew(type))
                 {
                     // new objects aren't really there on the stack
-                    types[i] = StackType.New;
+                    _types[i] = StackType.New;
                 }
                 else if (RuntimeVerifierJavaType.IsThis(type))
                 {
-                    types[i] = StackType.This;
+                    _types[i] = StackType.This;
                 }
-                else if (type == compiler.finish.Context.VerifierJavaTypeFactory.UninitializedThis)
+                else if (type == _compiler.finish.Context.VerifierJavaTypeFactory.UninitializedThis)
                 {
                     // uninitialized references cannot be stored in a local, but we can reload them
-                    types[i] = StackType.UnitializedThis;
+                    _types[i] = StackType.UnitializedThis;
                 }
                 else if (RuntimeVerifierJavaType.IsFaultBlockException(type))
                 {
-                    types[i] = StackType.FaultBlockException;
+                    _types[i] = StackType.FaultBlockException;
                 }
                 else
                 {
-                    types[i] = StackType.Other;
-                    locals[i] = compiler.ilGenerator.AllocTempLocal(compiler.GetLocalBuilderType(type));
+                    _types[i] = StackType.Other;
+                    _locals[i] = _compiler.ilGenerator.AllocTempLocal(_compiler.GetLocalBuilderType(type));
                 }
             }
 
-            internal void Load(int i)
+            internal readonly void Load(int i)
             {
-                switch (types[i])
+                switch (_types[i])
                 {
                     case StackType.Null:
-                        compiler.ilGenerator.Emit(OpCodes.Ldnull);
+                        _compiler.ilGenerator.Emit(OpCodes.Ldnull);
                         break;
                     case StackType.New:
                     case StackType.FaultBlockException:
@@ -447,39 +437,40 @@ namespace IKVM.Runtime
                         break;
                     case StackType.This:
                     case StackType.UnitializedThis:
-                        compiler.ilGenerator.Emit(OpCodes.Ldarg_0);
+                        _compiler.ilGenerator.Emit(OpCodes.Ldarg_0);
                         break;
                     case StackType.Other:
-                        compiler.ilGenerator.Emit(OpCodes.Ldloc, locals[i]);
+                        _compiler.ilGenerator.Emit(OpCodes.Ldloc, _locals[i]);
                         break;
                     default:
                         throw new InvalidOperationException();
                 }
             }
 
-            internal void Store(int i)
+            internal readonly void Store(int i)
             {
-                switch (types[i])
+                switch (_types[i])
                 {
                     case StackType.Null:
                     case StackType.This:
                     case StackType.UnitializedThis:
-                        compiler.ilGenerator.Emit(OpCodes.Pop);
+                        _compiler.ilGenerator.Emit(OpCodes.Pop);
                         break;
                     case StackType.New:
                     case StackType.FaultBlockException:
                         // objects aren't really there on the stack
                         break;
                     case StackType.Other:
-                        compiler.ilGenerator.Emit(OpCodes.Stloc, locals[i]);
+                        _compiler.ilGenerator.Emit(OpCodes.Stloc, _locals[i]);
                         break;
                     default:
                         throw new InvalidOperationException();
                 }
             }
+
         }
 
-        internal static void Compile(RuntimeByteCodeJavaType.FinishContext finish, RuntimeJavaType host, RuntimeByteCodeJavaType clazz, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ref bool nonleaf)
+        internal static void Compile(RuntimeByteCodeJavaType.FinishContext finish, RuntimeJavaType host, RuntimeByteCodeJavaType clazz, RuntimeJavaMethod mw, ClassFile classFile, Method m, CodeEmitter ilGenerator, ref bool nonleaf)
         {
             var classLoader = clazz.ClassLoader;
             if (classLoader.EmitSymbols)
@@ -490,17 +481,17 @@ namespace IKVM.Runtime
 
                     // the very first instruction in the method must have an associated line number, to be able
                     // to step into the method in Visual Studio .NET
-                    var table = m.LineNumberTableAttribute;
-                    if (table != null)
+                    var table = m.LineNumberTable;
+                    if (table.Count > 0)
                     {
                         int firstPC = int.MaxValue;
                         int firstLine = -1;
-                        for (int i = 0; i < table.Length; i++)
+                        for (int i = 0; i < table.Count; i++)
                         {
-                            if (table[i].start_pc < firstPC && table[i].line_number != 0)
+                            if (table[i].StartPc < firstPC && table[i].LineNumber != 0)
                             {
-                                firstLine = table[i].line_number;
-                                firstPC = table[i].start_pc;
+                                firstLine = table[i].LineNumber;
+                                firstPC = table[i].StartPc;
                             }
                         }
 
@@ -509,6 +500,7 @@ namespace IKVM.Runtime
                     }
                 }
             }
+
             Compiler c;
             try
             {
@@ -531,7 +523,7 @@ namespace IKVM.Runtime
                 ilGenerator.EmitThrow("java.lang.VerifyError", x.Message);
                 return;
             }
-            catch (ClassFormatError x)
+            catch (ClassFormatException x)
             {
                 classLoader.Diagnostics.EmittedClassFormatError(classFile.Name + "." + m.Name + m.Signature, x.Message);
                 clazz.SetHasClassFormatError();
@@ -576,16 +568,17 @@ namespace IKVM.Runtime
             }
         }
 
-        private sealed class Block
+        sealed class Block
         {
-            private readonly Compiler compiler;
-            private readonly CodeEmitter ilgen;
-            private readonly int beginIndex;
-            private readonly int endIndex;
-            private readonly int exceptionIndex;
-            private List<object> exits;
-            private readonly bool nested;
-            private readonly object[] labels;
+
+            readonly Compiler compiler;
+            readonly CodeEmitter ilgen;
+            readonly int beginIndex;
+            readonly int endIndex;
+            readonly int exceptionIndex;
+            List<object> exits;
+            readonly bool nested;
+            readonly object[] labels;
 
             internal Block(Compiler compiler, int beginIndex, int endIndex, int exceptionIndex, List<object> exits, bool nested)
             {
@@ -630,7 +623,7 @@ namespace IKVM.Runtime
             {
                 if (IsInRange(targetIndex))
                 {
-                    CodeEmitterLabel l = (CodeEmitterLabel)labels[targetIndex];
+                    var l = (CodeEmitterLabel)labels[targetIndex];
                     if (l == null)
                     {
                         l = ilgen.DefineLabel();
@@ -640,19 +633,17 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    BranchCookie l = (BranchCookie)labels[targetIndex];
+                    var l = (BranchCookie)labels[targetIndex];
                     if (l == null)
                     {
                         // if we're branching out of the current exception block, we need to indirect this thru a stub
                         // that saves the stack and uses leave to leave the exception block (to another stub that recovers
                         // the stack)
                         int stackHeight = compiler.ma.GetStackHeight(targetIndex);
-                        BranchCookie bc = new BranchCookie(compiler, stackHeight, targetIndex);
+                        var bc = new BranchCookie(compiler, stackHeight, targetIndex);
                         bc.ContentOnStack = true;
                         for (int i = 0; i < stackHeight; i++)
-                        {
                             bc.dh.SetType(i, compiler.ma.GetRawStackTypeWrapper(targetIndex, i));
-                        }
                         exits.Add(bc);
                         l = bc;
                         labels[targetIndex] = l;
@@ -671,7 +662,7 @@ namespace IKVM.Runtime
                 object label = labels[instructionIndex];
                 if (label == null)
                 {
-                    CodeEmitterLabel l = ilgen.DefineLabel();
+                    var l = ilgen.DefineLabel();
                     ilgen.MarkLabel(l);
                     labels[instructionIndex] = l;
                 }
@@ -692,12 +683,13 @@ namespace IKVM.Runtime
                 {
                     for (int i = 0; i < exits.Count; i++)
                     {
-                        object exit = exits[i];
-                        BranchCookie bc = exit as BranchCookie;
+                        var exit = exits[i];
+                        var bc = exit as BranchCookie;
                         if (bc != null && bc.ContentOnStack)
                         {
                             bc.ContentOnStack = false;
                             int stack = bc.dh.Count;
+
                             // HACK this is unreachable code, but we make sure that
                             // forward pass verification always yields a valid stack
                             // (this is required for unreachable leave stubs that are
@@ -705,14 +697,12 @@ namespace IKVM.Runtime
                             // embedded exception emitted by the compiler for invalid
                             // code (e.g. NoSuchFieldError))
                             for (int n = stack - 1; n >= 0; n--)
-                            {
                                 bc.dh.Load(n);
-                            }
+
                             ilgen.MarkLabel(bc.Stub);
                             for (int n = 0; n < stack; n++)
-                            {
                                 bc.dh.Store(n);
-                            }
+
                             if (bc.TargetIndex == -1)
                             {
                                 ilgen.EmitBr(bc.TargetLabel);
@@ -733,25 +723,22 @@ namespace IKVM.Runtime
                 {
                     for (int i = 0; i < exits.Count; i++)
                     {
-                        object exit = exits[i];
-                        ReturnCookie rc = exit as ReturnCookie;
+                        var exit = exits[i];
+                        var rc = exit as ReturnCookie;
                         if (rc != null)
                         {
                             if (newBlock.IsNested)
-                            {
                                 newBlock.exits.Add(rc);
-                            }
                             else
-                            {
                                 rc.EmitRet(ilgen);
-                            }
                         }
                         else
                         {
-                            BranchCookie bc = exit as BranchCookie;
+                            var bc = exit as BranchCookie;
                             if (bc != null && bc.TargetIndex != -1)
                             {
                                 Debug.Assert(!bc.ContentOnStack);
+
                                 // if the target is within the new block, we handle it, otherwise we
                                 // defer the cookie to our caller
                                 if (newBlock.IsInRange(bc.TargetIndex))
@@ -760,9 +747,8 @@ namespace IKVM.Runtime
                                     ilgen.MarkLabel(bc.Stub);
                                     int stack = bc.dh.Count;
                                     for (int n = stack - 1; n >= 0; n--)
-                                    {
                                         bc.dh.Load(n);
-                                    }
+
                                     ilgen.EmitBr(newBlock.GetLabel(bc.TargetIndex));
                                 }
                                 else
@@ -816,13 +802,9 @@ namespace IKVM.Runtime
                 if (scopeBegin != null)
                 {
                     for (int j = scopeClose[i]; j > 0; j--)
-                    {
                         ilGenerator.EndScope();
-                    }
                     for (int j = scopeBegin[i]; j > 0; j--)
-                    {
                         ilGenerator.BeginScope();
-                    }
                 }
 
                 // if we've left the current exception block, do the exit processing
@@ -830,30 +812,27 @@ namespace IKVM.Runtime
                 {
                     block.Leave();
 
-                    ExceptionTableEntry exc = exceptions[block.ExceptionIndex];
+                    var exc = exceptions[block.ExceptionIndex];
 
-                    Block prevBlock = block;
+                    var prevBlock = block;
                     block = blockStack.Pop();
 
                     exceptionIndex = block.ExceptionIndex + 1;
                     // skip over exception handlers that are no longer relevant
-                    for (; exceptionIndex < exceptions.Length && exceptions[exceptionIndex].endIndex <= i; exceptionIndex++)
+                    for (; exceptionIndex < exceptions.Length && exceptions[exceptionIndex].EndIndex <= i; exceptionIndex++)
                     {
                     }
 
-                    int handlerIndex = exc.handlerIndex;
+                    int handlerIndex = exc.HandlerIndex;
 
-                    if (exc.catchType.IsNil && RuntimeVerifierJavaType.IsFaultBlockException(ma.GetRawStackTypeWrapper(handlerIndex, 0)))
+                    if (exc.CatchType.IsNil && RuntimeVerifierJavaType.IsFaultBlockException(ma.GetRawStackTypeWrapper(handlerIndex, 0)))
                     {
-                        if (exc.isFinally)
-                        {
+                        if (exc.IsFinally)
                             ilGenerator.BeginFinallyBlock();
-                        }
                         else
-                        {
                             ilGenerator.BeginFaultBlock();
-                        }
-                        Block b = new Block(this, 0, block.EndIndex, -1, null, false);
+
+                        var b = new Block(this, 0, block.EndIndex, -1, null, false);
                         Compile(b, handlerIndex);
                         b.Leave();
                         ilGenerator.EndExceptionBlock();
@@ -862,32 +841,30 @@ namespace IKVM.Runtime
                     {
                         RuntimeJavaType exceptionTypeWrapper;
                         bool remap;
-                        if (exc.catchType.IsNil)
+                        if (exc.CatchType.IsNil)
                         {
                             exceptionTypeWrapper = finish.Context.JavaBase.TypeOfjavaLangThrowable;
                             remap = true;
                         }
                         else
                         {
-                            exceptionTypeWrapper = classFile.GetConstantPoolClassType(exc.catchType);
+                            exceptionTypeWrapper = classFile.GetConstantPoolClassType(exc.CatchType);
                             remap = exceptionTypeWrapper.IsUnloadable || !exceptionTypeWrapper.IsSubTypeOf(finish.Context.JavaBase.TypeOfCliSystemException);
                         }
-                        Type excType = exceptionTypeWrapper.TypeAsExceptionType;
-                        bool mapSafe = !exceptionTypeWrapper.IsUnloadable && !exceptionTypeWrapper.IsMapUnsafeException && !exceptionTypeWrapper.IsRemapped;
+
+                        var excType = exceptionTypeWrapper.TypeAsExceptionType;
+                        var mapSafe = !exceptionTypeWrapper.IsUnloadable && !exceptionTypeWrapper.IsMapUnsafeException && !exceptionTypeWrapper.IsRemapped;
                         if (mapSafe)
-                        {
                             ilGenerator.BeginCatchBlock(excType);
-                        }
                         else
-                        {
                             ilGenerator.BeginCatchBlock(finish.Context.Types.Exception);
-                        }
-                        BranchCookie bc = new BranchCookie(this, 1, exc.handlerIndex);
+
+                        var bc = new BranchCookie(this, 1, exc.HandlerIndex);
                         prevBlock.AddExitHack(bc);
-                        Instruction handlerInstr = code[handlerIndex];
-                        bool unusedException = (handlerInstr.NormalizedOpCode == NormalizedByteCode.__pop ||
-                            (handlerInstr.NormalizedOpCode == NormalizedByteCode.__astore &&
-                            localVars.GetLocalVar(handlerIndex) == null));
+                        var handlerInstr = code[handlerIndex];
+
+                        var unusedException = handlerInstr.NormalizedOpCode == NormalizedOpCode.Pop || (handlerInstr.NormalizedOpCode == NormalizedOpCode.Astore && localVars.GetLocalVar(handlerIndex) == null);
+
                         int mapFlags = unusedException ? 2 : 0;
                         if (mapSafe && unusedException)
                         {
@@ -920,11 +897,13 @@ namespace IKVM.Runtime
                             {
                                 ilGenerator.Emit(OpCodes.Dup);
                             }
-                            CodeEmitterLabel leave = ilGenerator.DefineLabel();
+
+                            var leave = ilGenerator.DefineLabel();
                             ilGenerator.EmitBrtrue(leave);
                             ilGenerator.Emit(OpCodes.Rethrow);
                             ilGenerator.MarkLabel(leave);
                         }
+
                         if (unusedException)
                         {
                             // we must still have an item on the stack, even though it isn't used!
@@ -935,6 +914,7 @@ namespace IKVM.Runtime
                             bc.dh.SetType(0, exceptionTypeWrapper);
                             bc.dh.Store(0);
                         }
+
                         ilGenerator.EmitLeave(bc.Stub);
                         ilGenerator.EndExceptionBlock();
                     }
@@ -978,7 +958,7 @@ namespace IKVM.Runtime
                 // transfer the stack into it
                 // Note that an exception block that *starts* at an unreachable instruction,
                 // is completely unreachable, because it is impossible to branch into an exception block.
-                for (; exceptionIndex < exceptions.Length && exceptions[exceptionIndex].startIndex == i; exceptionIndex++)
+                for (; exceptionIndex < exceptions.Length && exceptions[exceptionIndex].StartIndex == i; exceptionIndex++)
                 {
                     int stackHeight = ma.GetStackHeight(i);
                     if (stackHeight != 0)
@@ -989,6 +969,7 @@ namespace IKVM.Runtime
                             dh.SetType(k, ma.GetRawStackTypeWrapper(i, k));
                             dh.Store(k);
                         }
+
                         ilGenerator.BeginExceptionBlock();
                         for (int k = stackHeight - 1; k >= 0; k--)
                             dh.Load(k);
@@ -1001,18 +982,18 @@ namespace IKVM.Runtime
                     }
 
                     blockStack.Push(block);
-                    block = new Block(this, exceptions[exceptionIndex].startIndex, exceptions[exceptionIndex].endIndex, exceptionIndex, new List<object>(), true);
+                    block = new Block(this, exceptions[exceptionIndex].StartIndex, exceptions[exceptionIndex].EndIndex, exceptionIndex, new List<object>(), true);
                     block.MarkLabel(i);
                 }
 
                 if (emitLineNumbers)
                 {
-                    var table = m.LineNumberTableAttribute;
-                    for (int j = 0; j < table.Length; j++)
+                    var table = m.LineNumberTable;
+                    for (int j = 0; j < table.Count; j++)
                     {
-                        if (table[j].start_pc == code[i].PC && table[j].line_number != 0)
+                        if (table[j].StartPc == code[i].PC && table[j].LineNumber != 0)
                         {
-                            ilGenerator.SetLineNumber(table[j].line_number);
+                            ilGenerator.SetLineNumber(table[j].LineNumber);
                             break;
                         }
                     }
@@ -1026,22 +1007,22 @@ namespace IKVM.Runtime
                     // fool it by calling a trivial method that loops forever which the CLR JIT will then inline
                     // and see that control flow doesn't continue and hence the lifetime of "this" will be
                     // shorter than the constructor.
-                    switch (ByteCodeMetaData.GetFlowControl(instr.NormalizedOpCode))
+                    switch (OpCodeMetaData.GetFlowKind(instr.NormalizedOpCode))
                     {
-                        case ByteCodeFlowControl.Return:
+                        case OpCodeFlowControl.Return:
                             ilGenerator.Emit(OpCodes.Ldarg_0);
                             ilGenerator.Emit(OpCodes.Call, finish.Context.CompilerFactory.KeepAliveMethod);
                             break;
-                        case ByteCodeFlowControl.Branch:
-                        case ByteCodeFlowControl.CondBranch:
+                        case OpCodeFlowControl.Branch:
+                        case OpCodeFlowControl.ConditionalBranch:
                             if (instr.TargetIndex <= i)
                             {
                                 ilGenerator.Emit(OpCodes.Ldarg_0);
                                 ilGenerator.Emit(OpCodes.Call, finish.Context.CompilerFactory.KeepAliveMethod);
                             }
                             break;
-                        case ByteCodeFlowControl.Throw:
-                        case ByteCodeFlowControl.Switch:
+                        case OpCodeFlowControl.Throw:
+                        case OpCodeFlowControl.Switch:
                             if (ma.GetLocalTypeWrapper(i, 0) != finish.Context.VerifierJavaTypeFactory.UninitializedThis)
                             {
                                 ilGenerator.Emit(OpCodes.Ldarg_0);
@@ -1053,9 +1034,9 @@ namespace IKVM.Runtime
 
                 switch (instr.NormalizedOpCode)
                 {
-                    case NormalizedByteCode.__getstatic:
+                    case NormalizedOpCode.GetStatic:
                         {
-                            var cpi = classFile.GetFieldref(instr.Arg1);
+                            var cpi = classFile.GetFieldref(checked((ushort)instr.Arg1));
                             if (cpi.GetClassType() != clazz)
                                 nonleaf = true; // we may trigger a static initializer, which is equivalent to a call
 
@@ -1064,10 +1045,10 @@ namespace IKVM.Runtime
                             field.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilGenerator);
                             break;
                         }
-                    case NormalizedByteCode.__getfield:
+                    case NormalizedOpCode.GetField:
                         {
-                            ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
-                            RuntimeJavaField field = cpi.GetField();
+                            var cpi = classFile.GetFieldref(checked((ushort)instr.Arg1));
+                            var field = cpi.GetField();
                             if (ma.GetStackTypeWrapper(i, 0).IsUnloadable)
                             {
                                 if (field.IsProtected)
@@ -1085,9 +1066,9 @@ namespace IKVM.Runtime
                             field.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilGenerator);
                             break;
                         }
-                    case NormalizedByteCode.__putstatic:
+                    case NormalizedOpCode.PutStatic:
                         {
-                            var cpi = classFile.GetFieldref(instr.Arg1);
+                            var cpi = classFile.GetFieldref(checked((ushort)instr.Arg1));
                             if (cpi.GetClassType() != clazz)
                                 nonleaf = true; // we may trigger a static initializer, which is equivalent to a call
                             RuntimeJavaField field = cpi.GetField();
@@ -1104,14 +1085,14 @@ namespace IKVM.Runtime
                             field.EmitSet(ilGenerator);
                             break;
                         }
-                    case NormalizedByteCode.__putfield:
+                    case NormalizedOpCode.PutField:
                         {
-                            ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
-                            RuntimeJavaField field = cpi.GetField();
-                            RuntimeJavaType tw = field.FieldTypeWrapper;
+                            var cpi = classFile.GetFieldref(checked((ushort)instr.Arg1));
+                            var field = cpi.GetField();
+                            var tw = field.FieldTypeWrapper;
                             if (ma.GetStackTypeWrapper(i, 1).IsUnloadable)
                             {
-                                CodeEmitterLocal temp = ilGenerator.UnsafeAllocTempLocal(tw.TypeAsLocalOrStackType);
+                                var temp = ilGenerator.UnsafeAllocTempLocal(tw.TypeAsLocalOrStackType);
                                 ilGenerator.Emit(OpCodes.Stloc, temp);
                                 if (field.IsProtected)
                                 {
@@ -1123,8 +1104,10 @@ namespace IKVM.Runtime
                                     // downcast receiver to field declaring type
                                     field.DeclaringType.EmitCheckcast(ilGenerator);
                                 }
+
                                 ilGenerator.Emit(OpCodes.Ldloc, temp);
                             }
+
                             tw.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
                             if (strictfp)
                             {
@@ -1134,46 +1117,47 @@ namespace IKVM.Runtime
                             {
                                 ilGenerator.Emit(OpCodes.Conv_R8);
                             }
+
                             field.EmitSet(ilGenerator);
                             break;
                         }
-                    case NormalizedByteCode.__dynamic_getstatic:
-                    case NormalizedByteCode.__dynamic_putstatic:
-                    case NormalizedByteCode.__dynamic_getfield:
-                    case NormalizedByteCode.__dynamic_putfield:
+                    case NormalizedOpCode.DynamicGetStatic:
+                    case NormalizedOpCode.DynamicPutStatic:
+                    case NormalizedOpCode.DynamicGetField:
+                    case NormalizedOpCode.DynamicPutField:
                         nonleaf = true;
                         DynamicGetPutField(instr, i);
                         break;
-                    case NormalizedByteCode.__aconst_null:
+                    case NormalizedOpCode.AconstNull:
                         ilGenerator.Emit(OpCodes.Ldnull);
                         break;
-                    case NormalizedByteCode.__iconst:
+                    case NormalizedOpCode.Iconst:
                         ilGenerator.EmitLdc_I4(instr.NormalizedArg1);
                         break;
-                    case NormalizedByteCode.__lconst_0:
+                    case NormalizedOpCode.Lconst0:
                         ilGenerator.EmitLdc_I8(0L);
                         break;
-                    case NormalizedByteCode.__lconst_1:
+                    case NormalizedOpCode.Lconst1:
                         ilGenerator.EmitLdc_I8(1L);
                         break;
-                    case NormalizedByteCode.__fconst_0:
-                    case NormalizedByteCode.__dconst_0:
+                    case NormalizedOpCode.Fconst0:
+                    case NormalizedOpCode.Dconst0:
                         // floats are stored as native size on the stack, so both R4 and R8 are the same
                         ilGenerator.EmitLdc_R4(0.0f);
                         break;
-                    case NormalizedByteCode.__fconst_1:
-                    case NormalizedByteCode.__dconst_1:
+                    case NormalizedOpCode.Fconst1:
+                    case NormalizedOpCode.Dconst1:
                         // floats are stored as native size on the stack, so both R4 and R8 are the same
                         ilGenerator.EmitLdc_R4(1.0f);
                         break;
-                    case NormalizedByteCode.__fconst_2:
+                    case NormalizedOpCode.Fconst2:
                         ilGenerator.EmitLdc_R4(2.0f);
                         break;
-                    case NormalizedByteCode.__ldc_nothrow:
-                    case NormalizedByteCode.__ldc:
+                    case NormalizedOpCode.LdcNothrow:
+                    case NormalizedOpCode.Ldc:
                         EmitLoadConstant(ilGenerator, new ConstantHandle(ConstantKind.Unknown, (ushort)instr.Arg1));
                         break;
-                    case NormalizedByteCode.__invokedynamic:
+                    case NormalizedOpCode.InvokeDynamic:
                         {
                             var cpi = classFile.GetInvokeDynamic(new((ushort)instr.Arg1));
                             CastInterfaceArgs(null, cpi.GetArgTypes(), i, false);
@@ -1185,10 +1169,10 @@ namespace IKVM.Runtime
                             nonleaf = true;
                             break;
                         }
-                    case NormalizedByteCode.__dynamic_invokestatic:
-                    case NormalizedByteCode.__privileged_invokestatic:
-                    case NormalizedByteCode.__invokestatic:
-                    case NormalizedByteCode.__methodhandle_link:
+                    case NormalizedOpCode.DynamicInvokeStatic:
+                    case NormalizedOpCode.PrivilegedInvokeStatic:
+                    case NormalizedOpCode.InvokeStatic:
+                    case NormalizedOpCode.MethodHandleLink:
                         {
                             var method = GetMethodCallEmitter(instr.NormalizedOpCode, instr.Arg1);
                             if (method.IsIntrinsic && method.EmitIntrinsic(new EmitIntrinsicContext(method, finish, ilGenerator, ma, i, mw, classFile, code, flags)))
@@ -1205,23 +1189,23 @@ namespace IKVM.Runtime
                             nonleaf = true;
                             break;
                         }
-                    case NormalizedByteCode.__dynamic_invokeinterface:
-                    case NormalizedByteCode.__dynamic_invokevirtual:
-                    case NormalizedByteCode.__dynamic_invokespecial:
-                    case NormalizedByteCode.__privileged_invokevirtual:
-                    case NormalizedByteCode.__privileged_invokespecial:
-                    case NormalizedByteCode.__invokevirtual:
-                    case NormalizedByteCode.__invokeinterface:
-                    case NormalizedByteCode.__invokespecial:
-                    case NormalizedByteCode.__methodhandle_invoke:
+                    case NormalizedOpCode.DynamicInvokeInterface:
+                    case NormalizedOpCode.DynamicInvokeVirtual:
+                    case NormalizedOpCode.DynamicInvokeSpecial:
+                    case NormalizedOpCode.PrivilegedInvokeVirtual:
+                    case NormalizedOpCode.PrivilegedInvokeSpecial:
+                    case NormalizedOpCode.InvokeVirtual:
+                    case NormalizedOpCode.InvokeInterface:
+                    case NormalizedOpCode.InvokeSpecial:
+                    case NormalizedOpCode.MethodHandleInvoke:
                         {
-                            var isinvokespecial = instr.NormalizedOpCode == NormalizedByteCode.__invokespecial
-                                || instr.NormalizedOpCode == NormalizedByteCode.__dynamic_invokespecial
-                                || instr.NormalizedOpCode == NormalizedByteCode.__privileged_invokespecial;
+                            var isinvokespecial = instr.NormalizedOpCode == NormalizedOpCode.InvokeSpecial
+                                || instr.NormalizedOpCode == NormalizedOpCode.DynamicInvokeSpecial
+                                || instr.NormalizedOpCode == NormalizedOpCode.PrivilegedInvokeSpecial;
                             var method = GetMethodCallEmitter(instr.NormalizedOpCode, instr.Arg1);
                             var argcount = method.GetParameters().Length;
                             var type = ma.GetRawStackTypeWrapper(i, argcount);
-                            RuntimeJavaType thisType = ComputeThisType(type, method, instr.NormalizedOpCode);
+                            var thisType = ComputeThisType(type, method, instr.NormalizedOpCode);
 
                             var eic = new EmitIntrinsicContext(method, finish, ilGenerator, ma, i, mw, classFile, code, flags);
                             if (method.IsIntrinsic && method.EmitIntrinsic(eic))
@@ -1263,10 +1247,11 @@ namespace IKVM.Runtime
                                 var methodArgs = method.GetParameters();
                                 var args = new RuntimeJavaType[methodArgs.Length + 1];
                                 methodArgs.CopyTo(args, 1);
-                                if (instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface)
+                                if (instr.NormalizedOpCode == NormalizedOpCode.InvokeInterface)
                                     args[0] = method.DeclaringType;
                                 else
                                     args[0] = thisType;
+
                                 CastInterfaceArgs(method.DeclaringType, args, i, true);
                             }
 
@@ -1313,12 +1298,12 @@ namespace IKVM.Runtime
                                         // exceptions (because then the suppress flag won't be cleared),
                                         // but this case is handled by the "is fillInStackTrace overridden?"
                                         // test, because cli.System.Exception overrides fillInStackTrace.
-                                        if (code[i + 1].NormalizedOpCode == NormalizedByteCode.__athrow)
+                                        if (code[i + 1].NormalizedOpCode == NormalizedOpCode.Athrow)
                                         {
                                             if (thisType.GetMethod("fillInStackTrace", "()Ljava.lang.Throwable;", true).DeclaringType == finish.Context.JavaBase.TypeOfjavaLangThrowable)
                                                 ilGenerator.Emit(OpCodes.Call, finish.Context.CompilerFactory.SuppressFillInStackTraceMethod);
                                             if ((flags[i + 1] & InstructionFlags.BranchTarget) == 0)
-                                                code[i + 1].PatchOpCode(NormalizedByteCode.__athrow_no_unmap);
+                                                code[i + 1].PatchOpCode(NormalizedOpCode.AthrowNoUnmap);
                                         }
                                     }
 
@@ -1408,17 +1393,15 @@ namespace IKVM.Runtime
                                 else
                                 {
                                     Debug.Assert(type == finish.Context.VerifierJavaTypeFactory.UninitializedThis);
+
                                     method.EmitCall(ilGenerator);
                                     var locals = localVars.GetLocalVarsForInvokeSpecial(i);
                                     for (int j = 0; j < locals.Length; j++)
                                     {
                                         if (locals[j] != null)
                                         {
-                                            if (locals[j].builder == null)
-                                            {
-                                                // for invokespecial the resulting type can never be null
-                                                locals[j].builder = ilGenerator.DeclareLocal(GetLocalBuilderType(locals[j].type));
-                                            }
+                                            // for invokespecial the resulting type can never be null
+                                            locals[j].builder ??= ilGenerator.DeclareLocal(GetLocalBuilderType(locals[j].type));
                                             ilGenerator.Emit(OpCodes.Ldarg_0);
                                             ilGenerator.Emit(OpCodes.Stloc, locals[j].builder);
                                         }
@@ -1441,7 +1424,7 @@ namespace IKVM.Runtime
                                         // if the method is private, we can get away with a callvirt (and not generate the stub)
                                         method.EmitCallvirt(ilGenerator);
                                     }
-                                    else if (instr.NormalizedOpCode == NormalizedByteCode.__privileged_invokespecial)
+                                    else if (instr.NormalizedOpCode == NormalizedOpCode.PrivilegedInvokeSpecial)
                                     {
                                         method.EmitCall(ilGenerator);
                                     }
@@ -1457,9 +1440,7 @@ namespace IKVM.Runtime
                                     // the final Object.getClass() method and we don't want to call Object.getClass()
                                     // on a Throwable instance, because that would yield unverifiable code (java.lang.Throwable
                                     // extends System.Exception instead of java.lang.Object in the .NET type system).
-                                    if (RuntimeVerifierJavaType.IsThis(type)
-                                        && (method.IsFinal || clazz.IsFinal)
-                                        && clazz.GetMethod(method.Name, method.Signature, true) == method)
+                                    if (RuntimeVerifierJavaType.IsThis(type) && (method.IsFinal || clazz.IsFinal) && clazz.GetMethod(method.Name, method.Signature, true) == method)
                                     {
                                         // we're calling a method on our own instance that can't possibly be overriden,
                                         // so we don't need to use callvirt
@@ -1475,21 +1456,21 @@ namespace IKVM.Runtime
                             }
                             break;
                         }
-                    case NormalizedByteCode.__clone_array:
+                    case NormalizedOpCode.CloneArray:
                         ilGenerator.Emit(OpCodes.Callvirt, RuntimeArrayJavaType.GetCloneMethod(finish.Context));
                         break;
-                    case NormalizedByteCode.__return:
-                    case NormalizedByteCode.__areturn:
-                    case NormalizedByteCode.__ireturn:
-                    case NormalizedByteCode.__lreturn:
-                    case NormalizedByteCode.__freturn:
-                    case NormalizedByteCode.__dreturn:
+                    case NormalizedOpCode.Return:
+                    case NormalizedOpCode.Areturn:
+                    case NormalizedOpCode.Ireturn:
+                    case NormalizedOpCode.Lreturn:
+                    case NormalizedOpCode.Freturn:
+                    case NormalizedOpCode.Dreturn:
                         {
                             if (block.IsNested)
                             {
                                 // if we're inside an exception block, copy TOS to local, emit "leave" and push item onto our "todo" list
                                 CodeEmitterLocal local = null;
-                                if (instr.NormalizedOpCode != NormalizedByteCode.__return)
+                                if (instr.NormalizedOpCode != NormalizedOpCode.Return)
                                 {
                                     var retTypeWrapper = mw.ReturnType;
                                     retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
@@ -1512,15 +1493,15 @@ namespace IKVM.Runtime
                                 if (exceptions.Length == 0 && i > 0)
                                 {
                                     int k = i - 1;
-                                    while (k > 0 && (code[k].NormalizedOpCode == NormalizedByteCode.__nop || code[k].NormalizedOpCode == NormalizedByteCode.__pop))
+                                    while (k > 0 && (code[k].NormalizedOpCode == NormalizedOpCode.Nop || code[k].NormalizedOpCode == NormalizedOpCode.Pop))
                                         k--;
 
                                     switch (code[k].NormalizedOpCode)
                                     {
-                                        case NormalizedByteCode.__invokeinterface:
-                                        case NormalizedByteCode.__invokespecial:
-                                        case NormalizedByteCode.__invokestatic:
-                                        case NormalizedByteCode.__invokevirtual:
+                                        case NormalizedOpCode.InvokeInterface:
+                                        case NormalizedOpCode.InvokeSpecial:
+                                        case NormalizedOpCode.InvokeStatic:
+                                        case NormalizedOpCode.InvokeVirtual:
                                             x64hack = true;
                                             break;
                                     }
@@ -1529,7 +1510,7 @@ namespace IKVM.Runtime
                                 // if there is junk on the stack (other than the return value), we must pop it off
                                 // because in .NET this is invalid (unlike in Java)
                                 var stackHeight = ma.GetStackHeight(i);
-                                if (instr.NormalizedOpCode == NormalizedByteCode.__return)
+                                if (instr.NormalizedOpCode == NormalizedOpCode.Return)
                                 {
                                     if (stackHeight != 0 || x64hack)
                                         ilGenerator.EmitClearStack();
@@ -1558,7 +1539,7 @@ namespace IKVM.Runtime
                             }
                             break;
                         }
-                    case NormalizedByteCode.__aload:
+                    case NormalizedOpCode.Aload:
                         {
                             var type = ma.GetLocalTypeWrapper(i, instr.NormalizedArg1);
                             if (type == finish.Context.VerifierJavaTypeFactory.Null)
@@ -1591,7 +1572,7 @@ namespace IKVM.Runtime
 
                             break;
                         }
-                    case NormalizedByteCode.__astore:
+                    case NormalizedOpCode.Astore:
                         {
                             var type = ma.GetRawStackTypeWrapper(i, 0);
                             if (RuntimeVerifierJavaType.IsNotPresentOnStack(type))
@@ -1612,27 +1593,27 @@ namespace IKVM.Runtime
                             }
                             break;
                         }
-                    case NormalizedByteCode.__iload:
-                    case NormalizedByteCode.__lload:
-                    case NormalizedByteCode.__fload:
-                    case NormalizedByteCode.__dload:
+                    case NormalizedOpCode.Iload:
+                    case NormalizedOpCode.Lload:
+                    case NormalizedOpCode.Fload:
+                    case NormalizedOpCode.Dload:
                         LoadLocal(i);
                         break;
-                    case NormalizedByteCode.__istore:
-                    case NormalizedByteCode.__lstore:
+                    case NormalizedOpCode.Istore:
+                    case NormalizedOpCode.Lstore:
                         StoreLocal(i);
                         break;
-                    case NormalizedByteCode.__fstore:
+                    case NormalizedOpCode.Fstore:
                         StoreLocal(i);
                         break;
-                    case NormalizedByteCode.__dstore:
+                    case NormalizedOpCode.Dstore:
                         if (ma.IsStackTypeExtendedDouble(i, 0))
                         {
                             ilGenerator.Emit(OpCodes.Conv_R8);
                         }
                         StoreLocal(i);
                         break;
-                    case NormalizedByteCode.__new:
+                    case NormalizedOpCode.New:
                         {
                             var wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
                             if (wrapper.IsUnloadable)
@@ -1652,7 +1633,7 @@ namespace IKVM.Runtime
                             // we don't actually allocate the object here, the call to <init> will be converted into a newobj instruction
                             break;
                         }
-                    case NormalizedByteCode.__multianewarray:
+                    case NormalizedOpCode.Multianewarray:
                         {
                             var localArray = ilGenerator.UnsafeAllocTempLocal(finish.Context.Resolver.ResolveCoreType(typeof(int).FullName).MakeArrayType().AsReflection());
                             var localInt = ilGenerator.UnsafeAllocTempLocal(finish.Context.Types.Int32);
@@ -1696,7 +1677,7 @@ namespace IKVM.Runtime
                             }
                             break;
                         }
-                    case NormalizedByteCode.__anewarray:
+                    case NormalizedOpCode.Anewarray:
                         {
                             var wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
                             if (wrapper.IsUnloadable)
@@ -1731,7 +1712,7 @@ namespace IKVM.Runtime
 
                             break;
                         }
-                    case NormalizedByteCode.__newarray:
+                    case NormalizedOpCode.Newarray:
                         switch (instr.Arg1)
                         {
                             case 4:
@@ -1763,7 +1744,7 @@ namespace IKVM.Runtime
                                 throw new InvalidOperationException();
                         }
                         break;
-                    case NormalizedByteCode.__checkcast:
+                    case NormalizedOpCode.Checkcast:
                         {
                             var wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
                             if (wrapper.IsUnloadable)
@@ -1773,7 +1754,7 @@ namespace IKVM.Runtime
 
                             break;
                         }
-                    case NormalizedByteCode.__instanceof:
+                    case NormalizedOpCode.InstanceOf:
                         {
                             var wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
                             if (wrapper.IsUnloadable)
@@ -1783,7 +1764,7 @@ namespace IKVM.Runtime
 
                             break;
                         }
-                    case NormalizedByteCode.__aaload:
+                    case NormalizedOpCode.Aaload:
                         {
                             var tw = ma.GetRawStackTypeWrapper(i, 1);
                             if (tw.IsUnloadable)
@@ -1809,52 +1790,52 @@ namespace IKVM.Runtime
 
                             break;
                         }
-                    case NormalizedByteCode.__baload:
+                    case NormalizedOpCode.Baload:
                         // NOTE both the JVM and the CLR use signed bytes for boolean arrays (how convenient!)
                         ilGenerator.Emit(OpCodes.Ldelem_I1);
                         break;
-                    case NormalizedByteCode.__bastore:
+                    case NormalizedOpCode.Bastore:
                         ilGenerator.Emit(OpCodes.Stelem_I1);
                         break;
-                    case NormalizedByteCode.__caload:
+                    case NormalizedOpCode.Caload:
                         ilGenerator.Emit(OpCodes.Ldelem_U2);
                         break;
-                    case NormalizedByteCode.__castore:
+                    case NormalizedOpCode.Castore:
                         ilGenerator.Emit(OpCodes.Stelem_I2);
                         break;
-                    case NormalizedByteCode.__saload:
+                    case NormalizedOpCode.Saload:
                         ilGenerator.Emit(OpCodes.Ldelem_I2);
                         break;
-                    case NormalizedByteCode.__sastore:
+                    case NormalizedOpCode.Sastore:
                         ilGenerator.Emit(OpCodes.Stelem_I2);
                         break;
-                    case NormalizedByteCode.__iaload:
+                    case NormalizedOpCode.Iaload:
                         ilGenerator.Emit(OpCodes.Ldelem_I4);
                         break;
-                    case NormalizedByteCode.__iastore:
+                    case NormalizedOpCode.Iastore:
                         ilGenerator.Emit(OpCodes.Stelem_I4);
                         break;
-                    case NormalizedByteCode.__laload:
+                    case NormalizedOpCode.Laload:
                         ilGenerator.Emit(OpCodes.Ldelem_I8);
                         break;
-                    case NormalizedByteCode.__lastore:
+                    case NormalizedOpCode.Lastore:
                         ilGenerator.Emit(OpCodes.Stelem_I8);
                         break;
-                    case NormalizedByteCode.__faload:
+                    case NormalizedOpCode.Faload:
                         ilGenerator.Emit(OpCodes.Ldelem_R4);
                         break;
-                    case NormalizedByteCode.__fastore:
+                    case NormalizedOpCode.Fastore:
                         ilGenerator.Emit(OpCodes.Stelem_R4);
                         break;
-                    case NormalizedByteCode.__daload:
+                    case NormalizedOpCode.Daload:
                         ilGenerator.Emit(OpCodes.Ldelem_R8);
                         break;
-                    case NormalizedByteCode.__dastore:
+                    case NormalizedOpCode.Dastore:
                         if (ma.IsStackTypeExtendedDouble(i, 0))
                             ilGenerator.Emit(OpCodes.Conv_R8);
                         ilGenerator.Emit(OpCodes.Stelem_R8);
                         break;
-                    case NormalizedByteCode.__aastore:
+                    case NormalizedOpCode.Aastore:
                         {
                             var tw = ma.GetRawStackTypeWrapper(i, 2);
                             if (tw.IsUnloadable)
@@ -1886,7 +1867,7 @@ namespace IKVM.Runtime
 
                             break;
                         }
-                    case NormalizedByteCode.__arraylength:
+                    case NormalizedOpCode.Arraylength:
                         if (ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
                         {
                             ilGenerator.Emit(OpCodes.Castclass, finish.Context.Types.Array);
@@ -1897,151 +1878,151 @@ namespace IKVM.Runtime
                             ilGenerator.Emit(OpCodes.Ldlen);
                         }
                         break;
-                    case NormalizedByteCode.__lcmp:
+                    case NormalizedOpCode.Lcmp:
                         ilGenerator.Emit_lcmp();
                         break;
-                    case NormalizedByteCode.__fcmpl:
+                    case NormalizedOpCode.Fcmpl:
                         ilGenerator.Emit_fcmpl();
                         break;
-                    case NormalizedByteCode.__fcmpg:
+                    case NormalizedOpCode.Fcmpg:
                         ilGenerator.Emit_fcmpg();
                         break;
-                    case NormalizedByteCode.__dcmpl:
+                    case NormalizedOpCode.Dcmpl:
                         ilGenerator.Emit_dcmpl();
                         break;
-                    case NormalizedByteCode.__dcmpg:
+                    case NormalizedOpCode.Dcmpg:
                         ilGenerator.Emit_dcmpg();
                         break;
-                    case NormalizedByteCode.__if_icmpeq:
+                    case NormalizedOpCode.IfIcmpeq:
                         ilGenerator.EmitBeq(block.GetLabel(instr.TargetIndex));
                         break;
-                    case NormalizedByteCode.__if_icmpne:
+                    case NormalizedOpCode.IfIcmpne:
                         ilGenerator.EmitBne_Un(block.GetLabel(instr.TargetIndex));
                         break;
-                    case NormalizedByteCode.__if_icmple:
+                    case NormalizedOpCode.IfIcmple:
                         ilGenerator.EmitBle(block.GetLabel(instr.TargetIndex));
                         break;
-                    case NormalizedByteCode.__if_icmplt:
+                    case NormalizedOpCode.IfIcmplt:
                         ilGenerator.EmitBlt(block.GetLabel(instr.TargetIndex));
                         break;
-                    case NormalizedByteCode.__if_icmpge:
+                    case NormalizedOpCode.IfIcmpge:
                         ilGenerator.EmitBge(block.GetLabel(instr.TargetIndex));
                         break;
-                    case NormalizedByteCode.__if_icmpgt:
+                    case NormalizedOpCode.IfIcmpgt:
                         ilGenerator.EmitBgt(block.GetLabel(instr.TargetIndex));
                         break;
-                    case NormalizedByteCode.__ifle:
+                    case NormalizedOpCode.Ifle:
                         ilGenerator.Emit_if_le_lt_ge_gt(CodeEmitter.Comparison.LessOrEqual, block.GetLabel(instr.TargetIndex));
                         break;
-                    case NormalizedByteCode.__iflt:
+                    case NormalizedOpCode.Iflt:
                         ilGenerator.Emit_if_le_lt_ge_gt(CodeEmitter.Comparison.LessThan, block.GetLabel(instr.TargetIndex));
                         break;
-                    case NormalizedByteCode.__ifge:
+                    case NormalizedOpCode.Ifge:
                         ilGenerator.Emit_if_le_lt_ge_gt(CodeEmitter.Comparison.GreaterOrEqual, block.GetLabel(instr.TargetIndex));
                         break;
-                    case NormalizedByteCode.__ifgt:
+                    case NormalizedOpCode.Ifgt:
                         ilGenerator.Emit_if_le_lt_ge_gt(CodeEmitter.Comparison.GreaterThan, block.GetLabel(instr.TargetIndex));
                         break;
-                    case NormalizedByteCode.__ifne:
-                    case NormalizedByteCode.__ifnonnull:
+                    case NormalizedOpCode.Ifne:
+                    case NormalizedOpCode.IfNonNull:
                         ilGenerator.EmitBrtrue(block.GetLabel(instr.TargetIndex));
                         break;
-                    case NormalizedByteCode.__ifeq:
-                    case NormalizedByteCode.__ifnull:
+                    case NormalizedOpCode.Ifeq:
+                    case NormalizedOpCode.IfNull:
                         ilGenerator.EmitBrfalse(block.GetLabel(instr.TargetIndex));
                         break;
-                    case NormalizedByteCode.__if_acmpeq:
+                    case NormalizedOpCode.IfAcmpeq:
                         ilGenerator.EmitBeq(block.GetLabel(instr.TargetIndex));
                         break;
-                    case NormalizedByteCode.__if_acmpne:
+                    case NormalizedOpCode.IfAcmpne:
                         ilGenerator.EmitBne_Un(block.GetLabel(instr.TargetIndex));
                         break;
-                    case NormalizedByteCode.__goto:
-                    case NormalizedByteCode.__goto_finally:
+                    case NormalizedOpCode.Goto:
+                    case NormalizedOpCode.GotoFinally:
                         ilGenerator.EmitBr(block.GetLabel(instr.TargetIndex));
                         break;
-                    case NormalizedByteCode.__ineg:
-                    case NormalizedByteCode.__lneg:
-                    case NormalizedByteCode.__fneg:
-                    case NormalizedByteCode.__dneg:
+                    case NormalizedOpCode.Ineg:
+                    case NormalizedOpCode.Lneg:
+                    case NormalizedOpCode.Fneg:
+                    case NormalizedOpCode.Dneg:
                         ilGenerator.Emit(OpCodes.Neg);
                         break;
-                    case NormalizedByteCode.__iadd:
-                    case NormalizedByteCode.__ladd:
+                    case NormalizedOpCode.Iadd:
+                    case NormalizedOpCode.Ladd:
                         ilGenerator.Emit(OpCodes.Add);
                         break;
-                    case NormalizedByteCode.__fadd:
+                    case NormalizedOpCode.Fadd:
                         ilGenerator.Emit(OpCodes.Add);
                         ilGenerator.Emit(OpCodes.Conv_R4);
                         break;
-                    case NormalizedByteCode.__dadd:
+                    case NormalizedOpCode.Dadd:
                         ilGenerator.Emit(OpCodes.Add);
                         if (strictfp)
                         {
                             ilGenerator.Emit(OpCodes.Conv_R8);
                         }
                         break;
-                    case NormalizedByteCode.__isub:
-                    case NormalizedByteCode.__lsub:
+                    case NormalizedOpCode.Isub:
+                    case NormalizedOpCode.Lsub:
                         ilGenerator.Emit(OpCodes.Sub);
                         break;
-                    case NormalizedByteCode.__fsub:
+                    case NormalizedOpCode.Fsub:
                         ilGenerator.Emit(OpCodes.Sub);
                         ilGenerator.Emit(OpCodes.Conv_R4);
                         break;
-                    case NormalizedByteCode.__dsub:
+                    case NormalizedOpCode.Dsub:
                         ilGenerator.Emit(OpCodes.Sub);
                         if (strictfp)
                         {
                             ilGenerator.Emit(OpCodes.Conv_R8);
                         }
                         break;
-                    case NormalizedByteCode.__ixor:
-                    case NormalizedByteCode.__lxor:
+                    case NormalizedOpCode.Ixor:
+                    case NormalizedOpCode.Lxor:
                         ilGenerator.Emit(OpCodes.Xor);
                         break;
-                    case NormalizedByteCode.__ior:
-                    case NormalizedByteCode.__lor:
+                    case NormalizedOpCode.Ior:
+                    case NormalizedOpCode.Lor:
                         ilGenerator.Emit(OpCodes.Or);
                         break;
-                    case NormalizedByteCode.__iand:
-                    case NormalizedByteCode.__land:
+                    case NormalizedOpCode.Iand:
+                    case NormalizedOpCode.Land:
                         ilGenerator.Emit(OpCodes.And);
                         break;
-                    case NormalizedByteCode.__imul:
-                    case NormalizedByteCode.__lmul:
+                    case NormalizedOpCode.Imul:
+                    case NormalizedOpCode.Lmul:
                         ilGenerator.Emit(OpCodes.Mul);
                         break;
-                    case NormalizedByteCode.__fmul:
+                    case NormalizedOpCode.Fmul:
                         ilGenerator.Emit(OpCodes.Mul);
                         ilGenerator.Emit(OpCodes.Conv_R4);
                         break;
-                    case NormalizedByteCode.__dmul:
+                    case NormalizedOpCode.Dmul:
                         ilGenerator.Emit(OpCodes.Mul);
                         if (strictfp)
                         {
                             ilGenerator.Emit(OpCodes.Conv_R8);
                         }
                         break;
-                    case NormalizedByteCode.__idiv:
+                    case NormalizedOpCode.Idiv:
                         ilGenerator.Emit_idiv();
                         break;
-                    case NormalizedByteCode.__ldiv:
+                    case NormalizedOpCode.Ldiv:
                         ilGenerator.Emit_ldiv();
                         break;
-                    case NormalizedByteCode.__fdiv:
+                    case NormalizedOpCode.Fdiv:
                         ilGenerator.Emit(OpCodes.Div);
                         ilGenerator.Emit(OpCodes.Conv_R4);
                         break;
-                    case NormalizedByteCode.__ddiv:
+                    case NormalizedOpCode.Ddiv:
                         ilGenerator.Emit(OpCodes.Div);
                         if (strictfp)
                         {
                             ilGenerator.Emit(OpCodes.Conv_R8);
                         }
                         break;
-                    case NormalizedByteCode.__irem:
-                    case NormalizedByteCode.__lrem:
+                    case NormalizedOpCode.Irem:
+                    case NormalizedOpCode.Lrem:
                         {
                             // we need to special case taking the remainder of dividing by -1,
                             // because the CLR rem instruction throws an OverflowException when
@@ -2049,14 +2030,14 @@ namespace IKVM.Runtime
                             // Java just silently overflows
                             ilGenerator.Emit(OpCodes.Dup);
                             ilGenerator.Emit(OpCodes.Ldc_I4_M1);
-                            if (instr.NormalizedOpCode == NormalizedByteCode.__lrem)
+                            if (instr.NormalizedOpCode == NormalizedOpCode.Lrem)
                                 ilGenerator.Emit(OpCodes.Conv_I8);
                             var label = ilGenerator.DefineLabel();
                             ilGenerator.EmitBne_Un(label);
                             ilGenerator.Emit(OpCodes.Pop);
                             ilGenerator.Emit(OpCodes.Pop);
                             ilGenerator.Emit(OpCodes.Ldc_I4_0);
-                            if (instr.NormalizedOpCode == NormalizedByteCode.__lrem)
+                            if (instr.NormalizedOpCode == NormalizedOpCode.Lrem)
                             {
                                 ilGenerator.Emit(OpCodes.Conv_I8);
                             }
@@ -2067,40 +2048,40 @@ namespace IKVM.Runtime
                             ilGenerator.MarkLabel(label2);
                             break;
                         }
-                    case NormalizedByteCode.__frem:
+                    case NormalizedOpCode.Frem:
                         ilGenerator.Emit(OpCodes.Rem);
                         ilGenerator.Emit(OpCodes.Conv_R4);
                         break;
-                    case NormalizedByteCode.__drem:
+                    case NormalizedOpCode.Drem:
                         ilGenerator.Emit(OpCodes.Rem);
                         if (strictfp)
                             ilGenerator.Emit(OpCodes.Conv_R8);
                         break;
-                    case NormalizedByteCode.__ishl:
+                    case NormalizedOpCode.Ishl:
                         ilGenerator.Emit_And_I4(31);
                         ilGenerator.Emit(OpCodes.Shl);
                         break;
-                    case NormalizedByteCode.__lshl:
+                    case NormalizedOpCode.Lshl:
                         ilGenerator.Emit_And_I4(63);
                         ilGenerator.Emit(OpCodes.Shl);
                         break;
-                    case NormalizedByteCode.__iushr:
+                    case NormalizedOpCode.Iushr:
                         ilGenerator.Emit_And_I4(31);
                         ilGenerator.Emit(OpCodes.Shr_Un);
                         break;
-                    case NormalizedByteCode.__lushr:
+                    case NormalizedOpCode.Lushr:
                         ilGenerator.Emit_And_I4(63);
                         ilGenerator.Emit(OpCodes.Shr_Un);
                         break;
-                    case NormalizedByteCode.__ishr:
+                    case NormalizedOpCode.Ishr:
                         ilGenerator.Emit_And_I4(31);
                         ilGenerator.Emit(OpCodes.Shr);
                         break;
-                    case NormalizedByteCode.__lshr:
+                    case NormalizedOpCode.Lshr:
                         ilGenerator.Emit_And_I4(63);
                         ilGenerator.Emit(OpCodes.Shr);
                         break;
-                    case NormalizedByteCode.__swap:
+                    case NormalizedOpCode.Swap:
                         {
                             var dh = new DupHelper(this, 2);
                             dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
@@ -2112,13 +2093,13 @@ namespace IKVM.Runtime
                             dh.Release();
                             break;
                         }
-                    case NormalizedByteCode.__dup:
+                    case NormalizedOpCode.Dup:
                         // if the TOS contains a "new" object or a fault block exception, it isn't really there, so we don't dup it
                         if (!RuntimeVerifierJavaType.IsNotPresentOnStack(ma.GetRawStackTypeWrapper(i, 0)))
                             ilGenerator.Emit(OpCodes.Dup);
 
                         break;
-                    case NormalizedByteCode.__dup2:
+                    case NormalizedOpCode.Dup2:
                         {
                             var type1 = ma.GetRawStackTypeWrapper(i, 0);
                             if (type1.IsWidePrimitive)
@@ -2140,7 +2121,7 @@ namespace IKVM.Runtime
                             }
                             break;
                         }
-                    case NormalizedByteCode.__dup_x1:
+                    case NormalizedOpCode.DupX1:
                         {
                             var dh = new DupHelper(this, 2);
                             dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
@@ -2153,7 +2134,7 @@ namespace IKVM.Runtime
                             dh.Release();
                             break;
                         }
-                    case NormalizedByteCode.__dup2_x1:
+                    case NormalizedOpCode.Dup2X1:
                         {
                             var type1 = ma.GetRawStackTypeWrapper(i, 0);
                             if (type1.IsWidePrimitive)
@@ -2186,7 +2167,7 @@ namespace IKVM.Runtime
                             }
                             break;
                         }
-                    case NormalizedByteCode.__dup2_x2:
+                    case NormalizedOpCode.Dup2X2:
                         {
                             var type1 = ma.GetRawStackTypeWrapper(i, 0);
                             var type2 = ma.GetRawStackTypeWrapper(i, 1);
@@ -2265,7 +2246,7 @@ namespace IKVM.Runtime
                             }
                             break;
                         }
-                    case NormalizedByteCode.__dup_x2:
+                    case NormalizedOpCode.DupX2:
                         {
                             var type2 = ma.GetRawStackTypeWrapper(i, 1);
                             if (type2.IsWidePrimitive)
@@ -2299,7 +2280,7 @@ namespace IKVM.Runtime
                             }
                             break;
                         }
-                    case NormalizedByteCode.__pop2:
+                    case NormalizedOpCode.Pop2:
                         {
                             var type1 = ma.GetRawStackTypeWrapper(i, 0);
                             if (type1.IsWidePrimitive)
@@ -2315,27 +2296,27 @@ namespace IKVM.Runtime
                             }
                             break;
                         }
-                    case NormalizedByteCode.__pop:
+                    case NormalizedOpCode.Pop:
                         // if the TOS is a new object or a fault block exception, it isn't really there, so we don't need to pop it
                         if (!RuntimeVerifierJavaType.IsNotPresentOnStack(ma.GetRawStackTypeWrapper(i, 0)))
                         {
                             ilGenerator.Emit(OpCodes.Pop);
                         }
                         break;
-                    case NormalizedByteCode.__monitorenter:
+                    case NormalizedOpCode.MonitorEnter:
                         ilGenerator.EmitMonitorEnter();
                         break;
-                    case NormalizedByteCode.__monitorexit:
+                    case NormalizedOpCode.MonitorExit:
                         ilGenerator.EmitMonitorExit();
                         break;
-                    case NormalizedByteCode.__athrow_no_unmap:
+                    case NormalizedOpCode.AthrowNoUnmap:
                         if (ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
                         {
                             ilGenerator.Emit(OpCodes.Castclass, finish.Context.Types.Exception);
                         }
                         ilGenerator.Emit(OpCodes.Throw);
                         break;
-                    case NormalizedByteCode.__athrow:
+                    case NormalizedOpCode.Athrow:
                         if (RuntimeVerifierJavaType.IsFaultBlockException(ma.GetRawStackTypeWrapper(i, 0)))
                         {
                             ilGenerator.Emit(OpCodes.Endfinally);
@@ -2350,7 +2331,7 @@ namespace IKVM.Runtime
                             ilGenerator.Emit(OpCodes.Throw);
                         }
                         break;
-                    case NormalizedByteCode.__tableswitch:
+                    case NormalizedOpCode.TableSwitch:
                         {
                             // note that a tableswitch always has at least one entry
                             // (otherwise it would have failed verification)
@@ -2368,7 +2349,7 @@ namespace IKVM.Runtime
                             ilGenerator.EmitBr(block.GetLabel(instr.DefaultTarget));
                             break;
                         }
-                    case NormalizedByteCode.__lookupswitch:
+                    case NormalizedOpCode.LookupSwitch:
                         for (int j = 0; j < instr.SwitchEntryCount; j++)
                         {
                             ilGenerator.Emit(OpCodes.Dup);
@@ -2382,56 +2363,56 @@ namespace IKVM.Runtime
                         ilGenerator.Emit(OpCodes.Pop);
                         ilGenerator.EmitBr(block.GetLabel(instr.DefaultTarget));
                         break;
-                    case NormalizedByteCode.__iinc:
+                    case NormalizedOpCode.Iinc:
                         LoadLocal(i);
                         ilGenerator.EmitLdc_I4(instr.Arg2);
                         ilGenerator.Emit(OpCodes.Add);
                         StoreLocal(i);
                         break;
-                    case NormalizedByteCode.__i2b:
+                    case NormalizedOpCode.I2b:
                         ilGenerator.Emit(OpCodes.Conv_I1);
                         break;
-                    case NormalizedByteCode.__i2c:
+                    case NormalizedOpCode.I2c:
                         ilGenerator.Emit(OpCodes.Conv_U2);
                         break;
-                    case NormalizedByteCode.__i2s:
+                    case NormalizedOpCode.I2s:
                         ilGenerator.Emit(OpCodes.Conv_I2);
                         break;
-                    case NormalizedByteCode.__l2i:
+                    case NormalizedOpCode.L2i:
                         ilGenerator.Emit(OpCodes.Conv_I4);
                         break;
-                    case NormalizedByteCode.__f2i:
+                    case NormalizedOpCode.F2i:
                         ilGenerator.Emit(OpCodes.Call, finish.Context.ByteCodeHelperMethods.f2i);
                         break;
-                    case NormalizedByteCode.__d2i:
+                    case NormalizedOpCode.D2i:
                         ilGenerator.Emit(OpCodes.Call, finish.Context.ByteCodeHelperMethods.d2i);
                         break;
-                    case NormalizedByteCode.__f2l:
+                    case NormalizedOpCode.F2l:
                         ilGenerator.Emit(OpCodes.Call, finish.Context.ByteCodeHelperMethods.f2l);
                         break;
-                    case NormalizedByteCode.__d2l:
+                    case NormalizedOpCode.D2l:
                         ilGenerator.Emit(OpCodes.Call, finish.Context.ByteCodeHelperMethods.d2l);
                         break;
-                    case NormalizedByteCode.__i2l:
+                    case NormalizedOpCode.I2l:
                         ilGenerator.Emit(OpCodes.Conv_I8);
                         break;
-                    case NormalizedByteCode.__i2f:
-                    case NormalizedByteCode.__l2f:
-                    case NormalizedByteCode.__d2f:
+                    case NormalizedOpCode.I2f:
+                    case NormalizedOpCode.L2f:
+                    case NormalizedOpCode.D2f:
                         ilGenerator.Emit(OpCodes.Conv_R4);
                         break;
-                    case NormalizedByteCode.__i2d:
-                    case NormalizedByteCode.__l2d:
-                    case NormalizedByteCode.__f2d:
+                    case NormalizedOpCode.I2d:
+                    case NormalizedOpCode.L2d:
+                    case NormalizedOpCode.F2d:
                         ilGenerator.Emit(OpCodes.Conv_R8);
                         break;
-                    case NormalizedByteCode.__nop:
+                    case NormalizedOpCode.Nop:
                         ilGenerator.Emit(OpCodes.Nop);
                         break;
-                    case NormalizedByteCode.__intrinsic_gettype:
+                    case NormalizedOpCode.IntrinsicGettype:
                         ilGenerator.Emit(OpCodes.Callvirt, finish.Context.CompilerFactory.GetTypeMethod);
                         break;
-                    case NormalizedByteCode.__static_error:
+                    case NormalizedOpCode.StaticError:
                         {
                             bool wrapIncompatibleClassChangeError = false;
                             RuntimeJavaType exceptionType;
@@ -2490,16 +2471,16 @@ namespace IKVM.Runtime
                 }
 
                 // mark next instruction as inuse
-                switch (ByteCodeMetaData.GetFlowControl(instr.NormalizedOpCode))
+                switch (OpCodeMetaData.GetFlowKind(instr.NormalizedOpCode))
                 {
-                    case ByteCodeFlowControl.Switch:
-                    case ByteCodeFlowControl.Branch:
-                    case ByteCodeFlowControl.Return:
-                    case ByteCodeFlowControl.Throw:
+                    case OpCodeFlowControl.Switch:
+                    case OpCodeFlowControl.Branch:
+                    case OpCodeFlowControl.Return:
+                    case OpCodeFlowControl.Throw:
                         instructionIsForwardReachable = false;
                         break;
-                    case ByteCodeFlowControl.CondBranch:
-                    case ByteCodeFlowControl.Next:
+                    case OpCodeFlowControl.ConditionalBranch:
+                    case OpCodeFlowControl.Next:
                         instructionIsForwardReachable = true;
                         Debug.Assert((flags[i + 1] & InstructionFlags.Reachable) != 0);
                         // don't fall through end of try block
@@ -2536,32 +2517,32 @@ namespace IKVM.Runtime
         {
             switch (classFile.GetConstantPoolConstantType(constant))
             {
-                case ClassFile.ConstantType.Double:
+                case ConstantType.Double:
                     ilgen.EmitLdc_R8(classFile.GetConstantPoolConstantDouble((DoubleConstantHandle)constant));
                     break;
-                case ClassFile.ConstantType.Float:
+                case ConstantType.Float:
                     ilgen.EmitLdc_R4(classFile.GetConstantPoolConstantFloat((FloatConstantHandle)constant));
                     break;
-                case ClassFile.ConstantType.Integer:
+                case ConstantType.Integer:
                     ilgen.EmitLdc_I4(classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)constant));
                     break;
-                case ClassFile.ConstantType.Long:
+                case ConstantType.Long:
                     ilgen.EmitLdc_I8(classFile.GetConstantPoolConstantLong((LongConstantHandle)constant));
                     break;
-                case ClassFile.ConstantType.String:
+                case ConstantType.String:
                     ilgen.Emit(OpCodes.Ldstr, classFile.GetConstantPoolConstantString((StringConstantHandle)constant));
                     break;
-                case ClassFile.ConstantType.Class:
+                case ConstantType.Class:
                     EmitLoadClass(ilgen, classFile.GetConstantPoolClassType((ClassConstantHandle)constant));
                     break;
-                case ClassFile.ConstantType.MethodHandle:
+                case ConstantType.MethodHandle:
                     finish.GetValue<MethodHandleConstant>(constant.Slot).Emit(this, ilgen, (MethodHandleConstantHandle)constant);
                     break;
-                case ClassFile.ConstantType.MethodType:
+                case ConstantType.MethodType:
                     finish.GetValue<MethodTypeConstant>(constant.Slot).Emit(this, ilgen, (MethodTypeConstantHandle)constant);
                     break;
 #if !IMPORTER
-                case ClassFile.ConstantType.LiveObject:
+                case ConstantType.LiveObject:
                     finish.EmitLiveObjectLoad(ilgen, classFile.GetConstantPoolConstantLiveObject(constant.Slot));
                     break;
 #endif
@@ -2631,7 +2612,7 @@ namespace IKVM.Runtime
         static class InvokeDynamicBuilder
         {
 
-            internal static void Emit(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, Type delegateType)
+            internal static void Emit(Compiler compiler, ConstantPoolItemInvokeDynamic cpi, Type delegateType)
             {
                 var typeofOpenIndyCallSite = compiler.finish.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.IndyCallSite`1").AsReflection();
                 var methodLookup = compiler.finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodHandles").GetMethod("lookup", "()Ljava.lang.invoke.MethodHandles$Lookup;", false);
@@ -2666,7 +2647,7 @@ namespace IKVM.Runtime
                 compiler.ilGenerator.Emit(OpCodes.Call, methodGetTarget);
             }
 
-            static MethodBuilder CreateBootstrapStub(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, Type delegateType, TypeBuilder tb, FieldBuilder fb, MethodInfo methodGetTarget)
+            static MethodBuilder CreateBootstrapStub(Compiler compiler, ConstantPoolItemInvokeDynamic cpi, Type delegateType, TypeBuilder tb, FieldBuilder fb, MethodInfo methodGetTarget)
             {
                 var typeofCallSite = compiler.finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.CallSite").TypeAsSignatureType;
                 var args = Type.EmptyTypes;
@@ -2730,19 +2711,19 @@ namespace IKVM.Runtime
                 return mb;
             }
 
-            static bool EmitCallBootstrapMethod(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen, CodeEmitterLocal ok)
+            static bool EmitCallBootstrapMethod(Compiler compiler, ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen, CodeEmitterLocal ok)
             {
                 var methodLookup = compiler.finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodHandles").GetMethod("lookup", "()Ljava.lang.invoke.MethodHandles$Lookup;", false);
                 methodLookup.Link();
 
                 var bsm = compiler.classFile.GetBootstrapMethod(cpi.BootstrapMethod);
-                if (3 + bsm.ArgumentCount > 255)
+                if (3 + bsm.Arguments.Count > 255)
                 {
                     ilgen.EmitThrow("java.lang.BootstrapMethodError", "too many bootstrap method arguments");
                     return false;
                 }
 
-                var mh = compiler.classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex);
+                var mh = compiler.classFile.GetConstantPoolConstantMethodHandle(bsm.Method);
                 var mw = mh.Member as RuntimeJavaMethod;
                 switch (mh.Kind)
                 {
@@ -2756,7 +2737,7 @@ namespace IKVM.Runtime
                         break;
                     default:
                         // to throw the right exception, we have to resolve the MH constant here
-                        compiler.finish.GetValue<MethodHandleConstant>(bsm.BootstrapMethodIndex.Slot).Emit(compiler, ilgen, bsm.BootstrapMethodIndex);
+                        compiler.finish.GetValue<MethodHandleConstant>(bsm.Method.Slot).Emit(compiler, ilgen, bsm.Method);
                         ilgen.Emit(OpCodes.Pop);
                         ilgen.EmitLdc_I4(1);
                         ilgen.Emit(OpCodes.Stloc, ok);
@@ -2767,9 +2748,9 @@ namespace IKVM.Runtime
                 if (mw == null)
                 {
                     // to throw the right exception (i.e. without wrapping it in a BootstrapMethodError), we have to resolve the MH constant here
-                    compiler.finish.GetValue<MethodHandleConstant>(bsm.BootstrapMethodIndex.Slot).Emit(compiler, ilgen, bsm.BootstrapMethodIndex);
+                    compiler.finish.GetValue<MethodHandleConstant>(bsm.Method.Slot).Emit(compiler, ilgen, bsm.Method);
                     ilgen.Emit(OpCodes.Pop);
-                    if (mh.MemberConstantPoolItem is ClassFile.ConstantPoolItemMI cpiMI)
+                    if (mh.MemberConstantPoolItem is ConstantPoolItemMI cpiMI)
                     {
                         mw = new DynamicBinder().Get(compiler, mh.Kind, cpiMI, false);
                     }
@@ -2789,9 +2770,9 @@ namespace IKVM.Runtime
                 if (extraArgs == 1 && parameters[3].IsArray && parameters[3].ElementTypeWrapper == compiler.finish.Context.JavaBase.TypeOfJavaLangObject)
                 {
                     fixedArgs = 0;
-                    varArgs = bsm.ArgumentCount - fixedArgs;
+                    varArgs = bsm.Arguments.Count - fixedArgs;
                 }
-                else if (extraArgs != bsm.ArgumentCount)
+                else if (extraArgs != bsm.Arguments.Count)
                 {
                     ilgen.EmitLdc_I4(1);
                     ilgen.Emit(OpCodes.Stloc, ok);
@@ -2851,21 +2832,21 @@ namespace IKVM.Runtime
                 return true;
             }
 
-            static void EmitExtraArg(Compiler compiler, CodeEmitter ilgen, ClassFile.BootstrapMethod bsm, int index, RuntimeJavaType targetType, CodeEmitterLocal wrapException)
+            static void EmitExtraArg(Compiler compiler, CodeEmitter ilgen, BootstrapMethod bootstrapMethod, int index, RuntimeJavaType targetType, CodeEmitterLocal wrapException)
             {
-                var constant = bsm.GetArgument(index);
+                var constant = bootstrapMethod.Arguments[index];
                 compiler.EmitLoadConstant(ilgen, constant);
 
                 var constType = compiler.classFile.GetConstantPoolConstantType(constant) switch
                 {
-                    ClassFile.ConstantType.Integer => compiler.finish.Context.PrimitiveJavaTypeFactory.INT,
-                    ClassFile.ConstantType.Long => compiler.finish.Context.PrimitiveJavaTypeFactory.LONG,
-                    ClassFile.ConstantType.Float => compiler.finish.Context.PrimitiveJavaTypeFactory.FLOAT,
-                    ClassFile.ConstantType.Double => compiler.finish.Context.PrimitiveJavaTypeFactory.DOUBLE,
-                    ClassFile.ConstantType.Class => compiler.finish.Context.JavaBase.TypeOfJavaLangClass,
-                    ClassFile.ConstantType.String => compiler.finish.Context.JavaBase.TypeOfJavaLangString,
-                    ClassFile.ConstantType.MethodHandle => compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle,
-                    ClassFile.ConstantType.MethodType => compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodType,
+                    ConstantType.Integer => compiler.finish.Context.PrimitiveJavaTypeFactory.INT,
+                    ConstantType.Long => compiler.finish.Context.PrimitiveJavaTypeFactory.LONG,
+                    ConstantType.Float => compiler.finish.Context.PrimitiveJavaTypeFactory.FLOAT,
+                    ConstantType.Double => compiler.finish.Context.PrimitiveJavaTypeFactory.DOUBLE,
+                    ConstantType.Class => compiler.finish.Context.JavaBase.TypeOfJavaLangClass,
+                    ConstantType.String => compiler.finish.Context.JavaBase.TypeOfJavaLangString,
+                    ConstantType.MethodHandle => compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle,
+                    ConstantType.MethodType => compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodType,
                     _ => throw new InvalidOperationException(),
                 };
 
@@ -2877,7 +2858,7 @@ namespace IKVM.Runtime
                     if (constType.IsPrimitive)
                     {
                         var wrapper = GetWrapperType(constType, out var dummy);
-                        wrapper.GetMethod("valueOf", "(" + constType.SigName + ")" + wrapper.SigName, false).EmitCall(ilgen);
+                        wrapper.GetMethod("valueOf", "(" + constType.SignatureName + ")" + wrapper.SignatureName, false).EmitCall(ilgen);
                     }
 
                     if (targetType.IsUnloadable)
@@ -2888,7 +2869,7 @@ namespace IKVM.Runtime
                     {
                         var wrapper = GetWrapperType(targetType, out var unbox);
                         ilgen.Emit(OpCodes.Castclass, wrapper.TypeAsBaseType);
-                        wrapper.GetMethod(unbox, "()" + targetType.SigName, false).EmitCallvirt(ilgen);
+                        wrapper.GetMethod(unbox, "()" + targetType.SignatureName, false).EmitCallvirt(ilgen);
                     }
                     else if (!constType.IsAssignableTo(targetType))
                     {
@@ -2931,7 +2912,7 @@ namespace IKVM.Runtime
 
         }
 
-        void EmitInvokeDynamic(ClassFile.ConstantPoolItemInvokeDynamic cpi)
+        void EmitInvokeDynamic(ConstantPoolItemInvokeDynamic cpi)
         {
             var ilgen = ilGenerator;
             var args = cpi.GetArgTypes();
@@ -3027,15 +3008,15 @@ namespace IKVM.Runtime
             var code = m.Instructions;
             for (; index < code.Length; index++)
             {
-                if (code[index].NormalizedOpCode == NormalizedByteCode.__invokespecial)
+                if (code[index].NormalizedOpCode == NormalizedOpCode.InvokeSpecial)
                 {
-                    ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(code[index].Arg1);
-                    RuntimeJavaMethod mw = cpi.GetMethodForInvokespecial();
+                    var cpi = classFile.GetMethodref(code[index].Arg1);
+                    var mw = cpi.GetMethodForInvokespecial();
                     return !mw.IsConstructor || mw.DeclaringType != tw;
                 }
                 if ((flags[index] & InstructionFlags.BranchTarget) != 0
-                    || ByteCodeMetaData.IsBranch(code[index].NormalizedOpCode)
-                    || ByteCodeMetaData.CanThrowException(code[index].NormalizedOpCode))
+                    || OpCodeMetaData.IsBranch(code[index].NormalizedOpCode)
+                    || OpCodeMetaData.CanThrowException(code[index].NormalizedOpCode))
                 {
                     break;
                 }
@@ -3065,7 +3046,7 @@ namespace IKVM.Runtime
                     }
                     else if (args[i].IsInterfaceOrInterfaceArray)
                     {
-                        RuntimeJavaType tw = ma.GetStackTypeWrapper(instructionIndex, args.Length - 1 - i);
+                        var tw = ma.GetStackTypeWrapper(instructionIndex, args.Length - 1 - i);
                         if (tw.IsUnloadable || NeedsInterfaceDownCast(tw, args[i]))
                         {
                             needsCast = true;
@@ -3099,54 +3080,50 @@ namespace IKVM.Runtime
 
             if (needsCast)
             {
-                DupHelper dh = new DupHelper(this, args.Length);
+                var dh = new DupHelper(this, args.Length);
                 for (int i = firstCastArg + 1; i < args.Length; i++)
                 {
-                    RuntimeJavaType tw = ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i);
+                    var tw = ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i);
                     if (tw != finish.Context.VerifierJavaTypeFactory.UninitializedThis
                         && !RuntimeVerifierJavaType.IsThis(tw))
-                    {
                         tw = args[i];
-                    }
+
                     dh.SetType(i, tw);
                 }
+
                 for (int i = args.Length - 1; i >= firstCastArg; i--)
                 {
                     if (!args[i].IsUnloadable && !args[i].IsGhost)
                     {
-                        RuntimeJavaType tw = ma.GetStackTypeWrapper(instructionIndex, args.Length - 1 - i);
+                        var tw = ma.GetStackTypeWrapper(instructionIndex, args.Length - 1 - i);
                         if (tw.IsUnloadable || (args[i].IsInterfaceOrInterfaceArray && NeedsInterfaceDownCast(tw, args[i])))
                         {
                             ilGenerator.EmitAssertType(args[i].TypeAsTBD);
                             Profiler.Count("InterfaceDownCast");
                         }
                     }
+
                     if (i != firstCastArg)
                     {
                         dh.Store(i);
                     }
                 }
+
                 if (instanceMethod && args[0].IsUnloadable && !declaringType.IsUnloadable)
                 {
                     if (declaringType.IsInterface)
-                    {
                         ilGenerator.EmitAssertType(declaringType.TypeAsTBD);
-                    }
                     else if (declaringType.IsNonPrimitiveValueType)
-                    {
                         ilGenerator.Emit(OpCodes.Unbox, declaringType.TypeAsTBD);
-                    }
                     else
-                    {
                         ilGenerator.Emit(OpCodes.Castclass, declaringType.TypeAsSignatureType);
-                    }
                 }
+
                 for (int i = firstCastArg; i < args.Length; i++)
                 {
                     if (i != firstCastArg)
-                    {
                         dh.Load(i);
-                    }
+
                     if (!args[i].IsUnloadable && args[i].IsGhost)
                     {
                         if (i == 0 && instanceMethod && !declaringType.IsInterface)
@@ -3166,20 +3143,19 @@ namespace IKVM.Runtime
                         }
                         else
                         {
-                            CodeEmitterLocal ghost = ilGenerator.AllocTempLocal(finish.Context.Types.Object);
+                            var ghost = ilGenerator.AllocTempLocal(finish.Context.Types.Object);
                             ilGenerator.Emit(OpCodes.Stloc, ghost);
-                            CodeEmitterLocal local = ilGenerator.AllocTempLocal(args[i].TypeAsSignatureType);
+                            var local = ilGenerator.AllocTempLocal(args[i].TypeAsSignatureType);
                             ilGenerator.Emit(OpCodes.Ldloca, local);
                             ilGenerator.Emit(OpCodes.Ldloc, ghost);
                             ilGenerator.Emit(OpCodes.Stfld, args[i].GhostRefField);
                             ilGenerator.Emit(OpCodes.Ldloca, local);
                             ilGenerator.ReleaseTempLocal(local);
                             ilGenerator.ReleaseTempLocal(ghost);
+
                             // NOTE when the this argument is a value type, we need the address on the stack instead of the value
                             if (i != 0 || !instanceMethod)
-                            {
                                 ilGenerator.Emit(OpCodes.Ldobj, args[i].TypeAsSignatureType);
-                            }
                         }
                     }
                     else
@@ -3192,9 +3168,7 @@ namespace IKVM.Runtime
                                 {
                                     // we only need to unbox if the method was actually declared on the value type
                                     if (declaringType == args[i])
-                                    {
                                         ilGenerator.Emit(OpCodes.Unbox, args[i].TypeAsTBD);
-                                    }
                                 }
                                 else
                                 {
@@ -3208,49 +3182,49 @@ namespace IKVM.Runtime
                         }
                     }
                 }
+
                 dh.Release();
             }
         }
 
-        private bool NeedsInterfaceDownCast(RuntimeJavaType tw, RuntimeJavaType arg)
+        bool NeedsInterfaceDownCast(RuntimeJavaType tw, RuntimeJavaType arg)
         {
             if (tw == finish.Context.VerifierJavaTypeFactory.Null)
-            {
                 return false;
-            }
+
             if (!tw.IsAccessibleFrom(clazz))
-            {
                 tw = tw.GetPublicBaseTypeWrapper();
-            }
+
             return !tw.IsAssignableTo(arg);
         }
 
-        private void DynamicGetPutField(Instruction instr, int i)
+        void DynamicGetPutField(Instruction instr, int i)
         {
             MethodHandleKind kind;
             switch (instr.NormalizedOpCode)
             {
-                case NormalizedByteCode.__dynamic_getfield:
+                case NormalizedOpCode.DynamicGetField:
                     Profiler.Count("EmitDynamicGetfield");
                     kind = MethodHandleKind.GetField;
                     break;
-                case NormalizedByteCode.__dynamic_putfield:
+                case NormalizedOpCode.DynamicPutField:
                     Profiler.Count("EmitDynamicPutfield");
                     kind = MethodHandleKind.PutField;
                     break;
-                case NormalizedByteCode.__dynamic_getstatic:
+                case NormalizedOpCode.DynamicGetStatic:
                     Profiler.Count("EmitDynamicGetstatic");
                     kind = MethodHandleKind.GetStatic;
                     break;
-                case NormalizedByteCode.__dynamic_putstatic:
+                case NormalizedOpCode.DynamicPutStatic:
                     Profiler.Count("EmitDynamicPutstatic");
                     kind = MethodHandleKind.PutStatic;
                     break;
                 default:
                     throw new InvalidOperationException();
             }
-            ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
-            RuntimeJavaType fieldType = cpi.GetFieldType();
+
+            var cpi = classFile.GetFieldref(checked((ushort)instr.Arg1));
+            var fieldType = cpi.GetFieldType();
             if (kind == MethodHandleKind.PutField || kind == MethodHandleKind.PutStatic)
             {
                 fieldType.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
@@ -3263,14 +3237,13 @@ namespace IKVM.Runtime
                     ilGenerator.Emit(OpCodes.Conv_R8);
                 }
             }
+
             finish.GetValue<DynamicFieldBinder>(instr.Arg1 | ((byte)kind << 24)).Emit(this, cpi, kind);
             if (kind == MethodHandleKind.GetField || kind == MethodHandleKind.GetStatic)
-            {
                 fieldType.EmitConvSignatureTypeToStackType(ilGenerator);
-            }
         }
 
-        private static void EmitReturnTypeConversion(CodeEmitter ilgen, RuntimeJavaType typeWrapper)
+        static void EmitReturnTypeConversion(CodeEmitter ilgen, RuntimeJavaType typeWrapper)
         {
             if (typeWrapper.IsUnloadable)
             {
@@ -3299,31 +3272,27 @@ namespace IKVM.Runtime
         internal sealed class MethodHandleMethodWrapper : RuntimeJavaMethod
         {
 
-            private readonly Compiler compiler;
-            private readonly RuntimeJavaType wrapper;
-            private readonly ClassFile.ConstantPoolItemMI cpi;
+            readonly Compiler compiler;
+            readonly RuntimeJavaType wrapper;
+            readonly ConstantPoolItemMI cpi;
 
-            internal MethodHandleMethodWrapper(Compiler compiler, RuntimeJavaType wrapper, ClassFile.ConstantPoolItemMI cpi)
-                : base(compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
+            internal MethodHandleMethodWrapper(Compiler compiler, RuntimeJavaType wrapper, ConstantPoolItemMI cpi) :
+                base(compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
             {
                 this.compiler = compiler;
                 this.wrapper = wrapper;
                 this.cpi = cpi;
             }
 
-            private static void ToBasic(RuntimeJavaType tw, CodeEmitter ilgen)
+            static void ToBasic(RuntimeJavaType tw, CodeEmitter ilgen)
             {
                 if (tw.IsNonPrimitiveValueType)
-                {
                     tw.EmitBox(ilgen);
-                }
                 else if (tw.IsGhost)
-                {
                     tw.EmitConvSignatureTypeToStackType(ilgen);
-                }
             }
 
-            private static void FromBasic(RuntimeJavaType tw, CodeEmitter ilgen)
+            static void FromBasic(RuntimeJavaType tw, CodeEmitter ilgen)
             {
                 if (tw.IsNonPrimitiveValueType)
                 {
@@ -3348,7 +3317,7 @@ namespace IKVM.Runtime
             internal static void EmitLinkToCall(RuntimeContext context, CodeEmitter ilgen, RuntimeJavaType[] args, RuntimeJavaType retType)
             {
 #if !FIRST_PASS && !IMPORTER
-                CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
+                var temps = new CodeEmitterLocal[args.Length];
                 for (int i = args.Length - 1; i > 0; i--)
                 {
                     temps[i] = ilgen.DeclareLocal(context.MethodHandleUtil.AsBasicType(args[i]));
@@ -3357,23 +3326,23 @@ namespace IKVM.Runtime
                 }
                 temps[0] = ilgen.DeclareLocal(args[0].TypeAsSignatureType);
                 ilgen.Emit(OpCodes.Stloc, temps[0]);
+
                 Array.Resize(ref args, args.Length - 1);
-                Type delegateType = context.MethodHandleUtil.CreateMemberWrapperDelegateType(args, retType);
+                var delegateType = context.MethodHandleUtil.CreateMemberWrapperDelegateType(args, retType);
                 ilgen.Emit(OpCodes.Ldloc, temps[args.Length]);
-                ilgen.Emit(OpCodes.Ldfld, typeof(java.lang.invoke.MemberName).GetField("vmtarget", BindingFlags.Instance | BindingFlags.NonPublic));
+                ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.MemberName).GetField("vmtarget", BindingFlags.Instance | BindingFlags.NonPublic));
                 ilgen.Emit(OpCodes.Castclass, delegateType);
                 for (int i = 0; i < args.Length; i++)
-                {
                     ilgen.Emit(OpCodes.Ldloc, temps[i]);
-                }
+
                 context.MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
                 FromBasic(retType, ilgen);
 #else
-				throw new InvalidOperationException();
+                throw new InvalidOperationException();
 #endif
             }
 
-            private void EmitInvokeExact(CodeEmitter ilgen)
+            void EmitInvokeExact(CodeEmitter ilgen)
             {
                 var args = cpi.GetArgTypes();
                 var temps = new CodeEmitterLocal[args.Length];
@@ -3403,46 +3372,48 @@ namespace IKVM.Runtime
                 ilgen.Context.MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
             }
 
-            private void EmitInvokeMaxArity(CodeEmitter ilgen)
+            void EmitInvokeMaxArity(CodeEmitter ilgen)
             {
-                RuntimeJavaType[] args = cpi.GetArgTypes();
-                CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
+                var args = cpi.GetArgTypes();
+                var temps = new CodeEmitterLocal[args.Length];
                 for (int i = args.Length - 1; i >= 0; i--)
                 {
                     temps[i] = ilgen.DeclareLocal(args[i].TypeAsSignatureType);
                     ilgen.Emit(OpCodes.Stloc, temps[i]);
                 }
-                Type delegateType = compiler.finish.Context.MethodHandleUtil.CreateMethodHandleDelegateType(args, cpi.GetRetType());
+
+                var delegateType = compiler.finish.Context.MethodHandleUtil.CreateMethodHandleDelegateType(args, cpi.GetRetType());
                 ilgen.Emit(OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(delegateType));
                 compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle.GetMethod("asType", "(Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.MethodHandle;", false).EmitCallvirt(ilgen);
-                MethodInfo mi = compiler.finish.Context.ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(delegateType);
+                var mi = compiler.finish.Context.ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(delegateType);
                 ilgen.Emit(OpCodes.Call, mi);
                 for (int i = 0; i < args.Length; i++)
-                {
                     ilgen.Emit(OpCodes.Ldloc, temps[i]);
-                }
+
                 compiler.finish.Context.MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
             }
 
-            private void EmitInvoke(CodeEmitter ilgen)
+            void EmitInvoke(CodeEmitter ilgen)
             {
                 if (cpi.GetArgTypes().Length >= 127 && compiler.finish.Context.MethodHandleUtil.SlotCount(cpi.GetArgTypes()) >= 254)
                 {
                     EmitInvokeMaxArity(ilgen);
                     return;
                 }
-                RuntimeJavaType[] args = ArrayUtil.Concat(compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle, cpi.GetArgTypes());
-                CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
+
+                var args = ArrayUtil.Concat(compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle, cpi.GetArgTypes());
+                var temps = new CodeEmitterLocal[args.Length];
                 for (int i = args.Length - 1; i >= 0; i--)
                 {
                     temps[i] = ilgen.DeclareLocal(args[i].TypeAsSignatureType);
                     ilgen.Emit(OpCodes.Stloc, temps[i]);
                 }
-                Type delegateType = compiler.finish.Context.MethodHandleUtil.CreateMethodHandleDelegateType(args, cpi.GetRetType());
-                MethodInfo mi = ilgen.Context.ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(delegateType);
+
+                var delegateType = compiler.finish.Context.MethodHandleUtil.CreateMethodHandleDelegateType(args, cpi.GetRetType());
+                var mi = ilgen.Context.ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(delegateType);
 
                 var typeofInvokeCache = compiler.finish.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.InvokeCache`1").AsReflection();
-                FieldBuilder fb = compiler.finish.DefineMethodHandleInvokeCacheField(typeofInvokeCache.MakeGenericType(delegateType));
+                var fb = compiler.finish.DefineMethodHandleInvokeCacheField(typeofInvokeCache.MakeGenericType(delegateType));
                 ilgen.Emit(OpCodes.Ldloc, temps[0]);
                 if (HasUnloadable(cpi.GetArgTypes(), cpi.GetRetType()))
                 {
@@ -3459,13 +3430,12 @@ namespace IKVM.Runtime
                 ilgen.Emit(OpCodes.Ldsflda, fb);
                 ilgen.Emit(OpCodes.Call, mi);
                 for (int i = 0; i < args.Length; i++)
-                {
                     ilgen.Emit(OpCodes.Ldloc, temps[i]);
-                }
+
                 compiler.finish.Context.MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
             }
 
-            private void EmitInvokeBasic(CodeEmitter ilgen)
+            void EmitInvokeBasic(CodeEmitter ilgen)
             {
                 RuntimeJavaType retType = cpi.GetRetType();
                 EmitInvokeBasic(wrapper.Context, ilgen, cpi.GetArgTypes(), retType, true);
@@ -3475,26 +3445,25 @@ namespace IKVM.Runtime
             internal static void EmitInvokeBasic(RuntimeContext context, CodeEmitter ilgen, RuntimeJavaType[] args, RuntimeJavaType retType, bool toBasic)
             {
                 args = ArrayUtil.Concat(context.JavaBase.TypeOfJavaLangInvokeMethodHandle, args);
-                CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
+
+                var temps = new CodeEmitterLocal[args.Length];
                 for (int i = args.Length - 1; i > 0; i--)
                 {
                     temps[i] = ilgen.DeclareLocal(context.MethodHandleUtil.AsBasicType(args[i]));
                     if (toBasic)
-                    {
                         ToBasic(args[i], ilgen);
-                    }
+
                     ilgen.Emit(OpCodes.Stloc, temps[i]);
                 }
                 temps[0] = ilgen.DeclareLocal(args[0].TypeAsSignatureType);
                 ilgen.Emit(OpCodes.Stloc, temps[0]);
-                Type delegateType = context.MethodHandleUtil.CreateMemberWrapperDelegateType(args, retType);
-                MethodInfo mi = context.ByteCodeHelperMethods.GetDelegateForInvokeBasic.MakeGenericMethod(delegateType);
+                var delegateType = context.MethodHandleUtil.CreateMemberWrapperDelegateType(args, retType);
+                var mi = context.ByteCodeHelperMethods.GetDelegateForInvokeBasic.MakeGenericMethod(delegateType);
                 ilgen.Emit(OpCodes.Ldloc, temps[0]);
                 ilgen.Emit(OpCodes.Call, mi);
                 for (int i = 0; i < args.Length; i++)
-                {
                     ilgen.Emit(OpCodes.Ldloc, temps[i]);
-                }
+
                 context.MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
             }
 
@@ -3520,13 +3489,15 @@ namespace IKVM.Runtime
             {
                 throw new InvalidOperationException();
             }
+
         }
 
-        private sealed class DynamicFieldBinder
+        sealed class DynamicFieldBinder
         {
-            private MethodInfo method;
 
-            internal void Emit(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, MethodHandleKind kind)
+            MethodInfo method;
+
+            internal void Emit(Compiler compiler, ConstantPoolItemFieldref cpi, MethodHandleKind kind)
             {
                 if (method == null)
                     method = CreateMethod(compiler, cpi, kind);
@@ -3534,7 +3505,7 @@ namespace IKVM.Runtime
                 compiler.ilGenerator.Emit(OpCodes.Call, method);
             }
 
-            private static MethodInfo CreateMethod(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, MethodHandleKind kind)
+            static MethodInfo CreateMethod(Compiler compiler, ConstantPoolItemFieldref cpi, MethodHandleKind kind)
             {
                 RuntimeJavaType ret;
                 RuntimeJavaType[] args;
@@ -3562,19 +3533,20 @@ namespace IKVM.Runtime
 
                 return DynamicBinder.Emit(compiler, kind, cpi, ret, args, false);
             }
+
         }
 
-        private sealed class DynamicBinder
+        sealed class DynamicBinder
         {
 
             RuntimeJavaMethod mw;
 
-            internal RuntimeJavaMethod Get(Compiler compiler, MethodHandleKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
+            internal RuntimeJavaMethod Get(Compiler compiler, MethodHandleKind kind, ConstantPoolItemMI cpi, bool privileged)
             {
                 return mw ??= new DynamicBinderMethodWrapper(cpi, Emit(compiler, kind, cpi, privileged), kind);
             }
 
-            private static MethodInfo Emit(Compiler compiler, MethodHandleKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
+            static MethodInfo Emit(Compiler compiler, MethodHandleKind kind, ConstantPoolItemMI cpi, bool privileged)
             {
                 RuntimeJavaType ret;
                 RuntimeJavaType[] args;
@@ -3593,10 +3565,11 @@ namespace IKVM.Runtime
                     ret = cpi.GetRetType();
                     args = ArrayUtil.Concat(cpi.GetClassType(), cpi.GetArgTypes());
                 }
+
                 return Emit(compiler, kind, cpi, ret, args, privileged);
             }
 
-            internal static MethodInfo Emit(Compiler compiler, MethodHandleKind kind, ClassFile.ConstantPoolItemFMI cpi, RuntimeJavaType ret, RuntimeJavaType[] args, bool privileged)
+            internal static MethodInfo Emit(Compiler compiler, MethodHandleKind kind, ConstantPoolItemFMI cpi, RuntimeJavaType ret, RuntimeJavaType[] args, bool privileged)
             {
                 var ghostTarget = (kind == MethodHandleKind.InvokeSpecial || kind == MethodHandleKind.InvokeVirtual || kind == MethodHandleKind.InvokeInterface) && args[0].IsGhost;
                 var delegateType = compiler.finish.Context.MethodHandleUtil.CreateMethodHandleDelegateType(args, ret);
@@ -3609,36 +3582,33 @@ namespace IKVM.Runtime
                 if (ghostTarget)
                     types[0] = types[0].MakeByRefType();
 
-                MethodBuilder mb = compiler.finish.DefineMethodHandleDispatchStub(ret.TypeAsSignatureType, types);
-                CodeEmitter ilgen = compiler.finish.Context.CodeEmitterFactory.Create(mb);
+                var mb = compiler.finish.DefineMethodHandleDispatchStub(ret.TypeAsSignatureType, types);
+                var ilgen = compiler.finish.Context.CodeEmitterFactory.Create(mb);
                 ilgen.Emit(OpCodes.Ldsfld, fb);
-                CodeEmitterLabel label = ilgen.DefineLabel();
+                var label = ilgen.DefineLabel();
                 ilgen.EmitBrtrue(label);
                 ilgen.EmitLdc_I4((int)kind);
                 ilgen.Emit(OpCodes.Ldstr, cpi.Class);
                 ilgen.Emit(OpCodes.Ldstr, cpi.Name);
                 ilgen.Emit(OpCodes.Ldstr, cpi.Signature);
                 if (privileged)
-                {
                     compiler.finish.EmitHostCallerID(ilgen);
-                }
                 else
-                {
                     compiler.finish.EmitCallerID(ilgen, compiler.m.IsLambdaFormCompiled);
-                }
+
                 ilgen.Emit(OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.DynamicBinderMemberLookup.MakeGenericMethod(delegateType));
                 ilgen.Emit(OpCodes.Volatile);
                 ilgen.Emit(OpCodes.Stsfld, fb);
                 ilgen.MarkLabel(label);
                 ilgen.Emit(OpCodes.Ldsfld, fb);
+
                 for (int i = 0; i < args.Length; i++)
                 {
                     ilgen.EmitLdarg(i);
                     if (i == 0 && ghostTarget)
-                    {
                         ilgen.Emit(OpCodes.Ldobj, args[0].TypeAsSignatureType);
-                    }
                 }
+
                 compiler.finish.Context.MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
                 ilgen.Emit(OpCodes.Ret);
                 ilgen.DoEmit();
@@ -3650,7 +3620,7 @@ namespace IKVM.Runtime
 
                 readonly MethodInfo method;
 
-                internal DynamicBinderMethodWrapper(ClassFile.ConstantPoolItemMI cpi, MethodInfo method, MethodHandleKind kind) :
+                internal DynamicBinderMethodWrapper(ConstantPoolItemMI cpi, MethodInfo method, MethodHandleKind kind) :
                     base(cpi.GetClassType(), cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), kind == MethodHandleKind.InvokeStatic ? Modifiers.Public | Modifiers.Static : Modifiers.Public, MemberFlags.None)
                 {
                     this.method = method;
@@ -3675,7 +3645,7 @@ namespace IKVM.Runtime
 
         }
 
-        RuntimeJavaMethod GetMethodCallEmitter(NormalizedByteCode invoke, int constantPoolIndex)
+        RuntimeJavaMethod GetMethodCallEmitter(NormalizedOpCode invoke, int constantPoolIndex)
         {
             var cpi = classFile.GetMethodref(new MethodrefConstantHandle(checked((ushort)constantPoolIndex)));
 #if IMPORTER
@@ -3697,26 +3667,26 @@ namespace IKVM.Runtime
             RuntimeJavaMethod mw = null;
             switch (invoke)
             {
-                case NormalizedByteCode.__invokespecial:
+                case NormalizedOpCode.InvokeSpecial:
                     mw = cpi.GetMethodForInvokespecial();
                     break;
-                case NormalizedByteCode.__invokeinterface:
+                case NormalizedOpCode.InvokeInterface:
                     mw = cpi.GetMethod();
                     break;
-                case NormalizedByteCode.__invokestatic:
-                case NormalizedByteCode.__invokevirtual:
+                case NormalizedOpCode.InvokeStatic:
+                case NormalizedOpCode.InvokeVirtual:
                     mw = cpi.GetMethod();
                     break;
-                case NormalizedByteCode.__dynamic_invokeinterface:
-                case NormalizedByteCode.__dynamic_invokestatic:
-                case NormalizedByteCode.__dynamic_invokevirtual:
-                case NormalizedByteCode.__dynamic_invokespecial:
-                case NormalizedByteCode.__privileged_invokestatic:
-                case NormalizedByteCode.__privileged_invokevirtual:
-                case NormalizedByteCode.__privileged_invokespecial:
+                case NormalizedOpCode.DynamicInvokeInterface:
+                case NormalizedOpCode.DynamicInvokeStatic:
+                case NormalizedOpCode.DynamicInvokeVirtual:
+                case NormalizedOpCode.DynamicInvokeSpecial:
+                case NormalizedOpCode.PrivilegedInvokeStatic:
+                case NormalizedOpCode.PrivilegedInvokeVirtual:
+                case NormalizedOpCode.PrivilegedInvokeSpecial:
                     return GetDynamicMethodWrapper(constantPoolIndex, invoke, cpi);
-                case NormalizedByteCode.__methodhandle_invoke:
-                case NormalizedByteCode.__methodhandle_link:
+                case NormalizedOpCode.MethodHandleInvoke:
+                case NormalizedOpCode.MethodHandleLink:
                     return new MethodHandleMethodWrapper(this, clazz, cpi);
                 default:
                     throw new InvalidOperationException();
@@ -3728,30 +3698,30 @@ namespace IKVM.Runtime
             return mw;
         }
 
-        private RuntimeJavaMethod GetDynamicMethodWrapper(int index, NormalizedByteCode invoke, ClassFile.ConstantPoolItemMI cpi)
+        RuntimeJavaMethod GetDynamicMethodWrapper(int index, NormalizedOpCode invoke, ConstantPoolItemMI cpi)
         {
             MethodHandleKind kind;
             switch (invoke)
             {
-                case NormalizedByteCode.__invokeinterface:
-                case NormalizedByteCode.__dynamic_invokeinterface:
+                case NormalizedOpCode.InvokeInterface:
+                case NormalizedOpCode.DynamicInvokeInterface:
                     kind = MethodHandleKind.InvokeInterface;
                     break;
-                case NormalizedByteCode.__invokestatic:
-                case NormalizedByteCode.__dynamic_invokestatic:
-                case NormalizedByteCode.__privileged_invokestatic:
+                case NormalizedOpCode.InvokeStatic:
+                case NormalizedOpCode.DynamicInvokeStatic:
+                case NormalizedOpCode.PrivilegedInvokeStatic:
                     kind = MethodHandleKind.InvokeStatic;
                     break;
-                case NormalizedByteCode.__invokevirtual:
-                case NormalizedByteCode.__dynamic_invokevirtual:
-                case NormalizedByteCode.__privileged_invokevirtual:
+                case NormalizedOpCode.InvokeVirtual:
+                case NormalizedOpCode.DynamicInvokeVirtual:
+                case NormalizedOpCode.PrivilegedInvokeVirtual:
                     kind = MethodHandleKind.InvokeVirtual;
                     break;
-                case NormalizedByteCode.__invokespecial:
-                case NormalizedByteCode.__dynamic_invokespecial:
+                case NormalizedOpCode.InvokeSpecial:
+                case NormalizedOpCode.DynamicInvokeSpecial:
                     kind = MethodHandleKind.NewInvokeSpecial;
                     break;
-                case NormalizedByteCode.__privileged_invokespecial:
+                case NormalizedOpCode.PrivilegedInvokeSpecial:
                     // we don't support calling a base class constructor
                     kind = cpi.GetMethod().IsConstructor
                         ? MethodHandleKind.NewInvokeSpecial
@@ -3760,46 +3730,38 @@ namespace IKVM.Runtime
                 default:
                     throw new InvalidOperationException();
             }
+
             bool privileged;
             switch (invoke)
             {
-                case NormalizedByteCode.__privileged_invokestatic:
-                case NormalizedByteCode.__privileged_invokevirtual:
-                case NormalizedByteCode.__privileged_invokespecial:
+                case NormalizedOpCode.PrivilegedInvokeStatic:
+                case NormalizedOpCode.PrivilegedInvokeVirtual:
+                case NormalizedOpCode.PrivilegedInvokeSpecial:
                     privileged = true;
                     break;
                 default:
                     privileged = false;
                     break;
             }
+
             return finish.GetValue<DynamicBinder>(index | ((byte)kind << 24)).Get(this, kind, cpi, privileged);
         }
 
-        RuntimeJavaType ComputeThisType(RuntimeJavaType type, RuntimeJavaMethod method, NormalizedByteCode invoke)
+        RuntimeJavaType ComputeThisType(RuntimeJavaType type, RuntimeJavaMethod method, NormalizedOpCode invoke)
         {
             if (type == finish.Context.VerifierJavaTypeFactory.UninitializedThis || RuntimeVerifierJavaType.IsThis(type))
-            {
                 return clazz;
-            }
             else if (RuntimeVerifierJavaType.IsNew(type))
-            {
                 return ((RuntimeVerifierJavaType)type).UnderlyingType;
-            }
             else if (type == finish.Context.VerifierJavaTypeFactory.Null)
-            {
                 return method.DeclaringType;
-            }
-            else if (invoke == NormalizedByteCode.__invokevirtual && method.IsProtected && type.IsUnloadable)
-            {
+            else if (invoke == NormalizedOpCode.InvokeVirtual && method.IsProtected && type.IsUnloadable)
                 return clazz;
-            }
             else
-            {
                 return type;
-            }
         }
 
-        private LocalVar LoadLocal(int instructionIndex)
+        LocalVar LoadLocal(int instructionIndex)
         {
             var v = localVars.GetLocalVar(instructionIndex);
             if (v.isArg)
@@ -3857,6 +3819,7 @@ namespace IKVM.Runtime
                     if (debug && v.name != null)
                         v.builder.SetLocalSymInfo(v.name);
                 }
+
                 ilGenerator.Emit(OpCodes.Stloc, v.builder);
             }
 
@@ -3882,10 +3845,8 @@ namespace IKVM.Runtime
             {
                 // if the first instruction is unreachable, the entire block is unreachable,
                 // because you can't jump into a block (we've just split the blocks to ensure that)
-                if ((flags[exceptions[i].startIndex] & InstructionFlags.Reachable) != 0)
-                {
+                if ((flags[exceptions[i].StartIndex] & InstructionFlags.Reachable) != 0)
                     list.Add(exceptions[i]);
-                }
             }
 
             return list.ToArray();

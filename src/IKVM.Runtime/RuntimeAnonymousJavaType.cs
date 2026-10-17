@@ -107,7 +107,7 @@ namespace IKVM.Runtime
                 }
                 else if (mi.Name == "writeReplace")
                 {
-                    methods.Add(new RuntimeTypicalJavaMethod(this, "writeReplace", "()Ljava.lang.Object;", mi, Context.JavaBase.TypeOfJavaLangObject, Array.Empty<RuntimeJavaType>(), Modifiers.Private | Modifiers.Final, MemberFlags.None));
+                    methods.Add(new RuntimeTypicalJavaMethod(this, "writeReplace", "()Ljava.lang.Object;", mi, Context.JavaBase.TypeOfJavaLangObject, [], Modifiers.Private | Modifiers.Final, MemberFlags.None));
                 }
             }
 
@@ -117,7 +117,7 @@ namespace IKVM.Runtime
             foreach (var fi in type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             {
                 var fieldType = RuntimeManagedByteCodeJavaType.GetFieldTypeWrapper(Context, fi);
-                fields.Add(new RuntimeSimpleJavaField(this, fieldType, fi, fi.Name, fieldType.SigName, new ExModifiers(Modifiers.Private | Modifiers.Final, false)));
+                fields.Add(new RuntimeSimpleJavaField(this, fieldType, fi, fi.Name, fieldType.SignatureName, new ExModifiers(Modifiers.Private | Modifiers.Final, false)));
             }
 
             SetFields(fields.ToArray());
@@ -134,10 +134,10 @@ namespace IKVM.Runtime
             for (int i = 0; i < parameters.Length; i++)
             {
                 parameterTypes[i] = RuntimeManagedByteCodeJavaType.GetParameterTypeWrapper(Context, parameters[i]);
-                sb.Append(parameterTypes[i].SigName);
+                sb.Append(parameterTypes[i].SignatureName);
             }
             sb.Append(')');
-            sb.Append(returnType.SigName);
+            sb.Append(returnType.SignatureName);
             signature = sb.ToString();
         }
     }

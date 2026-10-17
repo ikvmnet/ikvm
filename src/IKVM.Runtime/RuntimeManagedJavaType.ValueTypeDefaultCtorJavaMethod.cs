@@ -45,7 +45,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="declaringType"></param>
             internal ValueTypeDefaultCtorJavaMethod(RuntimeManagedJavaType declaringType) :
-                base(declaringType, "<init>", "()V", null, declaringType.Context.PrimitiveJavaTypeFactory.VOID, Array.Empty<RuntimeJavaType>(), Modifiers.Public, MemberFlags.None)
+                base(declaringType, "<init>", "()V", null, declaringType.Context.PrimitiveJavaTypeFactory.VOID, [], Modifiers.Public, MemberFlags.None)
             {
 
             }

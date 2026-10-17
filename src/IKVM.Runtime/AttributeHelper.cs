@@ -28,10 +28,11 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 using IKVM.Attributes;
-using IKVM.CoreLib.Diagnostics;
-using IKVM.ByteCode.Buffers;
 using IKVM.ByteCode.Decoding;
+using IKVM.ByteCode.Buffers;
 using IKVM.ByteCode.Encoding;
+using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Runtime;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;

@@ -23,7 +23,7 @@
 */
 using System.Collections.Generic;
 
-using ExceptionTableEntry = IKVM.Runtime.ClassFile.Method.ExceptionTableEntry;
+using IKVM.CoreLib.Linking;
 
 namespace IKVM.Runtime
 {
@@ -37,23 +37,23 @@ namespace IKVM.Runtime
         /// <inheritdoc />
         public int Compare(ExceptionTableEntry e1, ExceptionTableEntry e2)
         {
-            if (e1.startIndex < e2.startIndex)
+            if (e1.StartIndex < e2.StartIndex)
                 return -1;
 
-            if (e1.startIndex == e2.startIndex)
+            if (e1.StartIndex == e2.StartIndex)
             {
-                if (e1.endIndex == e2.endIndex)
+                if (e1.EndIndex == e2.EndIndex)
                 {
-                    if (e1.ordinal > e2.ordinal)
+                    if (e1.Ordinal > e2.Ordinal)
                         return -1;
 
-                    if (e1.ordinal == e2.ordinal)
+                    if (e1.Ordinal == e2.Ordinal)
                         return 0;
 
                     return 1;
                 }
 
-                if (e1.endIndex > e2.endIndex)
+                if (e1.EndIndex > e2.EndIndex)
                     return -1;
             }
 

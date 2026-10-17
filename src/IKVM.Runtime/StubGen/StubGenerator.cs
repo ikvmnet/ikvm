@@ -2,12 +2,12 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
-using IKVM.ByteCode.Encoding;
 using IKVM.Attributes;
+using IKVM.ByteCode.Encoding;
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
 using IKVM.ByteCode.Buffers;
-
+using IKVM.CoreLib.Runtime;
 
 #if EXPORTER
 using IKVM.Reflection;
@@ -1035,7 +1035,7 @@ namespace IKVM.Runtime.StubGen
 
         static string EncodeTypeName(RuntimeJavaType tw)
         {
-            return tw.SigName.Replace('.', '/');
+            return tw.SignatureName.Replace('.', '/');
         }
 
         static string DecodeTypeName(string typeName)
