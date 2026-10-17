@@ -39,7 +39,6 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// </summary>
         static JTRegTestManager()
         {
-#if NETCOREAPP
             // executable permissions may not have made it onto the JRE binaries so attempt to set them
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
@@ -49,17 +48,21 @@ namespace IKVM.JTReg.TestAdapter.Core
                     var execPath = Path.Combine(javaHome, "bin", exec);
                     if (File.Exists(execPath))
                     {
+#if NET7_0_OR_GREATER
+                        var mod = File.GetUnixFileMode(execPath);
+                        var prm = mod | UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute;
+                        if (mod != prm)
+                            File.SetUnixFileMode(execPath, prm);
+#else
                         var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(execPath);
-                        var prm = psx.FileAccessPermissions;
-                        prm |= Mono.Unix.FileAccessPermissions.UserExecute;
-                        prm |= Mono.Unix.FileAccessPermissions.GroupExecute;
-                        prm |= Mono.Unix.FileAccessPermissions.OtherExecute;
-                        if (prm != psx.FileAccessPermissions)
+                        var mod = psx.FileAccessPermissions;
+                        var prm = mod | Mono.Unix.FileAccessPermissions.UserExecute | Mono.Unix.FileAccessPermissions.GroupExecute | Mono.Unix.FileAccessPermissions.OtherExecute;
+                        if (mod != prm)
                             psx.FileAccessPermissions = prm;
+#endif
                     }
                 }
             }
-#endif
 
             // need to do some static configuration on the harness
             if (JTRegTypes.Harness.GetClassDirMethod.invoke(null) == null)
