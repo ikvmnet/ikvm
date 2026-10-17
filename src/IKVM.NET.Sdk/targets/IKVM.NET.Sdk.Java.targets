@@ -32,7 +32,8 @@
             <JavaAssemblyAttribute Remove="System.Runtime.CompilerServices.InternalsVisibleTo" />
             <JavaAssemblyAttribute Include="@(_JavaAssemblyAttribute->'System.Runtime.CompilerServices.InternalsVisibleToAttribute')" Condition=" '%(Identity)' == 'System.Runtime.CompilerServices.InternalsVisibleTo' " />
 
-            <!-- #55 not emitted by stub generator -->
+            <!-- AssemblyMetadataAttribute only has a (key, value) constructor, which the annotation exposes as named elements -->
+            <_JavaAssemblyMetadataAttribute Include="@(JavaAssemblyAttribute)" Condition=" '%(Identity)' == 'System.Reflection.AssemblyMetadataAttribute' " />
             <JavaAssemblyAttribute Remove="System.Reflection.AssemblyMetadataAttribute" />
 
             <!-- Required by Roslyn -->
@@ -43,6 +44,7 @@
             <__JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;)')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' != '' And '%(JavaAssemblyAttribute._Parameter2)' == '' And '%(JavaAssemblyAttribute._Parameter3)' == '' " />
             <__JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;, &quot;%(_Parameter2)&quot;)')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' != '' And '%(JavaAssemblyAttribute._Parameter2)' != '' And '%(JavaAssemblyAttribute._Parameter3)' == '' " />
             <__JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;, &quot;%(_Parameter2)&quot;, &quot;%(_Parameter3)&quot;)')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' != '' And '%(JavaAssemblyAttribute._Parameter2)' != '' And '%(JavaAssemblyAttribute._Parameter3)' != '' " />
+            <__JavaAssemblyInfoLine Include="@(_JavaAssemblyMetadataAttribute->'@cli.%(Identity).Annotation(key = &quot;%(_Parameter1)&quot;, value = &quot;%(_Parameter2)&quot;)')" />
         </ItemGroup>
         <SortAssemblyAttributeLines Lines="@(__JavaAssemblyInfoLine)">
             <Output TaskParameter="Lines" ItemName="_JavaAssemblyInfoLine" />
