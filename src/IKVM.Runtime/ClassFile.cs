@@ -336,7 +336,7 @@ namespace IKVM.Runtime
             }
             catch (UnsupportedClassVersionException e)
             {
-                throw new UnsupportedClassVersionError(e.Message);
+                throw new UnsupportedClassVersionError(e.Version);
             }
             catch (ByteCodeException e)
             {
@@ -354,7 +354,7 @@ namespace IKVM.Runtime
         /// <exception cref="ClassFormatError"></exception>
         static string GetClassName(IKVM.ByteCode.Decoding.ClassFile reader, out bool isstub)
         {
-            if (reader.Version < new ClassFormatVersion(45, 3) || reader.Version > 52)
+            if (UnsupportedClassVersionError.IsSupported(reader.Version) == false)
                 throw new UnsupportedClassVersionError(reader.Version);
 
             // this is a terrible way to go about encoding this information
@@ -383,8 +383,8 @@ namespace IKVM.Runtime
 
             try
             {
-                if (clazz.Version < new ClassFormatVersion(45, 3) || clazz.Version > 52)
-                    throw new UnsupportedClassVersionError(clazz.Version);
+                if (UnsupportedClassVersionError.IsSupported(clazz.Version) == false)
+                    throw new UnsupportedClassVersionError(clazz.Version, inputClassName);
 
                 // load a copy of the constant pool using our own custom class hierarchy, reading data from IKVM.ByteCdoe
                 constantpool = new ConstantPoolItem[clazz.Constants.SlotCount];
@@ -958,6 +958,11 @@ namespace IKVM.Runtime
         /// Gets the major version of the class.
         /// </summary>
         public int MajorVersion => clazz.Version.Major;
+
+        /// <summary>
+        /// Gets the minor version of the class.
+        /// </summary>
+        public int MinorVersion => clazz.Version.Minor;
 
         /// <summary>
         /// Initiates linkage of this class file to the specified java type instance.

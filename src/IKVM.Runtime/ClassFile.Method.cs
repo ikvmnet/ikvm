@@ -45,6 +45,32 @@ namespace IKVM.Runtime
             MethodParametersEntry[] parameters;
 
             /// <summary>
+            /// Decodes a Code attribute. Class files before version 45.3 use a narrower header (u1 max_stack, u1 max_locals,
+            /// u2 code_length), which HotSpot still accepts.
+            /// </summary>
+            /// <param name="classFile"></param>
+            /// <param name="attribute"></param>
+            /// <returns></returns>
+            /// <exception cref="ClassFormatError"></exception>
+            static CodeAttribute ReadCodeAttribute(ClassFile classFile, IKVM.ByteCode.Decoding.Attribute attribute)
+            {
+                if (classFile.MajorVersion > 45 || classFile.MinorVersion > 2)
+                    return (CodeAttribute)attribute;
+
+                var reader = new ClassFormatReader(attribute.Data);
+                if (reader.TryReadU1(out byte maxStack) == false ||
+                    reader.TryReadU1(out byte maxLocals) == false ||
+                    reader.TryReadU2(out ushort codeLength) == false ||
+                    reader.TryReadMany((uint)codeLength, out var code) == false ||
+                    ExceptionHandlerTable.TryRead(ref reader, out var handlers) == false ||
+                    AttributeTable.TryRead(ref reader, out var attributes) == false ||
+                    reader.Remaining != 0)
+                    throw new ClassFormatError("Code segment has wrong length in class file {0}", classFile.Name);
+
+                return new CodeAttribute(maxStack, maxLocals, code, handlers, attributes);
+            }
+
+            /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="classFile"></param>
@@ -88,7 +114,7 @@ namespace IKVM.Runtime
                             break;
                         case AttributeName.Code:
                             {
-                                var codeAttribute = (CodeAttribute)attribute;
+                                var codeAttribute = ReadCodeAttribute(classFile, attribute);
                                 if (code.IsEmpty == false)
                                     throw new ClassFormatError("{0} (Duplicate Code attribute)", classFile.Name);
 

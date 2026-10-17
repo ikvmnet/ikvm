@@ -98,6 +98,21 @@
             }
         ]
     },
+    "UnsupportedClassVersion": {
+        "id": 10,
+        "level": "Info",
+        "message": "Skipping class \"{arg0}\". ({arg1})",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
+    },
     "ClassNotFound": {
         "id": 100,
         "level": "Warning",
@@ -676,6 +691,44 @@
         "args": [
             {
                 "name": "arg0",
+                "type": "string"
+            }
+        ]
+    },
+    "UnsupportedClassVersionSkipped": {
+        "id": 146,
+        "level": "Warning",
+        "message": "{arg0} class(es) in \"{arg1}\" target {arg2} and were skipped; IKVM supports class files up to version 52.0 (Java 8). (first skipped class: \"{arg3}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            },
+            {
+                "name": "arg3",
+                "type": "string"
+            }
+        ]
+    },
+    "NoClassesCompiled": {
+        "id": 147,
+        "level": "Warning",
+        "message": "No classes were compiled from \"{arg0}\": all {arg1} class(es) failed to compile, so the output assembly contains no types from it. See the preceding warnings for the reasons.",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
                 "type": "string"
             }
         ]
