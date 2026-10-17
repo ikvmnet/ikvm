@@ -789,7 +789,10 @@ namespace IKVM.Runtime
             var flags = ComputePartialReachability(startIndex, true);
             var exceptions = GetExceptionTableFor(flags);
             var exceptionIndex = 0;
-            var code = m.Instructions;
+            // intrinsics and peephole optimizations patch upcoming instructions (e.g. to __nop) while emitting, and
+            // fault handlers are compiled once per exception table entry that targets them, so every pass works on
+            // its own copy to keep those patches from leaking into later compilations of the same bytecode
+            var code = (Instruction[])m.Instructions.Clone();
             var blockStack = new Stack<Block>();
             var instructionIsForwardReachable = true;
             if (startIndex != 0)
