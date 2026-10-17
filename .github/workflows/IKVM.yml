@@ -19,7 +19,7 @@ on:
     - created
 
 env:
-  NATIVE_SDK_VERSION: "20251124.1"
+  NATIVE_SDK_VERSION: "20261016.1"
 
 jobs:
   build-jtreg:
@@ -166,7 +166,7 @@ jobs:
     - name: Restore JTReg Build
       run: mkdir -p ext/jtreg && cd ext/jtreg && unzip /tmp/jtreg-build.zip && rm /tmp/jtreg-build.zip
     - name: Download Native SDKs
-      uses: robinraju/release-downloader@v1
+      uses: robinraju/release-downloader@v1.9
       with:
         repository: ikvmnet/ikvm-native-sdk
         tag: ${{ env.NATIVE_SDK_VERSION }}

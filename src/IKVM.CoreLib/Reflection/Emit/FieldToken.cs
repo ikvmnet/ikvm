@@ -19,17 +19,18 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 
 namespace IKVM.Reflection.Emit
 {
 
-    internal readonly record struct FieldToken(int Token)
+    /// <summary>
+    /// Represents the metadata token of a field.
+    /// </summary>
+    /// <param name="Token">The metadata token of the field.</param>
+    readonly record struct FieldToken(int Token)
     {
-
-        public static readonly FieldToken Empty;
-
     }
 
 }

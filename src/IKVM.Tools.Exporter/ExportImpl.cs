@@ -379,7 +379,7 @@ namespace IKVM.Tools.Exporter
             do
             {
                 keepGoing = false;
-                foreach (var c in new List<RuntimeJavaType>(todo.Values).OrderBy(i => i.Name))
+                foreach (var c in new List<RuntimeJavaType>(todo.Values).OrderBy(i => i.Name, StringComparer.Ordinal))
                 {
                     if (!done.ContainsKey(c.Name))
                     {

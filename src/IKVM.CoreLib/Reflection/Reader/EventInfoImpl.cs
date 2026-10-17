@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -21,149 +21,185 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Metadata;
+using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// An event read from a row of the Event table of a module loaded from a PE image.
+    /// </summary>
     sealed class EventInfoImpl : EventInfo
     {
 
-        readonly ModuleReader module;
-        readonly Type declaringType;
-        readonly int index;
-        bool isPublic;
-        bool isNonPrivate;
-        bool isStatic;
-        bool flagsCached;
+        readonly ModuleReader _module;
+        readonly Type _declaringType;
+        readonly EventDefinitionHandle _handle;
+        readonly EventDefinition _definition;
+        bool _isPublic;
+        bool _isNonPrivate;
+        bool _isStatic;
+        bool _flagsCached;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="declaringType"></param>
-        /// <param name="index"></param>
-        internal EventInfoImpl(ModuleReader module, Type declaringType, int index)
+        /// <param name="module">The module that contains the event definition.</param>
+        /// <param name="declaringType">The type that declares the event.</param>
+        /// <param name="handle">The handle of the event definition.</param>
+        internal EventInfoImpl(ModuleReader module, Type declaringType, EventDefinitionHandle handle)
         {
-            this.module = module;
-            this.declaringType = declaringType;
-            this.index = index;
+            _module = module;
+            _declaringType = declaringType;
+            _handle = handle;
+            _definition = module.Metadata.GetEventDefinition(handle);
         }
 
-        public override bool Equals(object obj)
-        {
-            var other = obj as EventInfoImpl;
-            return other != null && other.declaringType == declaringType && other.index == index;
-        }
+        /// <summary>
+        /// Determines whether the specified object represents the same event definition of the same declaring type.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> is an <see cref="EventInfoImpl"/> for the same declaring type and handle; otherwise, <see langword="false"/>.</returns>
+        public override bool Equals(object obj) => obj is EventInfoImpl other && other._declaringType == _declaringType && other._handle == _handle;
 
-        public override int GetHashCode()
-        {
-            return declaringType.GetHashCode() * 123 + index;
-        }
+        /// <inheritdoc />
+        public override int GetHashCode() => _declaringType.GetHashCode() * 123 + MetadataTokens.GetRowNumber(_handle);
 
-        public override EventAttributes Attributes
-        {
-            get { return (EventAttributes)module.EventTable.records[index].EventFlags; }
-        }
+        /// <inheritdoc />
+        public override EventAttributes Attributes => (EventAttributes)_definition.Attributes;
 
-        public override MethodInfo GetAddMethod(bool nonPublic)
-        {
-            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.AddOn);
-        }
+        /// <inheritdoc />
+        public override MethodInfo GetAddMethod(bool nonPublic) => Accessor(_definition.GetAccessors().Adder, nonPublic);
 
-        public override MethodInfo GetRaiseMethod(bool nonPublic)
-        {
-            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Fire);
-        }
+        /// <inheritdoc />
+        public override MethodInfo GetRaiseMethod(bool nonPublic) => Accessor(_definition.GetAccessors().Raiser, nonPublic);
 
-        public override MethodInfo GetRemoveMethod(bool nonPublic)
-        {
-            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.RemoveOn);
-        }
+        /// <inheritdoc />
+        public override MethodInfo GetRemoveMethod(bool nonPublic) => Accessor(_definition.GetAccessors().Remover, nonPublic);
 
+        /// <inheritdoc />
         public override MethodInfo[] GetOtherMethods(bool nonPublic)
         {
-            return module.MethodSemanticsTable.GetMethods(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Other);
+            var list = new List<MethodInfo>();
+            foreach (var h in _definition.GetAccessors().Others)
+                if (Accessor(h, nonPublic) is { } m)
+                    list.Add(m);
+
+            return list.ToArray();
         }
 
-        public override MethodInfo[] __GetMethods()
+        /// <summary>
+        /// Resolves an accessor method of the event, filtering out non-public accessors unless requested.
+        /// </summary>
+        /// <param name="h">The handle of the accessor method, which may be nil.</param>
+        /// <param name="nonPublic"><see langword="true"/> to return the accessor even if it is not public.</param>
+        /// <returns>The accessor method, or <see langword="null"/> if the handle is nil or the accessor is non-public and <paramref name="nonPublic"/> is <see langword="false"/>.</returns>
+        MethodInfo Accessor(MethodDefinitionHandle h, bool nonPublic)
         {
-            return module.MethodSemanticsTable.GetMethods(module, this.MetadataToken, true, -1);
+            if (h.IsNil)
+                return null;
+
+            var method = (MethodInfo)_module.ResolveMethod(MetadataTokens.GetToken(h));
+            return nonPublic || method.IsPublic ? method : null;
         }
 
-        public override Type EventHandlerType
+        /// <summary>
+        /// Enumerates every accessor method of the event, public or not: add, remove, raise and other methods.
+        /// </summary>
+        /// <returns>The accessor methods that are present.</returns>
+        IEnumerable<MethodInfo> AllAccessors()
         {
-            get { return module.ResolveType(module.EventTable.records[index].EventType, declaringType); }
+            var accessors = _definition.GetAccessors();
+            foreach (var h in new[] { accessors.Adder, accessors.Remover, accessors.Raiser })
+                if (Accessor(h, true) is { } m)
+                    yield return m;
+
+            foreach (var h in accessors.Others)
+                if (Accessor(h, true) is { } m)
+                    yield return m;
         }
 
-        public override string Name
-        {
-            get { return module.GetString(module.EventTable.records[index].Name); }
-        }
+        /// <inheritdoc />
+        public override Type EventHandlerType => _module.ResolveType(MetadataTokens.GetToken(_definition.Type), _declaringType);
 
-        public override Type DeclaringType
-        {
-            get { return declaringType; }
-        }
+        /// <inheritdoc />
+        public override string Name => _module.GetString(_definition.Name);
 
-        public override Module Module
-        {
-            get { return module; }
-        }
+        /// <inheritdoc />
+        public override Type DeclaringType => _declaringType;
 
-        public override int MetadataToken
-        {
-            get { return (EventTable.Index << 24) + index + 1; }
-        }
+        /// <inheritdoc />
+        public override Module Module => _module;
 
+        /// <inheritdoc />
+        public override int MetadataToken => MetadataTokens.GetToken(_handle);
+
+        /// <summary>
+        /// Gets a value indicating whether any accessor of the event is public.
+        /// </summary>
         internal override bool IsPublic
         {
             get
             {
-                if (!flagsCached)
+                if (!_flagsCached)
                     ComputeFlags();
 
-                return isPublic;
+                return _isPublic;
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether any accessor of the event is more accessible than private.
+        /// </summary>
         internal override bool IsNonPrivate
         {
             get
             {
-                if (!flagsCached)
+                if (!_flagsCached)
                     ComputeFlags();
 
-                return isNonPrivate;
+                return _isNonPrivate;
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether any accessor of the event is static.
+        /// </summary>
         internal override bool IsStatic
         {
             get
             {
-                if (!flagsCached)
+                if (!_flagsCached)
                     ComputeFlags();
 
-                return isStatic;
+                return _isStatic;
             }
         }
 
+        /// <summary>
+        /// Computes and caches the accessibility and static flags of the event from all of its accessors.
+        /// </summary>
         void ComputeFlags()
         {
-            module.MethodSemanticsTable.ComputeFlags(module, this.MetadataToken, out isPublic, out isNonPrivate, out isStatic);
-            flagsCached = true;
+            foreach (var method in AllAccessors())
+            {
+                _isPublic |= method.IsPublic;
+                _isNonPrivate |= (method.Attributes & MethodAttributes.MemberAccessMask) > MethodAttributes.Private;
+                _isStatic |= method.IsStatic;
+            }
+
+            _flagsCached = true;
         }
 
-        internal override bool IsBaked
-        {
-            get { return true; }
-        }
+        /// <summary>
+        /// Gets a value indicating whether the event is complete; an event read from a PE image always is.
+        /// </summary>
+        internal override bool IsBaked => true;
 
-        internal override int GetCurrentToken()
-        {
-            return this.MetadataToken;
-        }
+        /// <inheritdoc />
+        internal override int GetCurrentToken() => MetadataToken;
 
     }
 

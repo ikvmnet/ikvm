@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,136 +26,36 @@ using System.Collections.Generic;
 namespace IKVM.Reflection
 {
 
-    internal abstract class TypeInfo : Type, IReflectableType
+    /// <summary>
+    /// Represents type declarations for class types, interface types, array types, value types, enumeration types, type
+    /// parameters, generic type definitions, and open or closed constructed generic types.
+    /// </summary>
+    abstract class TypeInfo : Type, IReflectableType
     {
-
-
-        const BindingFlags Flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         internal TypeInfo()
         {
-
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance that wraps another type and shares its type flags.
         /// </summary>
-        /// <param name="underlyingType"></param>
+        /// <param name="underlyingType">The type this instance stands in for.</param>
         internal TypeInfo(Type underlyingType) :
             base(underlyingType)
         {
-
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance for a type that is encoded in signatures by a single element type byte.
         /// </summary>
-        /// <param name="sigElementType"></param>
+        /// <param name="sigElementType">The signature element type (an <c>ELEMENT_TYPE_*</c> value) of the type.</param>
         internal TypeInfo(byte sigElementType) :
             base(sigElementType)
         {
-
-        }
-
-        public IEnumerable<ConstructorInfo> DeclaredConstructors
-        {
-            get { return GetConstructors(Flags); }
-        }
-
-        public IEnumerable<EventInfo> DeclaredEvents
-        {
-            get { return GetEvents(Flags); }
-        }
-
-        public IEnumerable<FieldInfo> DeclaredFields
-        {
-            get { return GetFields(Flags); }
-        }
-
-        public IEnumerable<MemberInfo> DeclaredMembers
-        {
-            get { return GetMembers(Flags); }
-        }
-
-        public IEnumerable<MethodInfo> DeclaredMethods
-        {
-            get { return GetMethods(Flags); }
-        }
-
-        public IEnumerable<TypeInfo> DeclaredNestedTypes
-        {
-            get
-            {
-                var types = GetNestedTypes(Flags);
-                var typeInfos = new TypeInfo[types.Length];
-                for (int i = 0; i < types.Length; i++)
-                    typeInfos[i] = types[i].GetTypeInfo();
-
-                return typeInfos;
-            }
-        }
-
-        public IEnumerable<PropertyInfo> DeclaredProperties
-        {
-            get { return GetProperties(Flags); }
-        }
-
-        public Type[] GenericTypeParameters
-        {
-            get { return IsGenericTypeDefinition ? GetGenericArguments() : Type.EmptyTypes; }
-        }
-
-        public IEnumerable<Type> ImplementedInterfaces
-        {
-            get { return __GetDeclaredInterfaces(); }
-        }
-
-        public Type AsType()
-        {
-            return this;
-        }
-
-        public EventInfo GetDeclaredEvent(string name)
-        {
-            return GetEvent(name, Flags);
-        }
-
-        public FieldInfo GetDeclaredField(string name)
-        {
-            return GetField(name, Flags);
-        }
-
-        public MethodInfo GetDeclaredMethod(string name)
-        {
-            return GetMethod(name, Flags);
-        }
-
-        public IEnumerable<MethodInfo> GetDeclaredMethods(string name)
-        {
-            var methods = new List<MethodInfo>();
-            foreach (var method in GetMethods(Flags))
-                if (method.Name == name)
-                    methods.Add(method);
-
-            return methods;
-        }
-
-        public TypeInfo GetDeclaredNestedType(string name)
-        {
-            return GetNestedType(name, Flags).GetTypeInfo();
-        }
-
-        public PropertyInfo GetDeclaredProperty(string name)
-        {
-            return GetProperty(name, Flags);
-        }
-
-        public bool IsAssignableFrom(TypeInfo typeInfo)
-        {
-            return base.IsAssignableFrom(typeInfo);
         }
 
     }

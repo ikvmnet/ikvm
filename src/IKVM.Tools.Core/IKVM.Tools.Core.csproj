@@ -8,7 +8,6 @@
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Tools.Importer" />
         <InternalsVisibleTo Include="IKVM.Tools.Exporter" />
-        <InternalsVisibleTo Include="IKVM.Tools.RefClass" />
         <InternalsVisibleTo Include="IKVM.Tools.Tests" />
     </ItemGroup>
 

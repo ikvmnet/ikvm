@@ -1,4 +1,4 @@
-// Licensed to the .NET Foundation under one or more agreements.
+﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
 // This file was forked from the .NET RuntimeILGenerator implementation as of 1/24/2024, and updated to emit debug
@@ -16,22 +16,39 @@ using System.Runtime.InteropServices;
 
 namespace IKVM.Reflection.Emit
 {
-    internal class ILGenerator
+
+    /// <summary>
+    /// Generates Microsoft intermediate language (MSIL) instructions.
+    /// </summary>
+    class ILGenerator
     {
 
         #region Const Members
-        private const int DefaultSize = 16;
-        private const int DefaultFixupArraySize = 8;
-        private const int DefaultLabelArraySize = 4;
-        private const int DefaultExceptionArraySize = 2;
+
+        const int DefaultSize = 16;
+        const int DefaultFixupArraySize = 8;
+        const int DefaultLabelArraySize = 4;
+        const int DefaultExceptionArraySize = 2;
+
         #endregion
 
         #region Internal Statics
-        internal static T[] EnlargeArray<T>(T[] incoming)
-        {
-            return EnlargeArray(incoming, incoming.Length * 2);
-        }
 
+        /// <summary>
+        /// Returns a copy of the array with twice its length.
+        /// </summary>
+        /// <typeparam name="T">The type of the array elements.</typeparam>
+        /// <param name="incoming">The array to enlarge.</param>
+        /// <returns>A new array of twice the length, starting with the elements of <paramref name="incoming"/>.</returns>
+        internal static T[] EnlargeArray<T>(T[] incoming) => EnlargeArray(incoming, incoming.Length * 2);
+
+        /// <summary>
+        /// Returns a copy of the array with the specified length.
+        /// </summary>
+        /// <typeparam name="T">The type of the array elements.</typeparam>
+        /// <param name="incoming">The array to enlarge.</param>
+        /// <param name="requiredSize">The length of the new array. Must be at least the length of <paramref name="incoming"/>.</param>
+        /// <returns>A new array of the required length, starting with the elements of <paramref name="incoming"/>.</returns>
         internal static T[] EnlargeArray<T>(T[] incoming, int requiredSize)
         {
             Debug.Assert(incoming != null);
@@ -44,152 +61,198 @@ namespace IKVM.Reflection.Emit
         #endregion
 
         #region Internal Data Members
-        private int m_length;
-        private byte[] m_ILStream;
 
-        private __LabelInfo[]? m_labelList;
-        private int m_labelCount;
+        int _length;
+        byte[] _ilStream;
 
-        private __FixupData[]? m_fixupData;
+        __LabelInfo[]? _labelList;
+        int _labelCount;
 
-        private int m_fixupCount;
+        __FixupData[]? _fixupData;
 
-        private int[]? m_RelocFixupList;
-        private int m_RelocFixupCount;
+        int _fixupCount;
 
-        private int m_exceptionCount;
-        private int m_currExcStackCount;
-        private __ExceptionInfo[]? m_exceptions;           // This is the list of all of the exceptions in this ILStream.
-        private __ExceptionInfo[]? m_currExcStack;         // This is the stack of exceptions which we're currently in.
+        int[]? _relocFixupList;
+        int _relocFixupCount;
 
-        internal ScopeTree m_ScopeTree;                 // this variable tracks all debugging scope information
-        internal LineNumberInfo m_LineNumberInfo;       // this variable tracks all line number information
+        int _exceptionCount;
+        int _currExcStackCount;
 
-        internal MethodBuilder m_methodBuilder;
-        internal int m_localCount;
-        internal SignatureHelper m_localSignature;
+        // the list of all of the exceptions in this IL stream
+        __ExceptionInfo[]? _exceptions;
 
-        private int m_curDepth; // Current stack depth, with -1 meaning unknown.
-        private int m_targetDepth; // Stack depth at a target of the previous instruction (when it is branching).
-        private int m_maxDepth; // Running max of the stack depth.
+        // the stack of exceptions which we're currently in
+        __ExceptionInfo[]? _currExcStack;
 
-        // Adjustment to add to m_maxDepth for incorrect/invalid IL. For example, when branch instructions
-        // with different stack depths target the same label.
-        private long m_depthAdjustment;
+        /// <summary>
+        /// Tracks all debugging scope information of the method body.
+        /// </summary>
+        internal ScopeTree ScopeTree;
 
-        internal int CurrExcStackCount => m_currExcStackCount;
+        /// <summary>
+        /// Tracks all line number information of the method body.
+        /// </summary>
+        internal LineNumberInfo LineNumberInfo;
 
-        internal __ExceptionInfo[]? CurrExcStack => m_currExcStack;
+        readonly MethodBuilder _methodBuilder;
+
+        /// <summary>
+        /// The number of local variables declared so far.
+        /// </summary>
+        internal int LocalCount;
+
+        /// <summary>
+        /// Builds the local variable signature of the method as local variables are declared.
+        /// </summary>
+        internal SignatureHelper LocalSignature;
+
+        // current stack depth, with -1 meaning unknown
+        int _curDepth;
+
+        // stack depth at a target of the previous instruction (when it is branching)
+        int _targetDepth;
+
+        // running max of the stack depth
+        int _maxDepth;
+
+        // adjustment to add to _maxDepth for incorrect/invalid IL, for example when branch instructions with different
+        // stack depths target the same label
+        long _depthAdjustment;
 
         #endregion
 
         #region Constructor
-        // package private constructor. This code path is used when client create
-        // ILGenerator through MethodBuilder.
-        internal ILGenerator(MethodBuilder methodBuilder) : this(methodBuilder, 64)
-        {
-        }
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="methodBuilder">The method whose body is generated.</param>
+        /// <param name="size">The initial size of the IL stream, in bytes. Values smaller than the default size are raised to it.</param>
         internal ILGenerator(MethodBuilder methodBuilder, int size)
         {
-            Debug.Assert(methodBuilder != null);
-            Debug.Assert(methodBuilder is MethodBuilder);
+            Debug.Assert(methodBuilder is not null);
 
-            m_ILStream = new byte[Math.Max(size, DefaultSize)];
+            _ilStream = new byte[Math.Max(size, DefaultSize)];
 
             // initialize the scope tree
-            m_ScopeTree = new ScopeTree();
-            m_LineNumberInfo = new LineNumberInfo();
-            m_methodBuilder = methodBuilder;
+            ScopeTree = new ScopeTree();
+            LineNumberInfo = new LineNumberInfo();
+            _methodBuilder = methodBuilder;
 
             // initialize local signature
-            m_localSignature = SignatureHelper.GetLocalVarSigHelper(methodBuilder.ModuleBuilder);
+            LocalSignature = SignatureHelper.GetLocalVarSigHelper(methodBuilder.ModuleBuilder);
         }
 
         #endregion
 
         #region Internal Members
+
+        /// <summary>
+        /// Records the current position in the IL stream as the location of a token that must be resolved when the
+        /// module is written.
+        /// </summary>
         internal virtual void RecordTokenFixup()
         {
-            if (m_RelocFixupList == null)
+            if (_relocFixupList == null)
             {
-                m_RelocFixupList = new int[DefaultFixupArraySize];
+                _relocFixupList = new int[DefaultFixupArraySize];
             }
-            else if (m_RelocFixupList.Length <= m_RelocFixupCount)
+            else if (_relocFixupList.Length <= _relocFixupCount)
             {
-                m_RelocFixupList = EnlargeArray(m_RelocFixupList);
+                _relocFixupList = EnlargeArray(_relocFixupList);
             }
 
-            m_RelocFixupList[m_RelocFixupCount++] = m_length;
+            _relocFixupList[_relocFixupCount++] = _length;
         }
 
+        /// <summary>
+        /// Writes the opcode to the IL stream and updates the stack depth by the opcode's fixed stack change. The
+        /// caller must ensure there is enough capacity.
+        /// </summary>
+        /// <param name="opcode">The opcode to write.</param>
         internal void InternalEmit(OpCode opcode)
         {
-            short opcodeValue = opcode.Value;
+            var opcodeValue = opcode.Value;
             if (opcode.Size != 1)
             {
-                BinaryPrimitives.WriteInt16BigEndian(m_ILStream.AsSpan(m_length), opcodeValue);
-                m_length += 2;
+                BinaryPrimitives.WriteInt16BigEndian(_ilStream.AsSpan(_length), opcodeValue);
+                _length += 2;
             }
             else
             {
-                m_ILStream[m_length++] = (byte)opcodeValue;
+                _ilStream[_length++] = (byte)opcodeValue;
             }
 
             UpdateStackSize(opcode, opcode.StackChange());
         }
 
+        /// <summary>
+        /// Updates the tracked stack depth requirements of the method for an instruction.
+        /// </summary>
+        /// <param name="opcode">The instruction that was emitted. If it cannot fall through, the current depth becomes unknown.</param>
+        /// <param name="stackchange">The amount by which the stack depth changes.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void UpdateStackSize(OpCode opcode, int stackchange)
         {
-            // Updates internal variables for keeping track of the stack size
-            // requirements for the function.  stackchange specifies the amount
-            // by which the stacksize needs to be updated.
-
-            if (m_curDepth < 0)
+            if (_curDepth < 0)
             {
-                // Current depth is "unknown". We get here when:
+                // current depth is "unknown". We get here when:
                 // * this is unreachable code.
                 // * the client uses explicit numeric offsets rather than Labels.
-                m_curDepth = 0;
+                _curDepth = 0;
             }
 
-            m_curDepth += stackchange;
-            if (m_curDepth < 0)
+            _curDepth += stackchange;
+            if (_curDepth < 0)
             {
-                // Stack underflow. Assume our previous depth computation was flawed.
-                m_depthAdjustment -= m_curDepth;
-                m_curDepth = 0;
+                // stack underflow, assume our previous depth computation was flawed
+                _depthAdjustment -= _curDepth;
+                _curDepth = 0;
             }
-            else if (m_maxDepth < m_curDepth)
-                m_maxDepth = m_curDepth;
-            Debug.Assert(m_depthAdjustment >= 0);
-            Debug.Assert(m_curDepth >= 0);
+            else if (_maxDepth < _curDepth)
+                _maxDepth = _curDepth;
+            Debug.Assert(_depthAdjustment >= 0);
+            Debug.Assert(_curDepth >= 0);
 
-            // Record the stack depth at a "target" of this instruction.
-            m_targetDepth = m_curDepth;
+            // record the stack depth at a "target" of this instruction
+            _targetDepth = _curDepth;
 
-            // If the current instruction can't fall through, set the depth to unknown.
+            // if the current instruction can't fall through, set the depth to unknown
             if (opcode.EndsUncondJmpBlk())
-                m_curDepth = -1;
+                _curDepth = -1;
         }
 
-        private int GetMethodToken(MethodBase method, Type[]? optionalParameterTypes, bool useMethodDef)
+        /// <summary>
+        /// Gets the token to emit for a reference to a method or constructor.
+        /// </summary>
+        /// <param name="method">The method or constructor.</param>
+        /// <param name="optionalParameterTypes">The types of the optional arguments of a varargs call, or <see langword="null"/>.</param>
+        /// <returns>The token of the method, which may be a pseudo token.</returns>
+        int GetMethodToken(MethodBase method, Type[]? optionalParameterTypes)
         {
             var mi = method is ConstructorInfo ctor ? ctor.GetMethodInfo() : (MethodInfo)method;
             if (optionalParameterTypes == null || optionalParameterTypes.Length == 0)
-                return m_methodBuilder.ModuleBuilder.GetMethodTokenForIL(mi).Token;
+                return _methodBuilder.ModuleBuilder.GetMethodTokenForIL(mi).Token;
             else
-                return m_methodBuilder.ModuleBuilder.__GetMethodToken(mi, optionalParameterTypes, null).Token;
+                return _methodBuilder.ModuleBuilder.__GetMethodToken(mi, optionalParameterTypes, null).Token;
         }
 
+        /// <summary>
+        /// Builds the signature of a method reference, adding a sentinel and the optional argument types for a varargs
+        /// call.
+        /// </summary>
+        /// <param name="call">The calling convention of the method.</param>
+        /// <param name="returnType">The return type of the method.</param>
+        /// <param name="parameterTypes">The types of the parameters of the method.</param>
+        /// <param name="optionalParameterTypes">The types of the optional arguments of a varargs call, or <see langword="null"/>.</param>
+        /// <returns>The signature helper holding the signature.</returns>
         internal SignatureHelper GetMemberRefSignature(
             CallingConventions call,
             Type? returnType,
             Type[]? parameterTypes,
             Type[]? optionalParameterTypes)
         {
-            var sig = SignatureHelper.GetMethodSigHelper(m_methodBuilder.Module, call, returnType);
+            var sig = SignatureHelper.GetMethodSigHelper(_methodBuilder.Module, call, returnType);
             sig.AddArguments(parameterTypes, null, null);
             if (optionalParameterTypes != null && optionalParameterTypes.Length != 0)
             {
@@ -200,169 +263,206 @@ namespace IKVM.Reflection.Emit
             return sig;
         }
 
+        /// <summary>
+        /// Called by <see cref="MethodBuilder"/> to do all of the label fixups and return a new byte array representing
+        /// the IL stream with labels resolved.
+        /// </summary>
+        /// <returns>The IL of the method body, or <see langword="null"/> if no IL was emitted.</returns>
+        /// <exception cref="ArgumentException">An exception block is still open, or a label was used but never marked.</exception>
+        /// <exception cref="NotSupportedException">A branch target is out of range for a one-byte branch instruction.</exception>
         internal byte[]? BakeByteArray()
         {
-            // BakeByteArray is an internal function designed to be called by MethodBuilder to do
-            // all of the fixups and return a new byte array representing the byte stream with labels resolved, etc.
-
-            if (m_currExcStackCount != 0)
+            if (_currExcStackCount != 0)
             {
                 throw new ArgumentException("The IL Generator cannot be used while there are unclosed exceptions.");
             }
 
-            if (m_length == 0)
+            if (_length == 0)
                 return null;
 
-            // Allocate space for the new array.
-            byte[] newBytes = new byte[m_length];
+            // allocate space for the new array
+            var newBytes = new byte[_length];
 
-            // Copy the data from the old array
-            Array.Copy(m_ILStream, newBytes, m_length);
+            // copy the data from the old array
+            Array.Copy(_ilStream, newBytes, _length);
 
-            // Do the fixups.
-            // This involves iterating over all of the labels and
-            // replacing them with their proper values.
-            for (int i = 0; i < m_fixupCount; i++)
+            // do the fixups: this involves iterating over all of the labels and replacing them with their proper values
+            for (var i = 0; i < _fixupCount; i++)
             {
-                __FixupData fixupData = m_fixupData![i];
-                int updateAddr = GetLabelPos(fixupData.m_fixupLabel) - (fixupData.m_fixupPos + fixupData.m_fixupInstSize);
+                __FixupData fixupData = _fixupData![i];
+                var updateAddr = GetLabelPos(fixupData.FixupLabel) - (fixupData.FixupPos + fixupData.FixupInstSize);
 
-                // Handle single byte instructions
-                // Throw an exception if they're trying to store a jump in a single byte instruction that doesn't fit.
-                if (fixupData.m_fixupInstSize == 1)
+                // handle single byte instructions, throwing an exception if they're trying to store a jump in a single
+                // byte instruction that doesn't fit
+                if (fixupData.FixupInstSize == 1)
                 {
-                    // Verify that our one-byte arg will fit into a Signed Byte.
+                    // verify that our one-byte arg will fit into a signed byte
                     if (updateAddr < sbyte.MinValue || updateAddr > sbyte.MaxValue)
                     {
-                        throw new NotSupportedException(string.Format("Illegal one-byte branch at position: {0}. Requested branch was: {1}.", fixupData.m_fixupPos, updateAddr));
+                        throw new NotSupportedException(string.Format("Illegal one-byte branch at position: {0}. Requested branch was: {1}.", fixupData.FixupPos, updateAddr));
                     }
 
-                    // Place the one-byte arg
-                    newBytes[fixupData.m_fixupPos] = (byte)updateAddr;
+                    // place the one-byte arg
+                    newBytes[fixupData.FixupPos] = (byte)updateAddr;
                 }
                 else
                 {
-                    // Place the four-byte arg
-                    BinaryPrimitives.WriteInt32LittleEndian(newBytes.AsSpan(fixupData.m_fixupPos), updateAddr);
+                    // place the four-byte arg
+                    BinaryPrimitives.WriteInt32LittleEndian(newBytes.AsSpan(fixupData.FixupPos), updateAddr);
                 }
             }
             return newBytes;
         }
 
+        /// <summary>
+        /// Returns the exception blocks of the method body, sorted so that inner blocks come before the blocks that
+        /// enclose them.
+        /// </summary>
+        /// <returns>The exception blocks, or <see langword="null"/> if there are none.</returns>
+        /// <exception cref="NotSupportedException">An exception block is still open.</exception>
         internal __ExceptionInfo[]? GetExceptions()
         {
-            if (m_currExcStackCount != 0)
+            if (_currExcStackCount != 0)
             {
                 throw new NotSupportedException("The IL Generator cannot be used while there are unclosed exceptions.");
             }
 
-            if (m_exceptionCount == 0)
+            if (_exceptionCount == 0)
             {
                 return null;
             }
 
-            var temp = new __ExceptionInfo[m_exceptionCount];
-            Array.Copy(m_exceptions!, temp, m_exceptionCount);
+            var temp = new __ExceptionInfo[_exceptionCount];
+            Array.Copy(_exceptions!, temp, _exceptionCount);
             SortExceptions(temp);
             return temp;
         }
 
+        /// <summary>
+        /// Guarantees that the IL stream can hold at least <paramref name="size"/> more bytes.
+        /// </summary>
+        /// <param name="size">The number of bytes about to be written.</param>
         internal void EnsureCapacity(int size)
         {
-            // Guarantees an array capable of holding at least size elements.
-            if (m_length + size >= m_ILStream.Length)
+            if (_length + size >= _ilStream.Length)
             {
                 IncreaseCapacity(size);
             }
         }
 
-        private void IncreaseCapacity(int size)
+        /// <summary>
+        /// Grows the IL stream to at least double its size, or to fit <paramref name="size"/> more bytes if that is
+        /// larger.
+        /// </summary>
+        /// <param name="size">The number of bytes about to be written.</param>
+        void IncreaseCapacity(int size)
         {
-            byte[] temp = new byte[Math.Max(m_ILStream.Length * 2, m_length + size)];
-            Array.Copy(m_ILStream, temp, m_ILStream.Length);
-            m_ILStream = temp;
+            var temp = new byte[Math.Max(_ilStream.Length * 2, _length + size)];
+            Array.Copy(_ilStream, temp, _ilStream.Length);
+            _ilStream = temp;
         }
 
+        /// <summary>
+        /// Writes a 32 bit little-endian integer to the IL stream. The caller must ensure there is enough capacity.
+        /// </summary>
+        /// <param name="value">The value to write.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void PutInteger4(int value)
         {
-            BinaryPrimitives.WriteInt32LittleEndian(m_ILStream.AsSpan(m_length), value);
-            m_length += 4;
+            BinaryPrimitives.WriteInt32LittleEndian(_ilStream.AsSpan(_length), value);
+            _length += 4;
         }
 
-        private int GetLabelPos(Label lbl)
+        /// <summary>
+        /// Gets the position in the stream of a particular label, verifying that the label exists and that it has been
+        /// given a value.
+        /// </summary>
+        /// <param name="lbl">The label.</param>
+        /// <returns>The offset in the IL stream at which the label was marked.</returns>
+        /// <exception cref="ArgumentException">The label was not defined by this generator, or has not been marked.</exception>
+        int GetLabelPos(Label lbl)
         {
-            // Gets the position in the stream of a particular label.
-            // Verifies that the label exists and that it has been given a value.
+            var index = lbl.Id;
 
-            int index = lbl.Id;
-
-            if (index < 0 || index >= m_labelCount || m_labelList is null)
+            if (index < 0 || index >= _labelCount || _labelList is null)
                 throw new ArgumentException("Bad label in ILGenerator.");
 
-            int pos = m_labelList[index].m_pos;
+            var pos = _labelList[index].Pos;
             if (pos < 0)
                 throw new ArgumentException("Bad label content in ILGenerator.");
 
             return pos;
         }
 
-        private void AddFixup(Label lbl, int pos, int instSize)
+        /// <summary>
+        /// Notes the label, position, and instruction size of a new fixup, expanding the fixup array as appropriate,
+        /// and records the stack depth at the branch for the label.
+        /// </summary>
+        /// <param name="lbl">The label the branch targets.</param>
+        /// <param name="pos">The offset in the IL stream of the branch operand.</param>
+        /// <param name="instSize">The size of the branch operand, which is also the distance from the operand to the end of the instruction (or of the switch table).</param>
+        /// <exception cref="ArgumentException">The label was not defined by this generator.</exception>
+        void AddFixup(Label lbl, int pos, int instSize)
         {
-            // Notes the label, position, and instruction size of a new fixup.  Expands
-            // all of the fixup arrays as appropriate.
-
-            if (m_fixupData == null)
+            if (_fixupData == null)
             {
-                m_fixupData = new __FixupData[DefaultFixupArraySize];
+                _fixupData = new __FixupData[DefaultFixupArraySize];
             }
-            else if (m_fixupData.Length <= m_fixupCount)
+            else if (_fixupData.Length <= _fixupCount)
             {
-                m_fixupData = EnlargeArray(m_fixupData);
+                _fixupData = EnlargeArray(_fixupData);
             }
 
-            m_fixupData[m_fixupCount++] = new __FixupData
+            _fixupData[_fixupCount++] = new __FixupData
             {
-                m_fixupPos = pos,
-                m_fixupLabel = lbl,
-                m_fixupInstSize = instSize
+                FixupPos = pos,
+                FixupLabel = lbl,
+                FixupInstSize = instSize
             };
 
-            int labelIndex = lbl.Id;
-            if (labelIndex < 0 || labelIndex >= m_labelCount || m_labelList is null)
+            var labelIndex = lbl.Id;
+            if (labelIndex < 0 || labelIndex >= _labelCount || _labelList is null)
                 throw new ArgumentException("Bad label in ILGenerator.");
 
-            int depth = m_labelList[labelIndex].m_depth;
-            int targetDepth = m_targetDepth;
+            var depth = _labelList[labelIndex].Depth;
+            var targetDepth = _targetDepth;
             Debug.Assert(depth >= -1);
             Debug.Assert(targetDepth >= -1);
             if (depth < targetDepth)
             {
-                // Either unknown depth for this label or this branch location has a larger depth than previously recorded.
-                // In the latter case, the IL is (likely) invalid, but we just compensate for it.
+                // either unknown depth for this label or this branch location has a larger depth than previously
+                // recorded; in the latter case, the IL is (likely) invalid, but we just compensate for it
                 if (depth >= 0)
-                    m_depthAdjustment += targetDepth - depth;
-                m_labelList[labelIndex].m_depth = targetDepth;
+                    _depthAdjustment += targetDepth - depth;
+                _labelList[labelIndex].Depth = targetDepth;
             }
         }
 
+        /// <summary>
+        /// Gets the maximum stack depth of the method body, including the adjustments made for invalid IL.
+        /// </summary>
+        /// <returns>The maximum stack depth, limited to 2^16 - 1, since the value is taken modulo 2^16 by other code.</returns>
         internal int GetMaxStackSize()
         {
-            // Limit the computed max stack to 2^16 - 1, since the value is mod`ed by 2^16 by other code.
-            Debug.Assert(m_depthAdjustment >= 0);
-            return (int)Math.Min(ushort.MaxValue, m_maxDepth + m_depthAdjustment);
+            Debug.Assert(_depthAdjustment >= 0);
+            return (int)Math.Min(ushort.MaxValue, _maxDepth + _depthAdjustment);
         }
 
-        private static void SortExceptions(__ExceptionInfo[] exceptions)
+        /// <summary>
+        /// Sorts the exception blocks so that inner blocks come before the blocks that enclose them, which is the order
+        /// in which the exception clauses must appear.
+        /// </summary>
+        /// <remarks>
+        /// This is just a cheap selection sort. We don't expect many exceptions (&lt;10), where it beats QuickSort. If
+        /// we have more exceptions than this in real life, we should consider moving to a QuickSort.
+        /// </remarks>
+        /// <param name="exceptions">The exception blocks to sort in place.</param>
+        static void SortExceptions(__ExceptionInfo[] exceptions)
         {
-            // In order to call exceptions properly we have to sort them in ascending order by their end position.
-            // Just a cheap insertion sort.  We don't expect many exceptions (<10), where InsertionSort beats QuickSort.
-            // If we have more exceptions than this in real life, we should consider moving to a QuickSort.
-
-            for (int i = 0; i < exceptions.Length; i++)
+            for (var i = 0; i < exceptions.Length; i++)
             {
-                int least = i;
-                for (int j = i + 1; j < exceptions.Length; j++)
+                var least = i;
+                for (var j = i + 1; j < exceptions.Length; j++)
                 {
                     if (exceptions[least].IsInner(exceptions[j]))
                     {
@@ -375,48 +475,76 @@ namespace IKVM.Reflection.Emit
             }
         }
 
+        /// <summary>
+        /// Returns the offsets in the IL stream of the tokens that must be resolved when the module is written.
+        /// </summary>
+        /// <returns>The offsets of the tokens, or <see langword="null"/> if there are none.</returns>
         internal int[]? GetTokenFixups()
         {
-            if (m_RelocFixupCount == 0)
+            if (_relocFixupCount == 0)
             {
-                Debug.Assert(m_RelocFixupList == null);
+                Debug.Assert(_relocFixupList == null);
                 return null;
             }
 
-            int[] narrowTokens = new int[m_RelocFixupCount];
-            Array.Copy(m_RelocFixupList!, narrowTokens, m_RelocFixupCount);
+            var narrowTokens = new int[_relocFixupCount];
+            Array.Copy(_relocFixupList!, narrowTokens, _relocFixupCount);
             return narrowTokens;
         }
+
         #endregion
 
         #region Public Members
 
         #region Emit
+
+        /// <summary>
+        /// Puts the specified instruction onto the stream of instructions.
+        /// </summary>
+        /// <param name="opcode">The Microsoft Intermediate Language (MSIL) instruction to be put onto the stream.</param>
         public void Emit(OpCode opcode)
         {
             EnsureCapacity(3);
             InternalEmit(opcode);
         }
 
+        /// <summary>
+        /// Puts the specified instruction and character argument onto the Microsoft intermediate language (MSIL) stream
+        /// of instructions.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be put onto the stream.</param>
+        /// <param name="arg">The character argument pushed onto the stream immediately after the instruction.</param>
         public void Emit(OpCode opcode, byte arg)
         {
             EnsureCapacity(4);
             InternalEmit(opcode);
-            m_ILStream[m_length++] = arg;
+            _ilStream[_length++] = arg;
         }
 
+        /// <summary>
+        /// Puts the specified instruction and numerical argument onto the Microsoft intermediate language (MSIL) stream
+        /// of instructions.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be emitted onto the stream.</param>
+        /// <param name="arg">The <see langword="short"/> argument pushed onto the stream immediately after the instruction.</param>
         public void Emit(OpCode opcode, short arg)
         {
-            // Puts opcode onto the stream of instructions followed by arg
             EnsureCapacity(5);
             InternalEmit(opcode);
-            BinaryPrimitives.WriteInt16LittleEndian(m_ILStream.AsSpan(m_length), arg);
-            m_length += 2;
+            BinaryPrimitives.WriteInt16LittleEndian(_ilStream.AsSpan(_length), arg);
+            _length += 2;
         }
 
+        /// <summary>
+        /// Puts the specified instruction and numerical argument onto the Microsoft intermediate language (MSIL) stream
+        /// of instructions. <c>ldc.i4</c>, <c>ldarg</c>, <c>ldarga</c> and <c>starg</c> are replaced by their shortest
+        /// form for the argument.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be put onto the stream.</param>
+        /// <param name="arg">The numerical argument pushed onto the stream immediately after the instruction.</param>
         public void Emit(OpCode opcode, int arg)
         {
-            // Special-case several opcodes that have shorter variants for common values.
+            // special-case several opcodes that have shorter variants for common values
             if (opcode.Equals(OpCodes.Ldc_I4))
             {
                 if (arg >= -1 && arg <= 8)
@@ -464,7 +592,8 @@ namespace IKVM.Reflection.Emit
                     return;
                 }
 
-                if ((uint)arg <= ushort.MaxValue) // this will be true except on misuse of the opcode
+                // this will be true except on misuse of the opcode
+                if ((uint)arg <= ushort.MaxValue)
                 {
                     Emit(OpCodes.Ldarg, (short)arg);
                     return;
@@ -478,7 +607,8 @@ namespace IKVM.Reflection.Emit
                     return;
                 }
 
-                if ((uint)arg <= ushort.MaxValue) // this will be true except on misuse of the opcode
+                // this will be true except on misuse of the opcode
+                if ((uint)arg <= ushort.MaxValue)
                 {
                     Emit(OpCodes.Ldarga, (short)arg);
                     return;
@@ -492,19 +622,28 @@ namespace IKVM.Reflection.Emit
                     return;
                 }
 
-                if ((uint)arg <= ushort.MaxValue) // this will be true except on misuse of the opcode
+                // this will be true except on misuse of the opcode
+                if ((uint)arg <= ushort.MaxValue)
                 {
                     Emit(OpCodes.Starg, (short)arg);
                     return;
                 }
             }
 
-            // For everything else, put the opcode followed by the arg onto the stream of instructions.
+            // for everything else, put the opcode followed by the arg onto the stream of instructions
             EnsureCapacity(7);
             InternalEmit(opcode);
             PutInteger4(arg);
         }
 
+        /// <summary>
+        /// Puts the specified instruction onto the Microsoft intermediate language (MSIL) stream followed by the
+        /// metadata token for the given method. <c>call</c>, <c>callvirt</c> and <c>newobj</c> are emitted as by
+        /// <see cref="EmitCall"/>.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be emitted onto the stream.</param>
+        /// <param name="meth">A <see cref="MethodInfo"/> representing a method.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="meth"/> is <see langword="null"/>.</exception>
         public void Emit(OpCode opcode, MethodInfo meth)
         {
             if (meth is null)
@@ -516,12 +655,11 @@ namespace IKVM.Reflection.Emit
             }
             else
             {
-                // Reflection doesn't distinguish between these two concepts:
+                // reflection doesn't distinguish between these two concepts:
                 //   1. A generic method definition: Foo`1
                 //   2. A generic method definition instantiated over its own generic arguments: Foo`1<!!0>
-                // In RefEmit, we always want 1 for Ld* opcodes and 2 for Call* and Newobj.
-                bool useMethodDef = opcode.Equals(OpCodes.Ldtoken) || opcode.Equals(OpCodes.Ldftn) || opcode.Equals(OpCodes.Ldvirtftn);
-                int tk = GetMethodToken(meth, null, useMethodDef);
+                // in RefEmit, we always want 1 for Ld* opcodes and 2 for Call* and Newobj
+                var tk = GetMethodToken(meth, null);
 
                 EnsureCapacity(7);
                 InternalEmit(opcode);
@@ -532,20 +670,30 @@ namespace IKVM.Reflection.Emit
             }
         }
 
+        /// <summary>
+        /// Puts a <see cref="OpCodes.Calli"/> instruction onto the Microsoft intermediate language (MSIL) stream,
+        /// specifying a managed calling convention for the indirect call.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be emitted onto the stream. Not used; <see cref="OpCodes.Calli"/> is always emitted.</param>
+        /// <param name="callingConvention">The managed calling convention to be used.</param>
+        /// <param name="returnType">The <see cref="Type"/> of the result.</param>
+        /// <param name="parameterTypes">The types of the required arguments to the instruction.</param>
+        /// <param name="optionalParameterTypes">The types of the optional arguments for varargs calls.</param>
+        /// <exception cref="InvalidOperationException"><paramref name="optionalParameterTypes"/> is not <see langword="null"/>, but <paramref name="callingConvention"/> does not include <see cref="CallingConventions.VarArgs"/>.</exception>
         public void EmitCalli(OpCode opcode, CallingConventions callingConvention,
             Type? returnType, Type[]? parameterTypes, Type[]? optionalParameterTypes)
         {
-            int stackchange = 0;
+            var stackchange = 0;
             if (optionalParameterTypes != null)
             {
                 if ((callingConvention & CallingConventions.VarArgs) == 0)
                 {
-                    // Client should not supply optional parameter in default calling convention
+                    // client should not supply optional parameter in default calling convention
                     throw new InvalidOperationException("Calling convention must be VarArgs.");
                 }
             }
 
-            ModuleBuilder modBuilder = (ModuleBuilder)m_methodBuilder.ModuleBuilder;
+            ModuleBuilder modBuilder = (ModuleBuilder)_methodBuilder.ModuleBuilder;
             SignatureHelper sig = GetMemberRefSignature(callingConvention,
                 returnType,
                 parameterTypes,
@@ -554,19 +702,19 @@ namespace IKVM.Reflection.Emit
             EnsureCapacity(7);
             Emit(OpCodes.Calli);
 
-            // If there is a non-void return type, push one.
+            // if there is a non-void return type, push one
             if (returnType != modBuilder.Universe.System_Void)
                 stackchange++;
-            // Pop off arguments if any.
+            // pop off arguments if any
             if (parameterTypes != null)
                 stackchange -= parameterTypes.Length;
-            // Pop off vararg arguments.
+            // pop off vararg arguments
             if (optionalParameterTypes != null)
                 stackchange -= optionalParameterTypes.Length;
-            // Pop the this parameter if the method has a this parameter.
+            // pop the this parameter if the method has a this parameter
             if ((callingConvention & CallingConventions.HasThis) == CallingConventions.HasThis)
                 stackchange--;
-            // Pop the native function pointer.
+            // pop the native function pointer
             stackchange--;
             UpdateStackSize(OpCodes.Calli, stackchange);
 
@@ -574,12 +722,20 @@ namespace IKVM.Reflection.Emit
             PutInteger4(modBuilder.GetSignatureToken(sig).Token);
         }
 
+        /// <summary>
+        /// Puts a <see cref="OpCodes.Calli"/> instruction onto the Microsoft intermediate language (MSIL) stream,
+        /// specifying an unmanaged calling convention for the indirect call.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be emitted onto the stream. Not used; <see cref="OpCodes.Calli"/> is always emitted.</param>
+        /// <param name="unmanagedCallConv">The unmanaged calling convention to be used.</param>
+        /// <param name="returnType">The <see cref="Type"/> of the result.</param>
+        /// <param name="parameterTypes">The types of the required arguments to the instruction.</param>
         public void EmitCalli(OpCode opcode, CallingConvention unmanagedCallConv, Type? returnType, Type[]? parameterTypes)
         {
-            int stackchange = 0;
-            int cParams = 0;
+            var stackchange = 0;
+            var cParams = 0;
 
-            ModuleBuilder modBuilder = (ModuleBuilder)m_methodBuilder.Module;
+            ModuleBuilder modBuilder = (ModuleBuilder)_methodBuilder.Module;
 
             if (parameterTypes != null)
             {
@@ -593,21 +749,21 @@ namespace IKVM.Reflection.Emit
 
             if (parameterTypes != null)
             {
-                for (int i = 0; i < cParams; i++)
+                for (var i = 0; i < cParams; i++)
                 {
                     sig.AddArgument(parameterTypes[i]);
                 }
             }
 
-            // If there is a non-void return type, push one.
+            // if there is a non-void return type, push one
             if (returnType != modBuilder.Universe.System_Void)
                 stackchange++;
 
-            // Pop off arguments if any.
+            // pop off arguments if any
             if (parameterTypes != null)
                 stackchange -= cParams;
 
-            // Pop the native function pointer.
+            // pop the native function pointer
             stackchange--;
             UpdateStackSize(OpCodes.Calli, stackchange);
 
@@ -617,6 +773,15 @@ namespace IKVM.Reflection.Emit
             PutInteger4(modBuilder.GetSignatureToken(sig).Token);
         }
 
+        /// <summary>
+        /// Puts a <c>call</c>, <c>callvirt</c> or <c>newobj</c> instruction onto the Microsoft intermediate language
+        /// (MSIL) stream to call a method, which may be a varargs method.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be emitted onto the stream. Must be <see cref="OpCodes.Call"/>, <see cref="OpCodes.Callvirt"/>, or <see cref="OpCodes.Newobj"/>.</param>
+        /// <param name="methodInfo">The method to be called.</param>
+        /// <param name="optionalParameterTypes">The types of the optional arguments if the method is a varargs method; otherwise, <see langword="null"/>.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="methodInfo"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException"><paramref name="opcode"/> does not specify a method call.</exception>
         public void EmitCall(OpCode opcode, MethodInfo methodInfo, Type[]? optionalParameterTypes)
         {
             if (methodInfo is null)
@@ -625,25 +790,24 @@ namespace IKVM.Reflection.Emit
             if (!(opcode.Equals(OpCodes.Call) || opcode.Equals(OpCodes.Callvirt) || opcode.Equals(OpCodes.Newobj)))
                 throw new ArgumentException("The specified opcode cannot be passed to EmitCall.", nameof(opcode));
 
-            int stackchange = 0;
-            int tk = GetMethodToken(methodInfo, optionalParameterTypes, false);
+            var stackchange = 0;
+            var tk = GetMethodToken(methodInfo, optionalParameterTypes);
 
             EnsureCapacity(7);
             InternalEmit(opcode);
 
-            // Push the return value if there is one.
-            if (methodInfo.ReturnType != m_methodBuilder.ModuleBuilder.Universe.System_Void)
+            // push the return value if there is one
+            if (methodInfo.ReturnType != _methodBuilder.ModuleBuilder.Universe.System_Void)
                 stackchange++;
-            // Pop the parameters.
+            // pop the parameters
             Type[] parameters = methodInfo.GetParameterTypes();
             if (parameters != null)
                 stackchange -= parameters.Length;
 
-            // Pop the this parameter if the method is non-static and the
-            // instruction is not newobj.
-            if (/*!(methodInfo is SymbolMethod) && */!methodInfo.IsStatic && !opcode.Equals(OpCodes.Newobj))
+            // pop the this parameter if the method is non-static and the instruction is not newobj
+            if (!methodInfo.IsStatic && !opcode.Equals(OpCodes.Newobj))
                 stackchange--;
-            // Pop the optional parameters off the stack.
+            // pop the optional parameters off the stack
             if (optionalParameterTypes != null)
                 stackchange -= optionalParameterTypes.Length;
             UpdateStackSize(opcode, stackchange);
@@ -652,58 +816,29 @@ namespace IKVM.Reflection.Emit
             PutInteger4(tk);
         }
 
-        public void Emit(OpCode opcode, SignatureHelper signature)
-        {
-            if (signature is null)
-                throw new ArgumentNullException(nameof(signature));
-
-            int stackchange = 0;
-            ModuleBuilder modBuilder = (ModuleBuilder)m_methodBuilder.Module;
-            int sig = modBuilder.GetSignatureToken(signature).Token;
-
-            int tempVal = sig;
-
-            EnsureCapacity(7);
-            InternalEmit(opcode);
-
-            // The only IL instruction that has VarPop behaviour, that takes a
-            // Signature token as a parameter is calli.  Pop the parameters and
-            // the native function pointer.  To be conservative, do not pop the
-            // this pointer since this information is not easily derived from
-            // SignatureHelper.
-            if (opcode.StackBehaviourPop == StackBehaviour.Varpop)
-            {
-                Debug.Assert(opcode.Equals(OpCodes.Calli),
-                                "Unexpected opcode encountered for StackBehaviour VarPop.");
-                // Pop the arguments..
-                stackchange -= signature.ArgumentCount;
-                // Pop native function pointer off the stack.
-                stackchange--;
-                UpdateStackSize(opcode, stackchange);
-            }
-
-            RecordTokenFixup();
-            PutInteger4(tempVal);
-        }
-
+        /// <summary>
+        /// Puts the specified instruction and metadata token for the specified constructor onto the Microsoft
+        /// intermediate language (MSIL) stream of instructions.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be emitted onto the stream.</param>
+        /// <param name="con">A <see cref="ConstructorInfo"/> representing a constructor.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="con"/> is <see langword="null"/>.</exception>
         public void Emit(OpCode opcode, ConstructorInfo con)
         {
             if (con is null)
                 throw new ArgumentNullException(nameof(con));
 
-            int stackchange = 0;
+            var stackchange = 0;
 
-            // Constructors cannot be generic so the value of UseMethodDef doesn't matter.
-            int tk = GetMethodToken(con, null, true);
+            var tk = GetMethodToken(con, null);
 
             EnsureCapacity(7);
             InternalEmit(opcode);
 
-            // Make a conservative estimate by assuming a return type and no
-            // this parameter.
+            // make a conservative estimate by assuming a return type and no this parameter
             if (opcode.StackBehaviourPush == StackBehaviour.Varpush)
             {
-                // Instruction must be one of call or callvirt.
+                // instruction must be one of call or callvirt
                 Debug.Assert(opcode.Equals(OpCodes.Call) ||
                                 opcode.Equals(OpCodes.Callvirt),
                                 "Unexpected opcode encountered for StackBehaviour of VarPush.");
@@ -711,7 +846,7 @@ namespace IKVM.Reflection.Emit
             }
             if (opcode.StackBehaviourPop == StackBehaviour.Varpop)
             {
-                // Instruction must be one of call, callvirt or newobj.
+                // instruction must be one of call, callvirt or newobj
                 Debug.Assert(opcode.Equals(OpCodes.Call) ||
                                 opcode.Equals(OpCodes.Callvirt) ||
                                 opcode.Equals(OpCodes.Newobj),
@@ -727,15 +862,18 @@ namespace IKVM.Reflection.Emit
             PutInteger4(tk);
         }
 
+        /// <summary>
+        /// Puts the specified instruction onto the Microsoft intermediate language (MSIL) stream followed by the
+        /// metadata token for the given type. The location of the token is recorded so that it can be patched when the
+        /// module is written.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be put onto the stream.</param>
+        /// <param name="cls">A <see cref="Type"/>.</param>
         public void Emit(OpCode opcode, Type cls)
         {
-            // Puts opcode onto the stream and then the metadata token represented
-            // by cls.  The location of cls is recorded so that the token can be
-            // patched if necessary when persisting the module to a PE.
-
-            ModuleBuilder modBuilder = (ModuleBuilder)m_methodBuilder.Module;
-            bool getGenericDefinition = (opcode == OpCodes.Ldtoken && cls != null && cls.IsGenericTypeDefinition);
-            int tempVal = getGenericDefinition ? modBuilder.GetTypeToken(cls).Token : modBuilder.GetTypeTokenForMemberRef(cls);
+            ModuleBuilder modBuilder = (ModuleBuilder)_methodBuilder.Module;
+            var getGenericDefinition = (opcode == OpCodes.Ldtoken && cls != null && cls.IsGenericTypeDefinition);
+            var tempVal = getGenericDefinition ? modBuilder.GetTypeToken(cls).Token : modBuilder.GetTypeTokenForMemberRef(cls);
 
             EnsureCapacity(7);
             InternalEmit(opcode);
@@ -743,20 +881,32 @@ namespace IKVM.Reflection.Emit
             PutInteger4(tempVal);
         }
 
+        /// <summary>
+        /// Puts the specified instruction and numerical argument onto the Microsoft intermediate language (MSIL) stream
+        /// of instructions.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be put onto the stream.</param>
+        /// <param name="arg">The numerical argument pushed onto the stream immediately after the instruction.</param>
         public void Emit(OpCode opcode, long arg)
         {
             EnsureCapacity(11);
             InternalEmit(opcode);
-            BinaryPrimitives.WriteInt64LittleEndian(m_ILStream.AsSpan(m_length), arg);
-            m_length += 8;
+            BinaryPrimitives.WriteInt64LittleEndian(_ilStream.AsSpan(_length), arg);
+            _length += 8;
         }
 
+        /// <summary>
+        /// Puts the specified instruction and numerical argument onto the Microsoft intermediate language (MSIL) stream
+        /// of instructions.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be put onto the stream.</param>
+        /// <param name="arg">The <see langword="float"/> argument pushed onto the stream immediately after the instruction.</param>
         public void Emit(OpCode opcode, float arg)
         {
             EnsureCapacity(7);
             InternalEmit(opcode);
-            BinaryPrimitives.WriteInt32LittleEndian(m_ILStream.AsSpan(m_length), SingleToInt32Bits(arg));
-            m_length += 4;
+            BinaryPrimitives.WriteInt32LittleEndian(_ilStream.AsSpan(_length), SingleToInt32Bits(arg));
+            _length += 4;
         }
 
         /// <summary>
@@ -774,98 +924,131 @@ namespace IKVM.Reflection.Emit
 #endif
         }
 
+        /// <summary>
+        /// Puts the specified instruction and numerical argument onto the Microsoft intermediate language (MSIL) stream
+        /// of instructions.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be put onto the stream.</param>
+        /// <param name="arg">The numerical argument pushed onto the stream immediately after the instruction.</param>
         public void Emit(OpCode opcode, double arg)
         {
             EnsureCapacity(11);
             InternalEmit(opcode);
-            BinaryPrimitives.WriteInt64LittleEndian(m_ILStream.AsSpan(m_length), BitConverter.DoubleToInt64Bits(arg));
-            m_length += 8;
+            BinaryPrimitives.WriteInt64LittleEndian(_ilStream.AsSpan(_length), BitConverter.DoubleToInt64Bits(arg));
+            _length += 8;
         }
 
+        /// <summary>
+        /// Puts the specified instruction onto the Microsoft intermediate language (MSIL) stream and leaves space to
+        /// include a label when fixes are done.
+        /// </summary>
+        /// <remarks>
+        /// Labels are created using <see cref="DefineLabel()"/> and their location within the stream is fixed by using
+        /// <see cref="MarkLabel"/>. If a single-byte instruction (designated by the <c>_S</c> suffix) is used, the
+        /// label can represent a jump of at most 127 bytes along the stream. <paramref name="opcode"/> must represent a
+        /// branch instruction (although this is not explicitly verified). Since branches are relative instructions, the
+        /// label will be replaced with the correct offset to branch during the fixup process.
+        /// </remarks>
+        /// <param name="opcode">The MSIL instruction to be emitted onto the stream.</param>
+        /// <param name="label">The label to which to branch from this location.</param>
         public void Emit(OpCode opcode, Label label)
         {
-            // Puts opcode onto the stream and leaves space to include label
-            // when fixups are done.  Labels are created using ILGenerator.DefineLabel and
-            // their location within the stream is fixed by using ILGenerator.MarkLabel.
-            // If a single-byte instruction (designated by the _S suffix in OpCodes.cs) is used,
-            // the label can represent a jump of at most 127 bytes along the stream.
-            //
-            // opcode must represent a branch instruction (although we don't explicitly
-            // verify this).  Since branches are relative instructions, label will be replaced with the
-            // correct offset to branch during the fixup process.
-
             EnsureCapacity(7);
 
             InternalEmit(opcode);
             if (OpCodes.TakesSingleByteArgument(opcode))
             {
-                AddFixup(label, m_length++, 1);
+                AddFixup(label, _length++, 1);
             }
             else
             {
-                AddFixup(label, m_length, 4);
-                m_length += 4;
+                AddFixup(label, _length, 4);
+                _length += 4;
             }
         }
 
+        /// <summary>
+        /// Puts the specified instruction onto the Microsoft intermediate language (MSIL) stream and leaves space to
+        /// include a label when fixes are done. This emits a switch table.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be emitted onto the stream.</param>
+        /// <param name="labels">The array of label objects to which to branch from this location. All of the labels will be used.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="labels"/> is <see langword="null"/>.</exception>
         public void Emit(OpCode opcode, Label[] labels)
         {
             if (labels is null)
                 throw new ArgumentNullException(nameof(labels));
 
-            // Emitting a switch table
-
             int i;
-            int remaining;                  // number of bytes remaining for this switch instruction to be subtracted
-            // for computing the offset
 
-            int count = labels.Length;
+            // number of bytes remaining for this switch instruction to be subtracted for computing the offset
+            int remaining;
+
+            var count = labels.Length;
 
             EnsureCapacity(count * 4 + 7);
             InternalEmit(opcode);
             PutInteger4(count);
             for (remaining = count * 4, i = 0; remaining > 0; remaining -= 4, i++)
             {
-                AddFixup(labels[i], m_length, remaining);
-                m_length += 4;
+                AddFixup(labels[i], _length, remaining);
+                _length += 4;
             }
         }
 
+        /// <summary>
+        /// Puts the specified instruction and metadata token for the specified field onto the Microsoft intermediate
+        /// language (MSIL) stream of instructions.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be emitted onto the stream.</param>
+        /// <param name="field">A <see cref="FieldInfo"/> representing a field.</param>
         public void Emit(OpCode opcode, FieldInfo field)
         {
-            ModuleBuilder modBuilder = (ModuleBuilder)m_methodBuilder.Module;
-            int tempVal = modBuilder.GetFieldToken(field).Token;
+            ModuleBuilder modBuilder = (ModuleBuilder)_methodBuilder.Module;
+            var tempVal = modBuilder.GetFieldToken(field).Token;
             EnsureCapacity(7);
             InternalEmit(opcode);
             RecordTokenFixup();
             PutInteger4(tempVal);
         }
 
+        /// <summary>
+        /// Puts the specified instruction onto the Microsoft intermediate language (MSIL) stream followed by the
+        /// metadata token for the given string.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be emitted onto the stream.</param>
+        /// <param name="str">The <see cref="string"/> to be emitted.</param>
         public void Emit(OpCode opcode, string str)
         {
-            // Puts the opcode onto the IL stream followed by the metadata token
-            // represented by str.  The location of str is recorded for future
-            // fixups if the module is persisted to a PE.
-
-            ModuleBuilder modBuilder = (ModuleBuilder)m_methodBuilder.Module;
-            int tempVal = modBuilder.GetStringConstant(str).Token;
+            // the user string token is final, so no fixup is recorded for it
+            ModuleBuilder modBuilder = (ModuleBuilder)_methodBuilder.Module;
+            var tempVal = modBuilder.GetStringConstant(str).Token;
             EnsureCapacity(7);
             InternalEmit(opcode);
             PutInteger4(tempVal);
         }
 
+        /// <summary>
+        /// Puts the specified instruction onto the Microsoft intermediate language (MSIL) stream followed by the index
+        /// of the given local variable. <c>ldloc</c>, <c>stloc</c> and <c>ldloca</c> are replaced by their shortest
+        /// form for the index.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be emitted onto the stream.</param>
+        /// <param name="local">A local variable.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="local"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException"><paramref name="local"/> was declared by a different method.</exception>
+        /// <exception cref="InvalidOperationException"><paramref name="opcode"/> is a single-byte instruction, and <paramref name="local"/> has an index greater than 255.</exception>
         public void Emit(OpCode opcode, LocalBuilder local)
         {
             if (local is null)
                 throw new ArgumentNullException(nameof(local));
 
-            // Puts the opcode onto the IL stream followed by the information for local variable local.
-            int tempVal = local.LocalIndex;
-            if (local.Method != m_methodBuilder)
+            var tempVal = local.LocalIndex;
+            if (local.Method != _methodBuilder)
             {
                 throw new ArgumentException("Local passed in does not belong to this ILGenerator.", nameof(local));
             }
-            // If the instruction is a ldloc, ldloca a stloc, morph it to the optimal form.
+            // if the instruction is a ldloc, ldloca or stloc, morph it to the optimal form
             if (opcode.Equals(OpCodes.Ldloc))
             {
                 switch (tempVal)
@@ -924,96 +1107,85 @@ namespace IKVM.Reflection.Emit
 
             if (!OpCodes.TakesSingleByteArgument(opcode))
             {
-                BinaryPrimitives.WriteInt16LittleEndian(m_ILStream.AsSpan(m_length), (short)tempVal);
-                m_length += 2;
+                BinaryPrimitives.WriteInt16LittleEndian(_ilStream.AsSpan(_length), (short)tempVal);
+                _length += 2;
             }
             else
             {
-                // Handle stloc_1, ldloc_1
+                // a short form such as ldloc.s or stloc.s can only address the first 256 locals
                 if (tempVal > byte.MaxValue)
                 {
                     throw new InvalidOperationException("Opcodes using a short-form index cannot address a local position over 255.");
                 }
-                m_ILStream[m_length++] = (byte)tempVal;
+                _ilStream[_length++] = (byte)tempVal;
             }
         }
+
         #endregion
 
         #region Exceptions
 
-        public virtual void ThrowException(Type excType)
-        {
-            if (excType is null)
-                throw new ArgumentNullException(nameof(excType));
-
-            // TODO figure out how to load type here
-            //if (!excType.IsSubclassOf( typeof(Exception)) && excType != typeof(Exception))
-            //throw new ArgumentException(nameof(excType));
-
-            var con = excType.GetConstructor(Type.EmptyTypes);
-            if (con == null)
-                throw new ArgumentException(nameof(excType));
-
-            Emit(OpCodes.Newobj, con);
-            Emit(OpCodes.Throw);
-        }
-
+        /// <summary>
+        /// Begins an exception block for a non-filtered exception. Creating an exception block records some
+        /// information, but does not actually emit any IL onto the stream.
+        /// </summary>
+        /// <remarks>
+        /// Exception blocks should be created and marked in the following form: emit some IL;
+        /// <see cref="BeginExceptionBlock"/>; emit the IL which should appear within the try block;
+        /// <see cref="BeginCatchBlock"/>; emit the IL which should appear within the catch block; optionally further
+        /// <see cref="BeginCatchBlock"/> calls, which can be repeated an arbitrary number of times;
+        /// <see cref="EndExceptionBlock"/>.
+        /// </remarks>
+        /// <returns>The label for the end of the block. This will leave you in the correct place to execute finally blocks or to finish the try.</returns>
         public Label BeginExceptionBlock()
         {
-            // Begin an Exception block.  Creating an Exception block records some information,
-            // but does not actually emit any IL onto the stream.  Exceptions should be created and
-            // marked in the following form:
-            //
-            // Emit Some IL
-            // BeginExceptionBlock
-            // Emit the IL which should appear within the "try" block
-            // BeginCatchBlock
-            // Emit the IL which should appear within the "catch" block
-            // Optional: BeginCatchBlock (this can be repeated an arbitrary number of times
-            // EndExceptionBlock
+            // delay init
+            _exceptions ??= new __ExceptionInfo[DefaultExceptionArraySize];
+            _currExcStack ??= new __ExceptionInfo[DefaultExceptionArraySize];
 
-            // Delay init
-            m_exceptions ??= new __ExceptionInfo[DefaultExceptionArraySize];
-            m_currExcStack ??= new __ExceptionInfo[DefaultExceptionArraySize];
-
-            if (m_exceptionCount >= m_exceptions.Length)
+            if (_exceptionCount >= _exceptions.Length)
             {
-                m_exceptions = EnlargeArray(m_exceptions);
+                _exceptions = EnlargeArray(_exceptions);
             }
 
-            if (m_currExcStackCount >= m_currExcStack.Length)
+            if (_currExcStackCount >= _currExcStack.Length)
             {
-                m_currExcStack = EnlargeArray(m_currExcStack);
+                _currExcStack = EnlargeArray(_currExcStack);
             }
 
             Label endLabel = DefineLabel(0);
-            __ExceptionInfo exceptionInfo = new __ExceptionInfo(m_length, endLabel);
+            __ExceptionInfo exceptionInfo = new __ExceptionInfo(_length, endLabel);
 
             // add the exception to the tracking list
-            m_exceptions[m_exceptionCount++] = exceptionInfo;
+            _exceptions[_exceptionCount++] = exceptionInfo;
 
-            // Make this exception the current active exception
-            m_currExcStack[m_currExcStackCount++] = exceptionInfo;
+            // make this exception the current active exception
+            _currExcStack[_currExcStackCount++] = exceptionInfo;
 
-            // Stack depth for "try" starts at zero.
-            m_curDepth = 0;
+            // stack depth for "try" starts at zero
+            _curDepth = 0;
 
             return endLabel;
         }
 
+        /// <summary>
+        /// Ends an exception block.
+        /// </summary>
+        /// <exception cref="NotSupportedException">The generator is not currently in an exception block.</exception>
+        /// <exception cref="InvalidOperationException">The current exception block has no catch, fault or finally clause.</exception>
         public void EndExceptionBlock()
         {
-            if (m_currExcStackCount == 0)
+            if (_currExcStackCount == 0)
             {
                 throw new NotSupportedException("Not currently in an exception block.");
             }
 
-            // Pop the current exception block
-            __ExceptionInfo current = m_currExcStack![m_currExcStackCount - 1];
-            m_currExcStack[--m_currExcStackCount] = null!;
+            // pop the current exception block
+            __ExceptionInfo current = _currExcStack![_currExcStackCount - 1];
+            _currExcStack[--_currExcStackCount] = null!;
 
             Label endLabel = current.GetEndLabel();
-            int state = current.GetCurrentState();
+            var state = current.GetCurrentState();
 
             if (state == __ExceptionInfo.State_Filter ||
                 state == __ExceptionInfo.State_Try)
@@ -1030,46 +1202,31 @@ namespace IKVM.Reflection.Emit
                 Emit(OpCodes.Endfinally);
             }
 
-            // Check if we've already set this label.
-            // The only reason why we might have set this is if we have a finally block.
-
-            Label label = m_labelList![endLabel.GetLabelValue()].m_pos != -1
-                ? current.m_finallyEndLabel
+            // check if we've already set this label; the only reason why we might have set this is if we have a finally
+            // block
+            Label label = _labelList![endLabel.GetLabelValue()].Pos != -1
+                ? current.FinallyEndLabel
                 : endLabel;
 
             MarkLabel(label);
 
-            current.Done(m_length);
+            current.Done(_length);
         }
 
-        public void BeginExceptFilterBlock()
-        {
-            // Begins an exception filter block.  Emits a branch instruction to the end of the current exception block.
-
-            if (m_currExcStackCount == 0)
-                throw new NotSupportedException("Not currently in an exception block.");
-
-            __ExceptionInfo current = m_currExcStack![m_currExcStackCount - 1];
-
-            Emit(OpCodes.Leave, current.GetEndLabel());
-
-            current.MarkFilterAddr(m_length);
-
-            // Stack depth for "filter" starts at one.
-            m_curDepth = 1;
-        }
-
+        /// <summary>
+        /// Begins a catch block. Emits a branch instruction to the end of the current exception block.
+        /// </summary>
+        /// <param name="exceptionType">The <see cref="Type"/> object that represents the exception, or <see langword="null"/> when the catch block follows a filter block.</param>
+        /// <exception cref="NotSupportedException">The generator is not currently in an exception block.</exception>
+        /// <exception cref="ArgumentException">The catch block follows a filter block and <paramref name="exceptionType"/> is not <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="exceptionType"/> is <see langword="null"/> and the catch block does not follow a filter block.</exception>
         public void BeginCatchBlock(Type? exceptionType)
         {
-            Debug.Assert(ModuleBuilder.IsPseudoToken(m_methodBuilder.ModuleBuilder.GetTypeTokenForMemberRef(exceptionType)) == false);
-
-            // Begins a catch block.  Emits a branch instruction to the end of the current exception block.
-
-            if (m_currExcStackCount == 0)
+            if (_currExcStackCount == 0)
             {
                 throw new NotSupportedException("Not currently in an exception block.");
             }
-            __ExceptionInfo current = m_currExcStack![m_currExcStackCount - 1];
+            __ExceptionInfo current = _currExcStack![_currExcStackCount - 1];
 
             if (current.GetCurrentState() == __ExceptionInfo.State_Filter)
             {
@@ -1089,44 +1246,53 @@ namespace IKVM.Reflection.Emit
                 Emit(OpCodes.Leave, current.GetEndLabel());
             }
 
-            current.MarkCatchAddr(m_length, exceptionType);
+            current.MarkCatchAddr(_length, exceptionType);
 
-            // Stack depth for "catch" starts at one.
-            m_curDepth = 1;
+            // stack depth for "catch" starts at one
+            _curDepth = 1;
         }
 
+        /// <summary>
+        /// Begins an exception fault block in the Microsoft intermediate language (MSIL) stream.
+        /// </summary>
+        /// <exception cref="NotSupportedException">The generator is not currently in an exception block.</exception>
         public void BeginFaultBlock()
         {
-            if (m_currExcStackCount == 0)
+            if (_currExcStackCount == 0)
             {
                 throw new NotSupportedException("Not currently in an exception block.");
             }
-            __ExceptionInfo current = m_currExcStack![m_currExcStackCount - 1];
+            __ExceptionInfo current = _currExcStack![_currExcStackCount - 1];
 
-            // emit the leave for the clause before this one.
+            // emit the leave for the clause before this one
             Emit(OpCodes.Leave, current.GetEndLabel());
 
-            current.MarkFaultAddr(m_length);
+            current.MarkFaultAddr(_length);
 
-            // Stack depth for "fault" starts at zero.
-            m_curDepth = 0;
+            // stack depth for "fault" starts at zero
+            _curDepth = 0;
         }
 
+        /// <summary>
+        /// Begins a finally block in the Microsoft intermediate language (MSIL) instruction stream.
+        /// </summary>
+        /// <exception cref="NotSupportedException">The generator is not currently in an exception block.</exception>
+        /// <exception cref="ArgumentException">The current exception block already has a finally block.</exception>
         public void BeginFinallyBlock()
         {
-            if (m_currExcStackCount == 0)
+            if (_currExcStackCount == 0)
             {
                 throw new NotSupportedException("Not currently in an exception block.");
             }
-            __ExceptionInfo current = m_currExcStack![m_currExcStackCount - 1];
-            int state = current.GetCurrentState();
+            __ExceptionInfo current = _currExcStack![_currExcStackCount - 1];
+            var state = current.GetCurrentState();
             Label endLabel = current.GetEndLabel();
-            int catchEndAddr = 0;
+            var catchEndAddr = 0;
             if (state != __ExceptionInfo.State_Try)
             {
                 // generate leave for any preceding catch clause
                 Emit(OpCodes.Leave, endLabel);
-                catchEndAddr = m_length;
+                catchEndAddr = _length;
             }
 
             MarkLabel(endLabel);
@@ -1137,86 +1303,94 @@ namespace IKVM.Reflection.Emit
             // generate leave for try clause
             Emit(OpCodes.Leave, finallyEndLabel);
             if (catchEndAddr == 0)
-                catchEndAddr = m_length;
-            current.MarkFinallyAddr(m_length, catchEndAddr);
+                catchEndAddr = _length;
+            current.MarkFinallyAddr(_length, catchEndAddr);
 
-            // Stack depth for "finally" starts at zero.
-            m_curDepth = 0;
+            // stack depth for "finally" starts at zero
+            _curDepth = 0;
         }
 
         #endregion
 
         #region Labels
-        public Label DefineLabel()
-        {
-            // We don't know the stack depth at the label yet, so set it to -1.
-            return DefineLabel(-1);
-        }
 
-        private Label DefineLabel(int depth)
+        /// <summary>
+        /// Declares a new label.
+        /// </summary>
+        /// <returns>A new label that can be used as a token for branching.</returns>
+        public Label DefineLabel() =>
+            // we don't know the stack depth at the label yet, so set it to -1
+            DefineLabel(-1);
+
+        /// <summary>
+        /// Declares a new label with the specified stack depth. The label is just a token and does not yet represent
+        /// any particular location within the stream; its position is set by <see cref="MarkLabel"/>.
+        /// </summary>
+        /// <param name="depth">The stack depth at the label, or -1 if it is not yet known.</param>
+        /// <returns>The new label.</returns>
+        Label DefineLabel(int depth)
         {
-            // Declares a new Label.  This is just a token and does not yet represent any particular location
-            // within the stream.  In order to set the position of the label within the stream, you must call
-            // Mark Label.
             Debug.Assert(depth >= -1);
 
-            // Delay init the label array in case we dont use it
-            m_labelList ??= new __LabelInfo[DefaultLabelArraySize];
+            // delay init the label array in case we don't use it
+            _labelList ??= new __LabelInfo[DefaultLabelArraySize];
 
-            if (m_labelCount >= m_labelList.Length)
+            if (_labelCount >= _labelList.Length)
             {
-                m_labelList = EnlargeArray(m_labelList);
+                _labelList = EnlargeArray(_labelList);
             }
-            m_labelList[m_labelCount].m_pos = -1;
-            m_labelList[m_labelCount].m_depth = depth;
-            return new Label(m_labelCount++);
+            _labelList[_labelCount].Pos = -1;
+            _labelList[_labelCount].Depth = depth;
+            return new Label(_labelCount++);
         }
 
+        /// <summary>
+        /// Marks the Microsoft intermediate language (MSIL) stream's current position with the given label. A label
+        /// cannot be marked more than once.
+        /// </summary>
+        /// <param name="loc">The label for which to set an index.</param>
+        /// <exception cref="ArgumentException"><paramref name="loc"/> does not belong to this generator, or has already been marked.</exception>
         public void MarkLabel(Label loc)
         {
-            // Defines a label by setting the position where that label is found within the stream.
-            // Does not allow a label to be defined more than once.
+            var labelIndex = loc.Id;
 
-            int labelIndex = loc.Id;
-
-            // This should only happen if a label from another generator is used with this one.
-            if (m_labelList is null || labelIndex < 0 || labelIndex >= m_labelList.Length)
+            // this should only happen if a label from another generator is used with this one
+            if (_labelList is null || labelIndex < 0 || labelIndex >= _labelList.Length)
             {
                 throw new ArgumentException("Invalid Label.");
             }
 
-            if (m_labelList[labelIndex].m_pos != -1)
+            if (_labelList[labelIndex].Pos != -1)
             {
                 throw new ArgumentException("Label defined multiple times.");
             }
 
-            m_labelList[labelIndex].m_pos = m_length;
+            _labelList[labelIndex].Pos = _length;
 
-            int depth = m_labelList[labelIndex].m_depth;
+            var depth = _labelList[labelIndex].Depth;
             if (depth < 0)
             {
-                // Unknown depth for this label, indicating that it hasn't been used yet.
-                // If m_curDepth is unknown, we're in the Backward branch constraint case. See ECMA-335 III.1.7.5.
-                // The m_depthAdjustment field will compensate for violations of this constraint, as we
-                // discover them. That is, here we assume a depth of zero. If a (later) branch to this label
-                // has a positive stack depth, we'll record that as the new depth and add the delta into
-                // m_depthAdjustment.
-                if (m_curDepth < 0)
-                    m_curDepth = 0;
-                m_labelList[labelIndex].m_depth = m_curDepth;
+                // unknown depth for this label, indicating that it hasn't been used yet. If _curDepth is unknown, we're
+                // in the backward branch constraint case, see ECMA-335 III.1.7.5. The _depthAdjustment field will
+                // compensate for violations of this constraint, as we discover them. That is, here we assume a depth of
+                // zero. If a (later) branch to this label has a positive stack depth, we'll record that as the new depth
+                // and add the delta into _depthAdjustment.
+                if (_curDepth < 0)
+                    _curDepth = 0;
+                _labelList[labelIndex].Depth = _curDepth;
             }
-            else if (depth < m_curDepth)
+            else if (depth < _curDepth)
             {
-                // A branch location with smaller stack targets this label. In this case, the IL is
-                // invalid, but we just compensate for it.
-                m_depthAdjustment += m_curDepth - depth;
-                m_labelList[labelIndex].m_depth = m_curDepth;
+                // a branch location with smaller stack targets this label; in this case, the IL is invalid, but we just
+                // compensate for it
+                _depthAdjustment += _curDepth - depth;
+                _labelList[labelIndex].Depth = _curDepth;
             }
-            else if (depth > m_curDepth)
+            else if (depth > _curDepth)
             {
-                // Either the current depth is unknown, or a branch location with larger stack targets
-                // this label, so the IL is invalid. In either case, just adjust the current depth.
-                m_curDepth = depth;
+                // either the current depth is unknown, or a branch location with larger stack targets this label, so
+                // the IL is invalid; in either case, just adjust the current depth
+                _curDepth = depth;
             }
         }
 
@@ -1224,20 +1398,24 @@ namespace IKVM.Reflection.Emit
 
         #region Debug API
 
-        public LocalBuilder DeclareLocal(Type localType)
-        {
-            return DeclareLocal(localType, false);
-        }
+        /// <summary>
+        /// Declares a local variable of the specified type.
+        /// </summary>
+        /// <param name="localType">A <see cref="Type"/> object that represents the type of the local variable.</param>
+        /// <returns>The declared local variable.</returns>
+        public LocalBuilder DeclareLocal(Type localType) => DeclareLocal(localType, false);
 
+        /// <summary>
+        /// Declares a local variable of the specified type, optionally pinning the object referred to by the variable.
+        /// </summary>
+        /// <param name="localType">A <see cref="Type"/> object that represents the type of the local variable.</param>
+        /// <param name="pinned"><see langword="true"/> to pin the object in memory; otherwise, <see langword="false"/>.</param>
+        /// <returns>A <see cref="LocalBuilder"/> object that represents the local variable.</returns>
+        /// <exception cref="InvalidOperationException">The type that declares the method has been created, or the method has been completed.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="localType"/> is <see langword="null"/>.</exception>
         public LocalBuilder DeclareLocal(Type localType, bool pinned)
         {
-            // Declare a local of type "local". The current active lexical scope
-            // will be the scope that local will live.
-
-            if (m_methodBuilder is not MethodBuilder methodBuilder)
-                throw new NotSupportedException();
-
-            if (methodBuilder.IsTypeCreated())
+            if (_methodBuilder.IsTypeCreated())
             {
                 // cannot change method after its containing type has been created
                 throw new InvalidOperationException("Unable to change after type has been created.");
@@ -1246,305 +1424,414 @@ namespace IKVM.Reflection.Emit
             if (localType is null)
                 throw new ArgumentNullException(nameof(localType));
 
-            if (methodBuilder.IsBaked)
+            if (_methodBuilder.IsBaked)
             {
                 throw new InvalidOperationException("Type definition of the method is complete.");
             }
 
             // add the localType to local signature
-            m_localSignature.AddArgument(localType, pinned);
+            LocalSignature.AddArgument(localType, pinned);
 
-            return new LocalBuilder(m_methodBuilder, localType, m_localCount++, pinned);
+            return new LocalBuilder(_methodBuilder, localType, LocalCount++, pinned);
         }
 
-        public void UsingNamespace(string usingNamespace)
-        {
-            // Specifying the namespace to be used in evaluating locals and watches
-            // for the current active lexical scope.
+        /// <summary>
+        /// Begins a lexical scope.
+        /// </summary>
+        public void BeginScope() => ScopeTree.AddScopeInfo(ScopeAction.Open, _length);
 
-            if (string.IsNullOrEmpty(usingNamespace))
-                throw new ArgumentException(nameof(usingNamespace));
+        /// <summary>
+        /// Ends a lexical scope.
+        /// </summary>
+        /// <exception cref="ArgumentException">There is no open scope to end.</exception>
+        public void EndScope() => ScopeTree.AddScopeInfo(ScopeAction.Close, _length);
 
-            if (m_methodBuilder is not MethodBuilder methodBuilder)
-                throw new NotSupportedException();
-
-            int index = ((ILGenerator)methodBuilder.GetILGenerator()).m_ScopeTree.GetCurrentActiveScopeIndex();
-            if (index == -1)
-            {
-                methodBuilder.m_localSymInfo ??= new();
-                methodBuilder.m_localSymInfo!.AddUsingNamespace(usingNamespace);
-            }
-            else
-            {
-                m_ScopeTree.AddUsingNamespaceToCurrentScope(usingNamespace);
-            }
-        }
-
-        public void BeginScope()
-        {
-            m_ScopeTree.AddScopeInfo(ScopeAction.Open, m_length);
-        }
-
-        public void EndScope()
-        {
-            m_ScopeTree.AddScopeInfo(ScopeAction.Close, m_length);
-        }
-
+        /// <summary>
+        /// Marks a sequence point in the Microsoft intermediate language (MSIL) stream.
+        /// </summary>
+        /// <param name="document">The document for which the sequence point is being defined.</param>
+        /// <param name="startLine">The line where the sequence point begins. Line numbers are 1 based.</param>
+        /// <param name="startColumn">The column in the line where the sequence point begins. Column numbers are 0 based.</param>
+        /// <param name="endLine">The line where the sequence point ends. Line numbers are 1 based.</param>
+        /// <param name="endColumn">The column in the line where the sequence point ends. Column numbers are 0 based.</param>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="startLine"/> or <paramref name="endLine"/> is less than or equal to zero.</exception>
         public virtual void MarkSequencePoint(
             ISymbolDocumentWriter document,
-            int startLine,       // line number is 1 based
-            int startColumn,     // column is 0 based
-            int endLine,         // line number is 1 based
-            int endColumn)       // column is 0 based
+            int startLine,
+            int startColumn,
+            int endLine,
+            int endColumn)
         {
             if (startLine == 0 || startLine < 0 || endLine == 0 || endLine < 0)
             {
                 throw new ArgumentOutOfRangeException("startLine");
             }
             Contract.EndContractBlock();
-            m_LineNumberInfo.AddLineNumberInfo(document, m_length, startLine, startColumn, endLine, endColumn);
+            LineNumberInfo.AddLineNumberInfo(document, _length, startLine, startColumn, endLine, endColumn);
         }
 
-        public int ILOffset => m_length;
+        /// <summary>
+        /// Gets the current offset, in bytes, in the Microsoft intermediate language (MSIL) stream that is being
+        /// emitted by the <see cref="ILGenerator"/>.
+        /// </summary>
+        public int ILOffset => _length;
 
+        /// <summary>
+        /// Puts the specified instruction and character argument onto the Microsoft intermediate language (MSIL) stream
+        /// of instructions.
+        /// </summary>
+        /// <param name="opcode">The MSIL instruction to be put onto the stream.</param>
+        /// <param name="arg">The character argument pushed onto the stream immediately after the instruction.</param>
         public void Emit(OpCode opcode, sbyte arg) => Emit(opcode, (byte)arg);
 
         #endregion
 
         #endregion
+
     }
 
-    internal struct __LabelInfo
+    /// <summary>
+    /// Records the position and stack depth of a label defined by an <see cref="ILGenerator"/>.
+    /// </summary>
+    struct __LabelInfo
     {
-        internal int m_pos; // Position in the il stream, with -1 meaning unknown.
-        internal int m_depth; // Stack depth, with -1 meaning unknown.
+
+        /// <summary>
+        /// The position of the label in the IL stream, with -1 meaning it has not been marked yet.
+        /// </summary>
+        internal int Pos;
+
+        /// <summary>
+        /// The stack depth at the label, with -1 meaning unknown.
+        /// </summary>
+        internal int Depth;
+
     }
 
-    internal struct __FixupData
+    /// <summary>
+    /// Records a branch operand in the IL stream that must be replaced by the offset of its target label.
+    /// </summary>
+    struct __FixupData
     {
-        internal Label m_fixupLabel;
-        internal int m_fixupPos;
 
-        internal int m_fixupInstSize;
+        /// <summary>
+        /// The label the branch targets.
+        /// </summary>
+        internal Label FixupLabel;
+
+        /// <summary>
+        /// The offset of the branch operand in the IL stream.
+        /// </summary>
+        internal int FixupPos;
+
+        /// <summary>
+        /// The size of the branch operand, which is also the distance from the operand to the point the branch offset
+        /// is relative to.
+        /// </summary>
+        internal int FixupInstSize;
+
     }
 
-    internal sealed class __ExceptionInfo
+    /// <summary>
+    /// Tracks an exception block of an <see cref="ILGenerator"/>: the try block and the offsets, kinds and exception
+    /// types of its clauses.
+    /// </summary>
+    sealed class __ExceptionInfo
     {
-        internal const int None = 0x0000;  // COR_ILEXCEPTION_CLAUSE_NONE
-        internal const int Filter = 0x0001;  // COR_ILEXCEPTION_CLAUSE_FILTER
-        internal const int Finally = 0x0002;  // COR_ILEXCEPTION_CLAUSE_FINALLY
-        internal const int Fault = 0x0004;  // COR_ILEXCEPTION_CLAUSE_FAULT
-        internal const int PreserveStack = 0x0004;  // COR_ILEXCEPTION_CLAUSE_PRESERVESTACK
 
+        /// <summary>
+        /// A typed catch clause (COR_ILEXCEPTION_CLAUSE_NONE).
+        /// </summary>
+        internal const int None = 0x0000;
+
+        /// <summary>
+        /// A filter clause (COR_ILEXCEPTION_CLAUSE_FILTER).
+        /// </summary>
+        internal const int Filter = 0x0001;
+
+        /// <summary>
+        /// A finally clause (COR_ILEXCEPTION_CLAUSE_FINALLY).
+        /// </summary>
+        internal const int Finally = 0x0002;
+
+        /// <summary>
+        /// A fault clause (COR_ILEXCEPTION_CLAUSE_FAULT).
+        /// </summary>
+        internal const int Fault = 0x0004;
+
+        /// <summary>
+        /// The generator is in the try block.
+        /// </summary>
         internal const int State_Try = 0;
+
+        /// <summary>
+        /// The generator is in a filter block.
+        /// </summary>
         internal const int State_Filter = 1;
+
+        /// <summary>
+        /// The generator is in a catch block.
+        /// </summary>
         internal const int State_Catch = 2;
+
+        /// <summary>
+        /// The generator is in the finally block.
+        /// </summary>
         internal const int State_Finally = 3;
+
+        /// <summary>
+        /// The generator is in a fault block.
+        /// </summary>
         internal const int State_Fault = 4;
+
+        /// <summary>
+        /// The exception block has been ended.
+        /// </summary>
         internal const int State_Done = 5;
 
-        internal int m_startAddr;
-        internal int[] m_filterAddr;
-        internal int[] m_catchAddr;
-        internal int[] m_catchEndAddr;
-        internal int[] m_type;
-        internal Type[] m_catchClass;
-        internal Label m_endLabel;
-        internal Label m_finallyEndLabel;
-        internal int m_endAddr;
-        internal int m_endFinally;
-        internal int m_currentCatch;
+        readonly int _startAddr;
+        int[] _filterAddr;
+        int[] _catchAddr;
+        int[] _catchEndAddr;
+        int[] _type;
+        Type[] _catchClass;
+        readonly Label _endLabel;
 
-        private int m_currentState;
+        /// <summary>
+        /// The label marked at the end of the finally block, if the exception block has one.
+        /// </summary>
+        internal Label FinallyEndLabel;
 
+        int _endAddr;
+        int _endFinally;
+        int _currentCatch;
+
+        int _currentState;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="startAddr">The offset in the IL stream at which the try block starts.</param>
+        /// <param name="endLabel">The label for the end of the exception block.</param>
         internal __ExceptionInfo(int startAddr, Label endLabel)
         {
-            m_startAddr = startAddr;
-            m_endAddr = -1;
-            m_filterAddr = new int[4];
-            m_catchAddr = new int[4];
-            m_catchEndAddr = new int[4];
-            m_catchClass = new Type[4];
-            m_currentCatch = 0;
-            m_endLabel = endLabel;
-            m_type = new int[4];
-            m_endFinally = -1;
-            m_currentState = State_Try;
+            _startAddr = startAddr;
+            _endAddr = -1;
+            _filterAddr = new int[4];
+            _catchAddr = new int[4];
+            _catchEndAddr = new int[4];
+            _catchClass = new Type[4];
+            _currentCatch = 0;
+            _endLabel = endLabel;
+            _type = new int[4];
+            _endFinally = -1;
+            _currentState = State_Try;
         }
 
-        private void MarkHelper(
-            int catchorfilterAddr,      // the starting address of a clause
-            int catchEndAddr,           // the end address of a previous catch clause. Only use when finally is following a catch
-            Type? catchClass,             // catch exception type
-            int type)                   // kind of clause
+        /// <summary>
+        /// Records the start of a clause, ending the previous clause, and ends the try block if this is the first
+        /// clause.
+        /// </summary>
+        /// <param name="catchorfilterAddr">The starting address of the clause.</param>
+        /// <param name="catchEndAddr">The end address of the previous catch clause. Only used when a finally clause follows a catch clause.</param>
+        /// <param name="catchClass">The exception type of a catch clause, or <see langword="null"/>.</param>
+        /// <param name="type">The kind of clause.</param>
+        void MarkHelper(
+            int catchorfilterAddr,
+            int catchEndAddr,
+            Type? catchClass,
+            int type)
         {
-            int currentCatch = m_currentCatch;
-            if (currentCatch >= m_catchAddr.Length)
+            var currentCatch = _currentCatch;
+            if (currentCatch >= _catchAddr.Length)
             {
-                m_filterAddr = ILGenerator.EnlargeArray(m_filterAddr);
-                m_catchAddr = ILGenerator.EnlargeArray(m_catchAddr);
-                m_catchEndAddr = ILGenerator.EnlargeArray(m_catchEndAddr);
-                m_catchClass = ILGenerator.EnlargeArray(m_catchClass);
-                m_type = ILGenerator.EnlargeArray(m_type);
+                _filterAddr = ILGenerator.EnlargeArray(_filterAddr);
+                _catchAddr = ILGenerator.EnlargeArray(_catchAddr);
+                _catchEndAddr = ILGenerator.EnlargeArray(_catchEndAddr);
+                _catchClass = ILGenerator.EnlargeArray(_catchClass);
+                _type = ILGenerator.EnlargeArray(_type);
             }
             if (type == Filter)
             {
-                m_type[currentCatch] = type;
-                m_filterAddr[currentCatch] = catchorfilterAddr;
-                m_catchAddr[currentCatch] = -1;
+                _type[currentCatch] = type;
+                _filterAddr[currentCatch] = catchorfilterAddr;
+                _catchAddr[currentCatch] = -1;
                 if (currentCatch > 0)
                 {
-                    Debug.Assert(m_catchEndAddr[currentCatch - 1] == -1, "m_catchEndAddr[m_currentCatch-1] == -1");
-                    m_catchEndAddr[currentCatch - 1] = catchorfilterAddr;
+                    Debug.Assert(_catchEndAddr[currentCatch - 1] == -1, "m_catchEndAddr[m_currentCatch-1] == -1");
+                    _catchEndAddr[currentCatch - 1] = catchorfilterAddr;
                 }
             }
             else
             {
-                // catch or Fault clause
-                m_catchClass[currentCatch] = catchClass!;
-                if (m_type[currentCatch] != Filter)
+                // catch or fault clause
+                _catchClass[currentCatch] = catchClass!;
+                if (_type[currentCatch] != Filter)
                 {
-                    m_type[currentCatch] = type;
+                    _type[currentCatch] = type;
                 }
-                m_catchAddr[currentCatch] = catchorfilterAddr;
+                _catchAddr[currentCatch] = catchorfilterAddr;
                 if (currentCatch > 0)
                 {
-                    if (m_type[currentCatch] != Filter)
+                    if (_type[currentCatch] != Filter)
                     {
-                        Debug.Assert(m_catchEndAddr[currentCatch - 1] == -1, "m_catchEndAddr[m_currentCatch-1] == -1");
-                        m_catchEndAddr[currentCatch - 1] = catchEndAddr;
+                        Debug.Assert(_catchEndAddr[currentCatch - 1] == -1, "m_catchEndAddr[m_currentCatch-1] == -1");
+                        _catchEndAddr[currentCatch - 1] = catchEndAddr;
                     }
                 }
-                m_catchEndAddr[currentCatch] = -1;
-                m_currentCatch++;
+                _catchEndAddr[currentCatch] = -1;
+                _currentCatch++;
             }
 
-            if (m_endAddr == -1)
+            if (_endAddr == -1)
             {
-                m_endAddr = catchorfilterAddr;
+                _endAddr = catchorfilterAddr;
             }
         }
 
-        internal void MarkFilterAddr(int filterAddr)
-        {
-            m_currentState = State_Filter;
-            MarkHelper(filterAddr, filterAddr, null, Filter);
-        }
-
+        /// <summary>
+        /// Records the start of a fault clause.
+        /// </summary>
+        /// <param name="faultAddr">The offset in the IL stream at which the fault clause starts.</param>
         internal void MarkFaultAddr(int faultAddr)
         {
-            m_currentState = State_Fault;
+            _currentState = State_Fault;
             MarkHelper(faultAddr, faultAddr, null, Fault);
         }
 
+        /// <summary>
+        /// Records the start of a catch clause.
+        /// </summary>
+        /// <param name="catchAddr">The offset in the IL stream at which the catch clause starts.</param>
+        /// <param name="catchException">The type of exception caught, or <see langword="null"/> for the handler of a filter.</param>
         internal void MarkCatchAddr(int catchAddr, Type? catchException)
         {
-            m_currentState = State_Catch;
+            _currentState = State_Catch;
             MarkHelper(catchAddr, catchAddr, catchException, None);
         }
 
+        /// <summary>
+        /// Records the start of the finally clause.
+        /// </summary>
+        /// <param name="finallyAddr">The offset in the IL stream at which the finally clause starts.</param>
+        /// <param name="endCatchAddr">The offset in the IL stream at which the preceding clause ends.</param>
+        /// <exception cref="ArgumentException">The exception block already has a finally clause.</exception>
         internal void MarkFinallyAddr(int finallyAddr, int endCatchAddr)
         {
-            if (m_endFinally != -1)
+            if (_endFinally != -1)
             {
                 throw new ArgumentException("Exception blocks may have at most one finally clause.");
             }
 
-            m_currentState = State_Finally;
-            m_endFinally = finallyAddr;
+            _currentState = State_Finally;
+            _endFinally = finallyAddr;
             MarkHelper(finallyAddr, endCatchAddr, null, Finally);
         }
 
+        /// <summary>
+        /// Ends the exception block, recording the end of its last clause.
+        /// </summary>
+        /// <param name="endAddr">The offset in the IL stream at which the exception block ends.</param>
         internal void Done(int endAddr)
         {
-            Debug.Assert(m_currentCatch > 0, "m_currentCatch > 0");
-            Debug.Assert(m_catchAddr[m_currentCatch - 1] > 0, "m_catchAddr[m_currentCatch-1] > 0");
-            Debug.Assert(m_catchEndAddr[m_currentCatch - 1] == -1, "m_catchEndAddr[m_currentCatch-1] == -1");
-            m_catchEndAddr[m_currentCatch - 1] = endAddr;
-            m_currentState = State_Done;
+            Debug.Assert(_currentCatch > 0, "m_currentCatch > 0");
+            Debug.Assert(_catchAddr[_currentCatch - 1] > 0, "m_catchAddr[m_currentCatch-1] > 0");
+            Debug.Assert(_catchEndAddr[_currentCatch - 1] == -1, "m_catchEndAddr[m_currentCatch-1] == -1");
+            _catchEndAddr[_currentCatch - 1] = endAddr;
+            _currentState = State_Done;
         }
 
-        internal int GetStartAddress()
-        {
-            return m_startAddr;
-        }
+        /// <summary>
+        /// Gets the offset in the IL stream at which the try block starts.
+        /// </summary>
+        /// <returns>The start offset of the try block.</returns>
+        internal int GetStartAddress() => _startAddr;
 
-        internal int GetEndAddress()
-        {
-            return m_endAddr;
-        }
+        /// <summary>
+        /// Gets the offset in the IL stream at which the try block ends, which is the start of the first clause.
+        /// </summary>
+        /// <returns>The end offset of the try block, or -1 if no clause has been started.</returns>
+        internal int GetEndAddress() => _endAddr;
 
-        internal int GetFinallyEndAddress()
-        {
-            return m_endFinally;
-        }
+        /// <summary>
+        /// Gets the offset in the IL stream at which the finally clause starts.
+        /// </summary>
+        /// <returns>The start offset of the finally clause, or -1 if there is none.</returns>
+        internal int GetFinallyEndAddress() => _endFinally;
 
-        internal Label GetEndLabel()
-        {
-            return m_endLabel;
-        }
+        /// <summary>
+        /// Gets the label for the end of the exception block.
+        /// </summary>
+        /// <returns>The end label.</returns>
+        internal Label GetEndLabel() => _endLabel;
 
-        internal int[] GetFilterAddresses()
-        {
-            return m_filterAddr;
-        }
+        /// <summary>
+        /// Gets the start offsets of the filter blocks, indexed by clause.
+        /// </summary>
+        /// <returns>The filter offsets. The array may be longer than the number of clauses.</returns>
+        internal int[] GetFilterAddresses() => _filterAddr;
 
-        internal int[] GetCatchAddresses()
-        {
-            return m_catchAddr;
-        }
+        /// <summary>
+        /// Gets the start offsets of the handler blocks, indexed by clause.
+        /// </summary>
+        /// <returns>The handler offsets. The array may be longer than the number of clauses.</returns>
+        internal int[] GetCatchAddresses() => _catchAddr;
 
-        internal int[] GetCatchEndAddresses()
-        {
-            return m_catchEndAddr;
-        }
+        /// <summary>
+        /// Gets the end offsets of the handler blocks, indexed by clause.
+        /// </summary>
+        /// <returns>The handler end offsets. The array may be longer than the number of clauses.</returns>
+        internal int[] GetCatchEndAddresses() => _catchEndAddr;
 
-        internal Type[] GetCatchClass()
-        {
-            return m_catchClass;
-        }
+        /// <summary>
+        /// Gets the exception types of the catch clauses, indexed by clause.
+        /// </summary>
+        /// <returns>The exception types, with <see langword="null"/> for clauses that are not typed catch clauses. The array may be longer than the number of clauses.</returns>
+        internal Type[] GetCatchClass() => _catchClass;
 
-        internal int GetNumberOfCatches()
-        {
-            return m_currentCatch;
-        }
+        /// <summary>
+        /// Gets the number of clauses of the exception block.
+        /// </summary>
+        /// <returns>The number of catch, filter, fault and finally clauses.</returns>
+        internal int GetNumberOfCatches() => _currentCatch;
 
-        internal int[] GetExceptionTypes()
-        {
-            return m_type;
-        }
+        /// <summary>
+        /// Gets the kinds of the clauses, indexed by clause.
+        /// </summary>
+        /// <returns>The clause kinds, one of <see cref="None"/>, <see cref="Filter"/>, <see cref="Finally"/> or <see cref="Fault"/>. The array may be longer than the number of clauses.</returns>
+        internal int[] GetExceptionTypes() => _type;
 
-        internal void SetFinallyEndLabel(Label lbl)
-        {
-            m_finallyEndLabel = lbl;
-        }
+        /// <summary>
+        /// Sets the label marked at the end of the finally block.
+        /// </summary>
+        /// <param name="lbl">The label.</param>
+        internal void SetFinallyEndLabel(Label lbl) => FinallyEndLabel = lbl;
 
-        internal Label GetFinallyEndLabel()
-        {
-            return m_finallyEndLabel;
-        }
-
-        // Specifies whether exc is an inner exception for "this".  The way
-        // its determined is by comparing the end address for the last catch
-        // clause for both exceptions.  If they're the same, the start address
-        // for the exception is compared.
-        // WARNING: This is not a generic function to determine the innerness
-        // of an exception.  This is somewhat of a mis-nomer.  This gives a
-        // random result for cases where the two exceptions being compared do
-        // not having a nesting relation.
+        /// <summary>
+        /// Specifies whether <paramref name="exc"/> is an inner exception block of this one. This is determined by
+        /// comparing the end address of the last clause of both blocks; if they are the same, the end addresses of the
+        /// try blocks are compared.
+        /// </summary>
+        /// <remarks>
+        /// WARNING: This is not a generic function to determine the innerness of an exception. This is somewhat of a
+        /// misnomer. This gives a random result for cases where the two exceptions being compared do not have a nesting
+        /// relation.
+        /// </remarks>
+        /// <param name="exc">The exception block to compare with.</param>
+        /// <returns><see langword="true"/> if <paramref name="exc"/> is nested inside this exception block; otherwise, <see langword="false"/>.</returns>
         internal bool IsInner(__ExceptionInfo exc)
         {
             Debug.Assert(exc != null);
-            Debug.Assert(m_currentCatch > 0, "m_currentCatch > 0");
-            Debug.Assert(exc.m_currentCatch > 0, "exc.m_currentCatch > 0");
+            Debug.Assert(_currentCatch > 0, "m_currentCatch > 0");
+            Debug.Assert(exc._currentCatch > 0, "exc.m_currentCatch > 0");
 
-            int exclast = exc.m_currentCatch - 1;
-            int last = m_currentCatch - 1;
+            var exclast = exc._currentCatch - 1;
+            var last = _currentCatch - 1;
 
-            if (exc.m_catchEndAddr[exclast] < m_catchEndAddr[last])
+            if (exc._catchEndAddr[exclast] < _catchEndAddr[last])
                 return true;
 
-            if (exc.m_catchEndAddr[exclast] != m_catchEndAddr[last])
+            if (exc._catchEndAddr[exclast] != _catchEndAddr[last])
                 return false;
             Debug.Assert(exc.GetEndAddress() != GetEndAddress(),
                 "exc.GetEndAddress() != GetEndAddress()");
@@ -1552,60 +1839,81 @@ namespace IKVM.Reflection.Emit
             return exc.GetEndAddress() > GetEndAddress();
         }
 
-        // 0 indicates in a try block
-        // 1 indicates in a filter block
-        // 2 indicates in a catch block
-        // 3 indicates in a finally block
-        // 4 indicates Done
-        internal int GetCurrentState()
-        {
-            return m_currentState;
-        }
+        /// <summary>
+        /// Gets the part of the exception block the generator is currently in.
+        /// </summary>
+        /// <returns>One of <see cref="State_Try"/>, <see cref="State_Filter"/>, <see cref="State_Catch"/>, <see cref="State_Finally"/>, <see cref="State_Fault"/> or <see cref="State_Done"/>.</returns>
+        internal int GetCurrentState() => _currentState;
+
     }
 
     /// <summary>
-    /// Scope Tree is a class that track the scope structure within a method body
-    /// It keeps track two parallel array. m_ScopeAction keeps track the action. It can be
-    /// OpenScope or CloseScope. m_iOffset records the offset where the action
-    /// takes place.
+    /// The actions recorded by a <see cref="ScopeTree"/>. The value of each action is the change it makes to the number
+    /// of closes still to be matched when walking the actions backwards.
     /// </summary>
-    internal enum ScopeAction : sbyte
+    enum ScopeAction : sbyte
     {
+
+        /// <summary>
+        /// Opens a lexical scope.
+        /// </summary>
         Open = -0x1,
+
+        /// <summary>
+        /// Closes a lexical scope.
+        /// </summary>
         Close = 0x1
+
     }
 
-    internal sealed class ScopeTree
+    /// <summary>
+    /// Tracks the scope structure within a method body. It keeps two parallel arrays: one of actions, each of which
+    /// opens or closes a scope, and one of the offsets at which the actions take place. The local variable symbol
+    /// information of each scope is kept alongside.
+    /// </summary>
+    sealed class ScopeTree
     {
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         internal ScopeTree()
         {
             // initialize data variables
-            m_iOpenScopeCount = 0;
-            m_iCount = 0;
+            OpenScopeCount = 0;
+            _count = 0;
         }
 
         /// <summary>
-        /// Find the current active lexical scope. For example, if we have
-        /// "Open Open Open Close",
-        /// we will return 1 as the second BeginScope is currently active.
+        /// Finds the current active lexical scope. For example, if we have "Open Open Open Close", we will return 1 as
+        /// the second BeginScope is currently active.
         /// </summary>
+        /// <returns>The index of the action that opened the current active scope, or -1 if no actions were recorded.</returns>
         internal int GetCurrentActiveScopeIndex()
         {
-            if (m_iCount == 0)
+            if (_count == 0)
             {
                 return -1;
             }
 
-            int i = m_iCount - 1;
+            var i = _count - 1;
 
-            for (int cClose = 0; cClose > 0 || m_ScopeActions[i] == ScopeAction.Close; i--)
+            for (var cClose = 0; cClose > 0 || _scopeActions[i] == ScopeAction.Close; i--)
             {
-                cClose += (sbyte)m_ScopeActions[i];
+                cClose += (sbyte)_scopeActions[i];
             }
 
             return i;
         }
 
+        /// <summary>
+        /// Adds symbol information for a local variable to the current active lexical scope.
+        /// </summary>
+        /// <param name="strName">The name of the local variable.</param>
+        /// <param name="signature">The signature of the local variable.</param>
+        /// <param name="slot">The index of the local variable.</param>
+        /// <param name="startOffset">The offset in the IL stream at which the local variable comes into scope.</param>
+        /// <param name="endOffset">The offset in the IL stream at which the local variable goes out of scope.</param>
         internal void AddLocalSymInfoToCurrentScope(
             string strName,
             byte[] signature,
@@ -1613,109 +1921,139 @@ namespace IKVM.Reflection.Emit
             int startOffset,
             int endOffset)
         {
-            int i = GetCurrentActiveScopeIndex();
-            m_localSymInfos[i] ??= new LocalSymInfo();
-            m_localSymInfos[i]!.AddLocalSymInfo(strName, signature, slot, startOffset, endOffset);
+            var i = GetCurrentActiveScopeIndex();
+            _localSymInfos[i] ??= new LocalSymInfo();
+            _localSymInfos[i]!.AddLocalSymInfo(strName, signature, slot, startOffset, endOffset);
         }
 
-        internal void AddUsingNamespaceToCurrentScope(string strNamespace)
-        {
-            int i = GetCurrentActiveScopeIndex();
-            m_localSymInfos[i] ??= new LocalSymInfo();
-            m_localSymInfos[i]!.AddUsingNamespace(strNamespace);
-        }
-
+        /// <summary>
+        /// Records the opening or closing of a scope.
+        /// </summary>
+        /// <param name="sa">Whether a scope is opened or closed.</param>
+        /// <param name="iOffset">The offset in the IL stream at which the action takes place.</param>
+        /// <exception cref="ArgumentException"><paramref name="sa"/> closes a scope, but no scope is open.</exception>
         internal void AddScopeInfo(ScopeAction sa, int iOffset)
         {
-            if (sa == ScopeAction.Close && m_iOpenScopeCount <= 0)
+            if (sa == ScopeAction.Close && OpenScopeCount <= 0)
             {
                 throw new ArgumentException("Non-matching symbol scope.");
             }
 
-            // make sure that arrays are large enough to hold addition info
+            // make sure that arrays are large enough to hold additional info
             EnsureCapacity();
 
-            m_ScopeActions[m_iCount] = sa;
-            m_iOffsets[m_iCount] = iOffset;
-            m_localSymInfos[m_iCount] = null;
-            checked { m_iCount++; }
+            _scopeActions[_count] = sa;
+            _offsets[_count] = iOffset;
+            _localSymInfos[_count] = null;
+            checked
+            { _count++; }
 
-            m_iOpenScopeCount += -(sbyte)sa;
+            OpenScopeCount += -(sbyte)sa;
         }
 
         /// <summary>
-        /// Helper to ensure arrays are large enough
+        /// Ensures the arrays are large enough to hold one more entry.
         /// </summary>
         internal void EnsureCapacity()
         {
-            if (m_iCount == 0)
+            if (_count == 0)
             {
-                // First time. Allocate the arrays.
-                m_iOffsets = new int[InitialSize];
-                m_ScopeActions = new ScopeAction[InitialSize];
-                m_localSymInfos = new LocalSymInfo[InitialSize];
+                // first time, allocate the arrays
+                _offsets = new int[InitialSize];
+                _scopeActions = new ScopeAction[InitialSize];
+                _localSymInfos = new LocalSymInfo[InitialSize];
             }
-            else if (m_iCount == m_iOffsets.Length)
+            else if (_count == _offsets.Length)
             {
-                // the arrays are full. Enlarge the arrays
-                // It would probably be simpler to just use Lists here.
-                int newSize = checked(m_iCount * 2);
-                int[] temp = new int[newSize];
-                Array.Copy(m_iOffsets, temp, m_iCount);
-                m_iOffsets = temp;
+                // the arrays are full, enlarge the arrays; it would probably be simpler to just use Lists here
+                var newSize = checked(_count * 2);
+                var temp = new int[newSize];
+                Array.Copy(_offsets, temp, _count);
+                _offsets = temp;
 
                 ScopeAction[] tempSA = new ScopeAction[newSize];
-                Array.Copy(m_ScopeActions, tempSA, m_iCount);
-                m_ScopeActions = tempSA;
+                Array.Copy(_scopeActions, tempSA, _count);
+                _scopeActions = tempSA;
 
                 LocalSymInfo[] tempLSI = new LocalSymInfo[newSize];
-                Array.Copy(m_localSymInfos, tempLSI, m_iCount);
-                m_localSymInfos = tempLSI;
+                Array.Copy(_localSymInfos, tempLSI, _count);
+                _localSymInfos = tempLSI;
             }
         }
+
+        /// <summary>
+        /// Writes the scopes, and the local variables declared in them, to the symbol writer.
+        /// </summary>
+        /// <param name="symWriter">The symbol writer of the module.</param>
         internal void EmitScopeTree(ISymbolWriter symWriter)
         {
             int i;
-            for (i = 0; i < m_iCount; i++)
+            for (i = 0; i < _count; i++)
             {
-                if (m_ScopeActions != null && m_ScopeActions[i] == ScopeAction.Open)
+                if (_scopeActions != null && _scopeActions[i] == ScopeAction.Open)
                 {
-                    symWriter.OpenScope(m_iOffsets[i]);
+                    symWriter.OpenScope(_offsets[i]);
                 }
                 else
                 {
-                    symWriter.CloseScope(m_iOffsets[i]);
+                    symWriter.CloseScope(_offsets[i]);
                 }
-                if (m_localSymInfos != null && m_localSymInfos[i] != null)
+                if (_localSymInfos != null && _localSymInfos[i] != null)
                 {
-                    m_localSymInfos[i]!.EmitLocalSymInfo(symWriter);
+                    _localSymInfos[i]!.EmitLocalSymInfo(symWriter);
                 }
             }
         }
 
-        internal int[] m_iOffsets = null!;                 // array of offsets
-        internal ScopeAction[] m_ScopeActions = null!;             // array of scope actions
-        internal int m_iCount;                   // how many entries in the arrays are occupied
-        internal int m_iOpenScopeCount;          // keep track how many scopes are open
+        // array of offsets
+        int[] _offsets = null!;
+
+        // array of scope actions
+        ScopeAction[] _scopeActions = null!;
+
+        // how many entries in the arrays are occupied
+        int _count;
+
+        /// <summary>
+        /// The number of scopes that are currently open.
+        /// </summary>
+        internal int OpenScopeCount;
+
+        /// <summary>
+        /// The initial length of the arrays.
+        /// </summary>
         internal const int InitialSize = 16;
-        internal LocalSymInfo?[] m_localSymInfos = null!;            // keep track debugging local information
+
+        // the local variable symbol information of each scope
+        LocalSymInfo?[] _localSymInfos = null!;
+
     }
 
-
-    /***************************
-    *
-    * This class tracks the line number info
-    *
-    ***************************/
-    internal sealed class LineNumberInfo
+    /// <summary>
+    /// Tracks the line number information of a method body, grouped by document.
+    /// </summary>
+    sealed class LineNumberInfo
     {
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         internal LineNumberInfo()
         {
             // initialize data variables
-            m_DocumentCount = 0;
-            m_iLastFound = 0;
+            _documentCount = 0;
+            _lastFound = 0;
         }
 
+        /// <summary>
+        /// Adds a sequence point.
+        /// </summary>
+        /// <param name="document">The document the sequence point refers to.</param>
+        /// <param name="iOffset">The offset in the IL stream of the sequence point.</param>
+        /// <param name="iStartLine">The line where the sequence point begins.</param>
+        /// <param name="iStartColumn">The column where the sequence point begins.</param>
+        /// <param name="iEndLine">The line where the sequence point ends.</param>
+        /// <param name="iEndColumn">The column where the sequence point ends.</param>
         internal void AddLineNumberInfo(
             ISymbolDocumentWriter document,
             int iOffset,
@@ -1726,89 +2064,111 @@ namespace IKVM.Reflection.Emit
         {
             int i;
 
-            // make sure that arrays are large enough to hold addition info
+            // find or add the entry for the document
             i = FindDocument(document);
 
-            Contract.Assert(i < m_DocumentCount, "Bad document look up!");
-            m_Documents[i].AddLineNumberInfo(document, iOffset, iStartLine, iStartColumn, iEndLine, iEndColumn);
+            Contract.Assert(i < _documentCount, "Bad document look up!");
+            _documents[i].AddLineNumberInfo(document, iOffset, iStartLine, iStartColumn, iEndLine, iEndColumn);
         }
 
-        // Find a REDocument representing document. If we cannot find one, we will add a new entry into
-        // the REDocument array.
-        private int FindDocument(ISymbolDocumentWriter document)
+        /// <summary>
+        /// Finds the <see cref="REDocument"/> representing the document. If we cannot find one, we add a new entry
+        /// into the array.
+        /// </summary>
+        /// <param name="document">The document to find.</param>
+        /// <returns>The index of the entry for the document.</returns>
+        int FindDocument(ISymbolDocumentWriter document)
         {
             int i;
 
-            // This is an optimization. The chance that the previous line is coming from the same
-            // document is very high.
-            if (m_iLastFound < m_DocumentCount && m_Documents[m_iLastFound].m_document == document)
-                return m_iLastFound;
+            // this is an optimization: the chance that the previous line is coming from the same document is very high
+            if (_lastFound < _documentCount && _documents[_lastFound].Document == document)
+                return _lastFound;
 
-            for (i = 0; i < m_DocumentCount; i++)
+            for (i = 0; i < _documentCount; i++)
             {
-                if (m_Documents[i].m_document == document)
+                if (_documents[i].Document == document)
                 {
-                    m_iLastFound = i;
-                    return m_iLastFound;
+                    _lastFound = i;
+                    return _lastFound;
                 }
             }
 
-            // cannot find an existing document so add one to the array                                       
+            // cannot find an existing document so add one to the array
             EnsureCapacity();
-            m_iLastFound = m_DocumentCount;
-            m_Documents[m_iLastFound] = new REDocument(document);
-            checked { m_DocumentCount++; }
-            return m_iLastFound;
+            _lastFound = _documentCount;
+            _documents[_lastFound] = new REDocument(document);
+            checked
+            { _documentCount++; }
+            return _lastFound;
         }
 
-        /**************************
-        *
-        * Helper to ensure arrays are large enough
-        *
-        **************************/
-        private void EnsureCapacity()
+        /// <summary>
+        /// Ensures the array is large enough to hold one more document.
+        /// </summary>
+        void EnsureCapacity()
         {
-            if (m_DocumentCount == 0)
+            if (_documentCount == 0)
             {
-                // First time. Allocate the arrays.
-                m_Documents = new REDocument[InitialSize];
+                // first time, allocate the arrays
+                _documents = new REDocument[InitialSize];
             }
-            else if (m_DocumentCount == m_Documents.Length)
+            else if (_documentCount == _documents.Length)
             {
-                // the arrays are full. Enlarge the arrays
-                REDocument[] temp = new REDocument[m_DocumentCount * 2];
-                Array.Copy(m_Documents, temp, m_DocumentCount);
-                m_Documents = temp;
+                // the arrays are full, enlarge the arrays
+                REDocument[] temp = new REDocument[_documentCount * 2];
+                Array.Copy(_documents, temp, _documentCount);
+                _documents = temp;
             }
         }
 
+        /// <summary>
+        /// Writes the sequence points of every document to the symbol writer.
+        /// </summary>
+        /// <param name="symWriter">The symbol writer of the module.</param>
         internal void EmitLineNumberInfo(ISymbolWriter symWriter)
         {
-            for (int i = 0; i < m_DocumentCount; i++)
-                m_Documents[i].EmitLineNumberInfo(symWriter);
+            for (var i = 0; i < _documentCount; i++)
+                _documents[i].EmitLineNumberInfo(symWriter);
         }
 
-        private int m_DocumentCount;         // how many documents that we have right now
-        private REDocument[] m_Documents;             // array of documents
-        private const int InitialSize = 16;
-        private int m_iLastFound;
+        // how many documents that we have right now
+        int _documentCount;
+
+        // array of documents
+        REDocument[] _documents;
+
+        const int InitialSize = 16;
+        int _lastFound;
+
     }
 
-
-    /***************************
-    *
-    * This class tracks the line number info
-    *
-    ***************************/
-    internal sealed class REDocument
+    /// <summary>
+    /// Tracks the line number information of a method body for one document.
+    /// </summary>
+    sealed class REDocument
     {
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="document">The document to track.</param>
         internal REDocument(ISymbolDocumentWriter document)
         {
             // initialize data variables
-            m_iLineNumberCount = 0;
-            m_document = document;
+            _lineNumberCount = 0;
+            Document = document;
         }
 
+        /// <summary>
+        /// Adds a sequence point.
+        /// </summary>
+        /// <param name="document">The document the sequence point refers to. Must be the tracked document.</param>
+        /// <param name="iOffset">The offset in the IL stream of the sequence point.</param>
+        /// <param name="iStartLine">The line where the sequence point begins.</param>
+        /// <param name="iStartColumn">The column where the sequence point begins.</param>
+        /// <param name="iEndLine">The line where the sequence point ends.</param>
+        /// <param name="iEndColumn">The column where the sequence point ends.</param>
         internal void AddLineNumberInfo(
             ISymbolDocumentWriter document,
             int iOffset,
@@ -1817,62 +2177,64 @@ namespace IKVM.Reflection.Emit
             int iEndLine,
             int iEndColumn)
         {
-            Contract.Assert(document == m_document, "Bad document look up!");
+            Contract.Assert(document == Document, "Bad document look up!");
 
-            // make sure that arrays are large enough to hold addition info
+            // make sure that arrays are large enough to hold additional info
             EnsureCapacity();
 
-            m_iOffsets[m_iLineNumberCount] = iOffset;
-            m_iLines[m_iLineNumberCount] = iStartLine;
-            m_iColumns[m_iLineNumberCount] = iStartColumn;
-            m_iEndLines[m_iLineNumberCount] = iEndLine;
-            m_iEndColumns[m_iLineNumberCount] = iEndColumn;
-            checked { m_iLineNumberCount++; }
+            _offsets[_lineNumberCount] = iOffset;
+            _lines[_lineNumberCount] = iStartLine;
+            _columns[_lineNumberCount] = iStartColumn;
+            _endLines[_lineNumberCount] = iEndLine;
+            _endColumns[_lineNumberCount] = iEndColumn;
+            checked
+            { _lineNumberCount++; }
         }
 
-        /**************************
-        *
-        * Helper to ensure arrays are large enough
-        *
-        **************************/
-        private void EnsureCapacity()
+        /// <summary>
+        /// Ensures the arrays are large enough to hold one more sequence point.
+        /// </summary>
+        void EnsureCapacity()
         {
-            if (m_iLineNumberCount == 0)
+            if (_lineNumberCount == 0)
             {
-                // First time. Allocate the arrays.
-                m_iOffsets = new int[InitialSize];
-                m_iLines = new int[InitialSize];
-                m_iColumns = new int[InitialSize];
-                m_iEndLines = new int[InitialSize];
-                m_iEndColumns = new int[InitialSize];
+                // first time, allocate the arrays
+                _offsets = new int[InitialSize];
+                _lines = new int[InitialSize];
+                _columns = new int[InitialSize];
+                _endLines = new int[InitialSize];
+                _endColumns = new int[InitialSize];
             }
-            else if (m_iLineNumberCount == m_iOffsets.Length)
+            else if (_lineNumberCount == _offsets.Length)
             {
-                // the arrays are full. Enlarge the arrays
-                // It would probably be simpler to just use Lists here
-                int newSize = checked(m_iLineNumberCount * 2);
-                int[] temp = new int[newSize];
-                Array.Copy(m_iOffsets, temp, m_iLineNumberCount);
-                m_iOffsets = temp;
+                // the arrays are full, enlarge the arrays; it would probably be simpler to just use Lists here
+                var newSize = checked(_lineNumberCount * 2);
+                var temp = new int[newSize];
+                Array.Copy(_offsets, temp, _lineNumberCount);
+                _offsets = temp;
 
                 temp = new int[newSize];
-                Array.Copy(m_iLines, temp, m_iLineNumberCount);
-                m_iLines = temp;
+                Array.Copy(_lines, temp, _lineNumberCount);
+                _lines = temp;
 
                 temp = new int[newSize];
-                Array.Copy(m_iColumns, temp, m_iLineNumberCount);
-                m_iColumns = temp;
+                Array.Copy(_columns, temp, _lineNumberCount);
+                _columns = temp;
 
                 temp = new int[newSize];
-                Array.Copy(m_iEndLines, temp, m_iLineNumberCount);
-                m_iEndLines = temp;
+                Array.Copy(_endLines, temp, _lineNumberCount);
+                _endLines = temp;
 
                 temp = new int[newSize];
-                Array.Copy(m_iEndColumns, temp, m_iLineNumberCount);
-                m_iEndColumns = temp;
+                Array.Copy(_endColumns, temp, _lineNumberCount);
+                _endColumns = temp;
             }
         }
 
+        /// <summary>
+        /// Writes the sequence points of the document to the symbol writer.
+        /// </summary>
+        /// <param name="symWriter">The symbol writer of the module.</param>
         internal void EmitLineNumberInfo(ISymbolWriter symWriter)
         {
             int[] iOffsetsTemp;
@@ -1881,36 +2243,53 @@ namespace IKVM.Reflection.Emit
             int[] iEndLinesTemp;
             int[] iEndColumnsTemp;
 
-            if (m_iLineNumberCount == 0)
+            if (_lineNumberCount == 0)
                 return;
             // reduce the array size to be exact
-            iOffsetsTemp = new int[m_iLineNumberCount];
-            Array.Copy(m_iOffsets, iOffsetsTemp, m_iLineNumberCount);
+            iOffsetsTemp = new int[_lineNumberCount];
+            Array.Copy(_offsets, iOffsetsTemp, _lineNumberCount);
 
-            iLinesTemp = new int[m_iLineNumberCount];
-            Array.Copy(m_iLines, iLinesTemp, m_iLineNumberCount);
+            iLinesTemp = new int[_lineNumberCount];
+            Array.Copy(_lines, iLinesTemp, _lineNumberCount);
 
-            iColumnsTemp = new int[m_iLineNumberCount];
-            Array.Copy(m_iColumns, iColumnsTemp, m_iLineNumberCount);
+            iColumnsTemp = new int[_lineNumberCount];
+            Array.Copy(_columns, iColumnsTemp, _lineNumberCount);
 
-            iEndLinesTemp = new int[m_iLineNumberCount];
-            Array.Copy(m_iEndLines, iEndLinesTemp, m_iLineNumberCount);
+            iEndLinesTemp = new int[_lineNumberCount];
+            Array.Copy(_endLines, iEndLinesTemp, _lineNumberCount);
 
-            iEndColumnsTemp = new int[m_iLineNumberCount];
-            Array.Copy(m_iEndColumns, iEndColumnsTemp, m_iLineNumberCount);
+            iEndColumnsTemp = new int[_lineNumberCount];
+            Array.Copy(_endColumns, iEndColumnsTemp, _lineNumberCount);
 
-            symWriter.DefineSequencePoints(m_document, iOffsetsTemp, iLinesTemp, iColumnsTemp, iEndLinesTemp, iEndColumnsTemp);
+            symWriter.DefineSequencePoints(Document, iOffsetsTemp, iLinesTemp, iColumnsTemp, iEndLinesTemp, iEndColumnsTemp);
         }
 
-        private int[] m_iOffsets;                 // array of offsets
-        private int[] m_iLines;                   // array of offsets
-        private int[] m_iColumns;                 // array of offsets
-        private int[] m_iEndLines;                // array of offsets
-        private int[] m_iEndColumns;              // array of offsets
-        internal ISymbolDocumentWriter m_document;       // The ISymbolDocumentWriter that this REDocument is tracking.
-        private int m_iLineNumberCount;         // how many entries in the arrays are occupied
-        private const int InitialSize = 16;
-    }       // end of REDocument
+        // array of offsets
+        int[] _offsets;
+
+        // array of start lines
+        int[] _lines;
+
+        // array of start columns
+        int[] _columns;
+
+        // array of end lines
+        int[] _endLines;
+
+        // array of end columns
+        int[] _endColumns;
+
+        /// <summary>
+        /// The document that this instance is tracking.
+        /// </summary>
+        internal ISymbolDocumentWriter Document;
+
+        // how many entries in the arrays are occupied
+        int _lineNumberCount;
+
+        const int InitialSize = 16;
+
+    }
 
 }
 

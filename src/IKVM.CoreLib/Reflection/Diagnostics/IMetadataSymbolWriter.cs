@@ -6,23 +6,23 @@ namespace IKVM.Reflection.Diagnostics
 {
 
     /// <summary>
-    /// Extensions to <see cref="ISymbolWriter"/> that provides additional capability for IKVM.
+    /// Extensions to <see cref="ISymbolWriter"/> that provide additional capability for IKVM.
     /// </summary>
-    internal interface IMetadataSymbolWriter : ISymbolWriter
+    interface IMetadataSymbolWriter : ISymbolWriter
     {
 
         /// <summary>
-        /// Extended OpenMethod that accepts a local variable signature.
+        /// Opens a method in which to place symbolic information, recording the signature of its local variables.
         /// </summary>
-        /// <param name="method"></param>
-        /// <param name="localSignatureHandle"></param>
+        /// <param name="method">The metadata token of the method to open.</param>
+        /// <param name="localSignatureHandle">The handle of the standalone signature that describes the method's local variables.</param>
         void OpenMethod(SymbolToken method, StandaloneSignatureHandle localSignatureHandle);
 
         /// <summary>
         /// Writes the debug information to the given metadata.
         /// </summary>
-        /// <param name="metadata"></param>
-        /// <param name="userEntryPoint"></param>
+        /// <param name="metadata">The metadata builder that receives the debug information.</param>
+        /// <param name="userEntryPoint">When this method returns, contains the metadata token of the user entry point method, or 0 if there is none.</param>
         void WriteTo(MetadataBuilder metadata, out int userEntryPoint);
 
     }

@@ -32,6 +32,8 @@
         public static readonly string ReferenceOutputAssembly = "ReferenceOutputAssembly";
         public static readonly string Static = "Static";
         public static readonly string Optimize = "Optimize";
+        public static readonly string StrictFinalFieldSemantics = "StrictFinalFieldSemantics";
+        public static readonly string RemoveAssertions = "RemoveAssertions";
 
     }
 

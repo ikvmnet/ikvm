@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -24,62 +24,76 @@
 namespace IKVM.Reflection
 {
 
-    internal readonly struct CustomAttributeNamedArgument
+    /// <summary>
+    /// Represents a named argument of a custom attribute in the reflection-only context.
+    /// </summary>
+    readonly struct CustomAttributeNamedArgument
     {
 
-        readonly MemberInfo member;
-        readonly CustomAttributeTypedArgument value;
+        readonly MemberInfo _member;
+        readonly CustomAttributeTypedArgument _value;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="member"></param>
-        /// <param name="value"></param>
+        /// <param name="member">The field or property of the custom attribute that the argument sets.</param>
+        /// <param name="value">The value of the argument.</param>
         internal CustomAttributeNamedArgument(MemberInfo member, CustomAttributeTypedArgument value)
         {
-            this.member = member;
-            this.value = value;
+            _member = member;
+            _value = value;
         }
 
-        public override bool Equals(object obj)
-        {
-            return this == obj as CustomAttributeNamedArgument?;
-        }
+        /// <summary>
+        /// Returns a value that indicates whether this instance is equal to a specified object.
+        /// </summary>
+        /// <param name="obj">An object to compare with this instance, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> equals the type and value of this instance; otherwise, <see langword="false"/>.</returns>
+        public override bool Equals(object obj) => this == obj as CustomAttributeNamedArgument?;
 
-        public override int GetHashCode()
-        {
-            return member.GetHashCode() ^ 53 * value.GetHashCode();
-        }
+        /// <summary>
+        /// Serves as a hash function for a particular type.
+        /// </summary>
+        /// <returns>A hash code for the current object.</returns>
+        public override int GetHashCode() => _member.GetHashCode() ^ 53 * _value.GetHashCode();
 
-        public MemberInfo MemberInfo
-        {
-            get { return member; }
-        }
+        /// <summary>
+        /// Gets the attribute member that would be used to set the named argument.
+        /// </summary>
+        public MemberInfo MemberInfo => _member;
 
-        public CustomAttributeTypedArgument TypedValue
-        {
-            get { return value; }
-        }
+        /// <summary>
+        /// Gets a <see cref="CustomAttributeTypedArgument"/> structure that can be used to obtain the type and value of
+        /// the current named argument.
+        /// </summary>
+        public CustomAttributeTypedArgument TypedValue => _value;
 
-        public bool IsField
-        {
-            get { return member.MemberType == MemberTypes.Field; }
-        }
+        /// <summary>
+        /// Gets a value that indicates whether the named argument is a field.
+        /// </summary>
+        public bool IsField => _member.MemberType == MemberTypes.Field;
 
-        public string MemberName
-        {
-            get { return member.Name; }
-        }
+        /// <summary>
+        /// Gets the name of the attribute member that would be used to set the named argument.
+        /// </summary>
+        public string MemberName => _member.Name;
 
-        public static bool operator ==(CustomAttributeNamedArgument arg1, CustomAttributeNamedArgument arg2)
-        {
-            return arg1.member.Equals(arg2.member) && arg1.value == arg2.value;
-        }
+        /// <summary>
+        /// Tests whether two <see cref="CustomAttributeNamedArgument"/> structures are equivalent.
+        /// </summary>
+        /// <param name="arg1">The structure to the left of the equality operator.</param>
+        /// <param name="arg2">The structure to the right of the equality operator.</param>
+        /// <returns><see langword="true"/> if the two structures are equal; otherwise, <see langword="false"/>.</returns>
+        public static bool operator ==(CustomAttributeNamedArgument arg1, CustomAttributeNamedArgument arg2) =>
+            arg1._member.Equals(arg2._member) && arg1._value == arg2._value;
 
-        public static bool operator !=(CustomAttributeNamedArgument arg1, CustomAttributeNamedArgument arg2)
-        {
-            return !(arg1 == arg2);
-        }
+        /// <summary>
+        /// Tests whether two <see cref="CustomAttributeNamedArgument"/> structures are different.
+        /// </summary>
+        /// <param name="arg1">The structure to the left of the inequality operator.</param>
+        /// <param name="arg2">The structure to the right of the inequality operator.</param>
+        /// <returns><see langword="true"/> if the two structures are different; otherwise, <see langword="false"/>.</returns>
+        public static bool operator !=(CustomAttributeNamedArgument arg1, CustomAttributeNamedArgument arg2) => !(arg1 == arg2);
 
     }
 

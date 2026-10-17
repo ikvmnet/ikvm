@@ -2,7 +2,7 @@
 
 ## Build
 
-The project can be opened in Visual Studio, or it can be be built with MSBuild on a Windows host. The project can currently be built on a Linux or OSX hostas well.
+The project can be opened in Visual Studio, or it can be be built with MSBuild on a Windows host. The project cannot currently be built on a Linux host, nor with an exclusively .NET Core version of MSBuild.
 
 Prerequisites for building the project:
 * A clone of the IKVM repository which includes submodules (e.g. `git clone --recurse-submodules https://github.com/ikvmnet/ikvm.git`)
@@ -21,27 +21,20 @@ Prerequisites for building the project:
  Once the prerequisites are in place, to build IKVM from the command line you will use the following commands:
 
  ```
- dotnet restore IKVM.sln
- dotnet msbuild IKVM.dist.msbuildproj
+ dotnet restore IKVM.slnx
+ msbuild IKVM.dist.msbuildproj
  ```
 
 ## Project
 
-+ IKVM.sln
++ IKVM.slnx
   Main solution file for the project.
 + IKVM.dist.msbuildproj
   MSBuild project file that builds the output artifacts, including the NuGet packages.
 + IKVM.Runtime
   The main executable core of IKVM. Provides services used by IKVM.Java.
 + IKVM.Java
-  The reference assembly version of the OpenJDK distribution included with IKVM. This project is heavily customized to compile the OpenJDK Java source files and produce a .NET assembly from them. This specific project
-  builds the Windows version of the code, but then strips method bodies and other metadata using Refasmer from JetBrains.
-+ IKVM.Java.runtime.windows
-  The Windows version of the OpenJDK distribution.
-+ IKVM.Java.runtime.linux
-  The Linux version of the OpenJDK distribution.
-+ IKVM.Java.runtime.osx
-  The OSX version of the OpenJDK distribution.
+  The OpenJDK distribution included with IKVM. This project is heavily customized to compile the OpenJDK Java source files and produce a .NET assembly from them.
 + IKVM.Image
   Outputs the files that make up the Java Runtime Image base. That is, the lib/ directory.
 + IKVM.Image.JRE
@@ -64,16 +57,12 @@ Prerequisites for building the project:
   "Reference" version of the IKVM.Java project. Due to the circular dependency between IKVM.Java and IKVM.Runtime, IKVM.Runtime must build against a partial copy of IKVM.Java.
 + IKVM
   To untangle the ProjectReferences between the circular dependencies, this project generates the NuGet package output, including all of it's required dependencies, and the full version of the underlying IKVM assemblies.
-+ libikvm
-  A small C/C++ native library that provides low-level services to the IKVM runtime, such as thread management and JNI support.
-+ lib*
-  Other OpenJDK derived native libraries required by IKVM.Java. These are accessed by OpenJDK through JNI.
++ ikvm-native-*
+  Native vcxproj files for building 'ikvm-native'. This code facilitates the functionality of IKVM.Runtime.JNI.
 + IKVM.MSBuild
   Contains tasks and targets used by both the IKVM package and the IKVM.NET.Sdk package. Two divergent paths exist: Tasks and NoTasks. When doing in-tree builds, NoTasks is used.
-+ IKVM.MSBuild.Tools
-  Bundle of the tools (ikvmc.exe, ikvmstub.exe) used by the MSBuild tasks.
 + IKVM.MSBuild.Tasks
-  Source code for the task contained within IKVM.MSBuild. These tasks invoke the tools, among other things.
+  Source code for the task contained within IKVM.MSBuild.
 + IKVM.NET.Sdk
   MSBuild SDK package which provides support for building managed code form Java sources. To divergent paths exist: Tasks and NoTasks. When doing in-tree builds, NoTasks is used.
 + dist-*
@@ -82,10 +71,6 @@ Prerequisites for building the project:
   Various .NET libraries for executing the IKVM tools programatically. These are used by the MSBuild Tasks to launch ikvmc.exe and ikvmstub.exe.
 + IKVM.Java.Extensions
   Various extension methods and such for bridiging IKVM.Java with .NET patterns and practices.
-+ IKVM.JTReg.TestAdapter
-  Wrapper around JTReg, the Java Test Runner, to allow running Java tests from within .NET test runners.
-+ IKVM.OpenJDK.Tests
-  Test cases imported from the OpenJDK project, exposed through the JTReg test runner.
 
 ## Versioning
 

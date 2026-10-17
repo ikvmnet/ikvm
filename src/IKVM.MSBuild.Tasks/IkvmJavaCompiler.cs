@@ -169,6 +169,11 @@ namespace IKVM.MSBuild.Tasks
         }
 
         /// <summary>
+        /// The compiler runs long, so the node is yielded to other work immediately.
+        /// </summary>
+        protected override TimeSpan YieldDelay => TimeSpan.Zero;
+
+        /// <summary>
         /// Execute the Java compiler in a separate thread.
         /// </summary>
         /// <param name="cancellationToken"></param>

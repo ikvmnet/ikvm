@@ -99,6 +99,10 @@
             <Output TaskParameter="Items" ItemName="_IkvmReferenceItemWithMetadata" />
         </IkvmReferenceItemPrepare>
 
+        <ItemGroup>
+            <FileWrites Include="$(_IkvmReferenceItemPrepareStateFile)" />
+        </ItemGroup>
+
         <!-- Assign newly discovered items. -->
         <ItemGroup>
             <IkvmReferenceItem Remove="@(IkvmReferenceItem)"/>
@@ -109,7 +113,6 @@
     <PropertyGroup>
         <GetIkvmReferenceItemsDependsOn>
             $(GetIkvmReferenceItemsDependsOn);
-            ResolveIkvmFrameworkReferences;
             GetIkvmReferenceItemsFromIkvmReferences;
             _UpdateIkvmReferenceItemsMetadata;
         </GetIkvmReferenceItemsDependsOn>
@@ -121,15 +124,14 @@
     </Target>
 
     <!-- Builds the IkvmReferenceItem set into their output items within the cache. -->
-    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmFrameworkReferences" Inputs="%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)">
+    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmFrameworkReferences" Inputs="%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)" Condition=" '@(IkvmReferenceItem)' != '' ">
         <Error Text="_CompileIkvmReferences has no implementation." />
     </Target>
 
     <PropertyGroup>
         <CompileIkvmReferencesDependsOn>
-            $(CompileIkvmReferenceAssemblies);
+            $(CompileIkvmReferencesDependsOn);
             GetIkvmReferenceItems;
-            ResolveIkvmFrameworkReferences;
             _CompileIkvmReferences;
         </CompileIkvmReferencesDependsOn>
     </PropertyGroup>
@@ -164,6 +166,72 @@
     <Target Name="ResolveIkvmReferences" BeforeTargets="ResolveAssemblyReferences" DependsOnTargets="$(ResolveIkvmReferencesDependsOn)">
 
     </Target>
+
+    <!--
+    A compiler only emits a reference to an assembly whose types it actually uses, so an IkvmReference the project
+    declares but only reaches by name at runtime leaves no trace in the output assembly, and the assembly class
+    loader has no way to delegate to it. Embedding an 'ikvm.exports' resource naming each IkvmReference restores
+    the declared set without pulling in the rest of the resolved reference graph.
+
+    Java projects are excluded: their assembly is produced by the IKVM importer, which writes the resource itself.
+
+    IkvmReferenceItem arrives in build order, dependencies ahead of the items that pulled them in. A lookup wants
+    the opposite: the items the project declared should answer before the tree beneath them, the way the nearest
+    declaration wins a Maven class path. Writing the exports in reverse restores that order.
+    -->
+    <PropertyGroup>
+        <IkvmGenerateAssemblyExports Condition=" '$(IkvmGenerateAssemblyExports)' == '' ">true</IkvmGenerateAssemblyExports>
+        <IkvmAssemblyExportsFile Condition=" '$(IkvmAssemblyExportsFile)' == '' ">$(IntermediateOutputPath)ikvm.exports</IkvmAssemblyExportsFile>
+    </PropertyGroup>
+
+    <Target Name="GenerateIkvmAssemblyExports" BeforeTargets="PrepareResources" DependsOnTargets="GetIkvmReferenceItems;CompileIkvmReferences" Condition=" '$(IkvmGenerateAssemblyExports)' == 'true' And '$(Language)' != 'Java' And '@(IkvmReferenceItem)' != '' ">
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(IkvmAssemblyExportsFile)'))" />
+
+        <IkvmWriteExportsFile References="@(IkvmReferenceItem->'%(CachePath)')" Reverse="true" Output="$(IkvmAssemblyExportsFile)">
+            <Output TaskParameter="ExportsFile" ItemName="_IkvmAssemblyExportsFile" />
+        </IkvmWriteExportsFile>
+
+        <ItemGroup>
+            <EmbeddedResource Include="@(_IkvmAssemblyExportsFile)" LogicalName="ikvm.exports" Visible="false" />
+            <FileWrites Include="$(IkvmAssemblyExportsFile)" />
+        </ItemGroup>
+    </Target>
+
+    <!-- Property pages for IkvmReference items in Visual Studio -->
+    <ItemGroup>
+        <PropertyPageSchema Include="$(MSBuildThisFileDirectory)IkvmReference.xaml">
+            <Context>Project;BrowseObject</Context>
+        </PropertyPageSchema>
+        <PropertyPageSchema Include="$(MSBuildThisFileDirectory)ResolvedIkvmReference.xaml">
+            <Context>ProjectSubscriptionService;BrowseObject</Context>
+        </PropertyPageSchema>
+    </ItemGroup>
+
+    <!-- Describes IkvmReference items for Visual Studio without compiling them. Never fails: each item reports whether it resolves. -->
+    <Target Name="ResolveIkvmReferencesDesignTime" Returns="@(_IkvmReferenceDesignTimeItem)">
+        <IkvmReferenceItemDescribe Items="@(IkvmReference)" Condition=" '@(IkvmReference)' != '' ">
+            <Output TaskParameter="DescribedItems" ItemName="_IkvmReferenceDesignTimeItem" />
+        </IkvmReferenceItemDescribe>
+    </Target>
+
+    <!-- Describes the paths in $(IkvmReferenceCandidates) as IkvmReference items would be described, without adding them to the project. -->
+    <Target Name="DescribeIkvmReferenceCandidates" Returns="@(_IkvmReferenceCandidateItem)">
+        <ItemGroup>
+            <_IkvmReferenceCandidate Include="$(IkvmReferenceCandidates)" />
+        </ItemGroup>
+        <IkvmReferenceItemDescribe Items="@(_IkvmReferenceCandidate)" Condition=" '@(_IkvmReferenceCandidate)' != '' ">
+            <Output TaskParameter="DescribedItems" ItemName="_IkvmReferenceCandidateItem" />
+        </IkvmReferenceItemDescribe>
+    </Target>
+
+    <!-- Prompt Visual Studio to install the IKVM extension when the project uses IkvmReference -->
+    <ItemGroup Condition=" '@(IkvmReference)' != '' ">
+        <VsixDependency Remove="IKVM.VisualStudio.8bf8ccd4-363a-4a23-a857-b038314c2c9e" />
+        <VsixDependency Include="IKVM.VisualStudio.8bf8ccd4-363a-4a23-a857-b038314c2c9e">
+            <DisplayName>IKVM Extension for Visual Studio</DisplayName>
+            <MoreInfoUrl>https://marketplace.visualstudio.com/items?itemName=ikvm.ikvm</MoreInfoUrl>
+        </VsixDependency>
+    </ItemGroup>
 
     <!-- Include Task or NoTask implementation of targets. -->
     <Import Project="IKVM.IkvmReference.Tasks.targets" Condition=" '$(UseIkvmTasks)' != 'false' "/>

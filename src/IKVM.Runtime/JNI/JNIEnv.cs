@@ -183,7 +183,9 @@ namespace IKVM.Runtime.JNI
                 // TODO what should the protection domain be?
                 // NOTE I'm assuming name is platform encoded (as opposed to UTF-8), but the Sun JVM only seems to work for ASCII.
                 var classLoader = (java.lang.ClassLoader)pEnv->UnwrapRef(loader);
-                return pEnv->MakeLocalRef(IKVM.Java.Externs.java.lang.ClassLoader.defineClass0(classLoader, name != null ? DecodeMUTF8Argument(name, nameof(name)) : null, buf, 0, buf.Length, null));
+                // JNI names classes with slashes, where ClassLoader expects dots
+                var className = name != null ? DecodeMUTF8Argument(name, nameof(name)).Replace('/', '.') : null;
+                return pEnv->MakeLocalRef(IKVM.Java.Externs.java.lang.ClassLoader.defineClass0(classLoader, className, buf, 0, buf.Length, null));
             }
             catch (Exception e)
             {
@@ -790,9 +792,14 @@ namespace IKVM.Runtime.JNI
         {
             try
             {
+                // NULL can be cast to any class
+                var o = pEnv->UnwrapRef(obj);
+                if (o == null)
+                    return JNI_TRUE;
+
                 // NOTE if clazz is an interface, this is still the right thing to do
                 // (i.e. if the object implements the interface, we return true)
-                var objClass = IKVM.Java.Externs.ikvm.runtime.Util.getClassFromObject(pEnv->UnwrapRef(obj));
+                var objClass = IKVM.Java.Externs.ikvm.runtime.Util.getClassFromObject(o);
                 var w1 = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
                 var w2 = RuntimeJavaType.FromClass(objClass);
                 return w2.IsAssignableTo(w1) ? JNI_TRUE : JNI_FALSE;
@@ -1584,7 +1591,15 @@ namespace IKVM.Runtime.JNI
 
         internal static nint GetStaticMethodID(JNIEnv* pEnv, nint clazz, byte* name, byte* sig)
         {
-            return FindMethodID(pEnv, clazz, name, sig, true);
+            try
+            {
+                return FindMethodID(pEnv, clazz, name, sig, true);
+            }
+            catch (Exception e)
+            {
+                JVM.SetPendingException(e);
+                return 0;
+            }
         }
 
         internal static nint CallStaticObjectMethodA(JNIEnv* pEnv, nint clazz, nint methodID, JValue* args)
@@ -1913,7 +1928,7 @@ namespace IKVM.Runtime.JNI
 #else
             try
             {
-                GetFieldWrapper(fieldID).UnsafeSetValue<bool>(null, val != JNI_TRUE);
+                GetFieldWrapper(fieldID).UnsafeSetValue<bool>(null, val != JNI_FALSE);
             }
             catch (Exception e)
             {
@@ -2521,20 +2536,39 @@ namespace IKVM.Runtime.JNI
             }
         }
 
+        /// <summary>
+        /// Returns whether the region lies within the array, and otherwise sets ArrayIndexOutOfBoundsException as the
+        /// pending exception.
+        /// </summary>
+        /// <param name="array"></param>
+        /// <param name="start"></param>
+        /// <param name="len"></param>
+        /// <returns></returns>
+        static bool CheckArrayRegion(Array array, int start, int len)
+        {
+            if (start < 0 || len < 0 || start > array.Length - len)
+            {
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
+                return false;
+            }
+
+            return true;
+        }
+
         internal static void GetBooleanArrayRegion(JNIEnv* pEnv, nint array, int start, int len, jboolean* buf)
         {
             try
             {
-                bool[] b = (bool[])pEnv->UnwrapRef(array);
-                sbyte* p = (sbyte*)(void*)buf;
+                var b = (bool[])pEnv->UnwrapRef(array);
+                if (CheckArrayRegion(b, start, len) == false)
+                    return;
+
                 for (int i = 0; i < len; i++)
-                {
-                    *p++ = b[start + i] ? JNI_TRUE : JNI_FALSE;
-                }
+                    buf[i] = b[start + i] ? JNI_TRUE : JNI_FALSE;
             }
-            catch (IndexOutOfRangeException)
+            catch (Exception e)
             {
-                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(e);
             }
         }
 
@@ -2542,16 +2576,15 @@ namespace IKVM.Runtime.JNI
         {
             try
             {
-                byte[] b = (byte[])pEnv->UnwrapRef(array);
-                byte* p = (byte*)(void*)buf;
-                for (int i = 0; i < len; i++)
-                {
-                    *p++ = b[start + i];
-                }
+                var b = (byte[])pEnv->UnwrapRef(array);
+                if (CheckArrayRegion(b, start, len) == false)
+                    return;
+
+                Marshal.Copy(b, start, (IntPtr)buf, len);
             }
-            catch (IndexOutOfRangeException)
+            catch (Exception e)
             {
-                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(e);
             }
         }
 
@@ -2637,16 +2670,16 @@ namespace IKVM.Runtime.JNI
         {
             try
             {
-                bool[] b = (bool[])pEnv->UnwrapRef(array);
-                sbyte* p = (sbyte*)(void*)buf;
+                var b = (bool[])pEnv->UnwrapRef(array);
+                if (CheckArrayRegion(b, start, len) == false)
+                    return;
+
                 for (int i = 0; i < len; i++)
-                {
-                    b[start + i] = *p++ != JNI_FALSE;
-                }
+                    b[start + i] = buf[i] != JNI_FALSE;
             }
-            catch (IndexOutOfRangeException)
+            catch (Exception e)
             {
-                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(e);
             }
         }
 
@@ -2654,16 +2687,15 @@ namespace IKVM.Runtime.JNI
         {
             try
             {
-                byte[] b = (byte[])pEnv->UnwrapRef(array);
-                byte* p = (byte*)(void*)buf;
-                for (int i = 0; i < len; i++)
-                {
-                    b[start + i] = *p++;
-                }
+                var b = (byte[])pEnv->UnwrapRef(array);
+                if (CheckArrayRegion(b, start, len) == false)
+                    return;
+
+                Marshal.Copy((IntPtr)buf, b, start, len);
             }
-            catch (IndexOutOfRangeException)
+            catch (Exception e)
             {
-                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(e);
             }
         }
 
@@ -2868,7 +2900,7 @@ namespace IKVM.Runtime.JNI
             string s = (string)pEnv->UnwrapRef(str);
             if (s != null)
             {
-                if (start < 0 || start > s.Length || s.Length - start < len)
+                if (start < 0 || len < 0 || start > s.Length - len)
                 {
                     JVM.SetPendingException(new java.lang.StringIndexOutOfBoundsException());
                     return;
@@ -2895,7 +2927,7 @@ namespace IKVM.Runtime.JNI
             string s = (string)pEnv->UnwrapRef(str);
             if (s != null)
             {
-                if (start < 0 || start > s.Length || s.Length - start < len)
+                if (start < 0 || len < 0 || start > s.Length - len)
                 {
                     JVM.SetPendingException(new java.lang.StringIndexOutOfBoundsException());
                     return;
@@ -3074,7 +3106,8 @@ namespace IKVM.Runtime.JNI
         {
             try
             {
-                return (void*)(IntPtr)((sun.nio.ch.DirectBuffer)pEnv->UnwrapRef(buf)).address();
+                // a buffer that isn't direct has no address
+                return pEnv->UnwrapRef(buf) is sun.nio.ch.DirectBuffer direct ? (void*)(IntPtr)direct.address() : null;
             }
             catch (Exception x)
             {
@@ -3087,7 +3120,8 @@ namespace IKVM.Runtime.JNI
         {
             try
             {
-                return (jlong)(long)((java.nio.Buffer)pEnv->UnwrapRef(buf)).capacity();
+                // a buffer that isn't direct has a capacity of -1
+                return pEnv->UnwrapRef(buf) is sun.nio.ch.DirectBuffer and java.nio.Buffer buffer ? buffer.capacity() : -1;
             }
             catch (Exception x)
             {
@@ -3099,7 +3133,10 @@ namespace IKVM.Runtime.JNI
         internal static JObjectRefType GetObjectRefType(JNIEnv* pEnv, nint obj)
         {
             int i = ((IntPtr)obj).ToInt32();
-            if (i >= 0)
+            if (i == 0)
+                return JObjectRefType.JNIInvalidRefType;
+
+            if (i > 0)
                 return JObjectRefType.JNILocalRefType;
 
             i = -i;

@@ -28,88 +28,87 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
-    internal sealed class RawModule : IDisposable
+    /// <summary>
+    /// A module that has been read from a file or stream but not yet loaded into its <see cref="Universe"/>. It allows
+    /// inspecting the assembly identity and references before deciding whether to load it with
+    /// <see cref="Universe.LoadAssembly(RawModule)"/>.
+    /// </summary>
+    sealed class RawModule : IDisposable
     {
 
-        readonly ModuleReader module;
-        readonly bool isManifestModule;
-        bool imported;
+        readonly ModuleReader _module;
+        readonly bool _isManifestModule;
+        bool _imported;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
+        /// <param name="module">The module that has been read.</param>
         internal RawModule(ModuleReader module)
         {
-            this.module = module;
-            this.isManifestModule = module.Assembly != null;
+            _module = module;
+            _isManifestModule = module.Assembly != null;
         }
 
-        public string Location
-        {
-            get { return module.FullyQualifiedName; }
-        }
+        /// <summary>
+        /// Gets the fully qualified path of the module.
+        /// </summary>
+        public string Location => _module.FullyQualifiedName;
 
-        public bool IsManifestModule
-        {
-            get { return isManifestModule; }
-        }
+        /// <summary>
+        /// Gets whether the module contains an assembly manifest.
+        /// </summary>
+        public bool IsManifestModule => _isManifestModule;
 
-        public Guid ModuleVersionId
-        {
-            get { return module.ModuleVersionId; }
-        }
-
-        public string ImageRuntimeVersion
-        {
-            get { return module.__ImageRuntimeVersion; }
-        }
-
-        public int MDStreamVersion
-        {
-            get { return module.MDStreamVersion; }
-        }
-
+        /// <summary>
+        /// Throws if the module does not contain an assembly manifest.
+        /// </summary>
+        /// <exception cref="BadImageFormatException">The module does not contain a manifest.</exception>
         void CheckManifestModule()
         {
             if (!IsManifestModule)
                 throw new BadImageFormatException("Module does not contain a manifest");
         }
 
+        /// <summary>
+        /// Gets the name of the assembly whose manifest the module contains.
+        /// </summary>
+        /// <returns>The assembly name.</returns>
+        /// <exception cref="BadImageFormatException">The module does not contain a manifest.</exception>
         public AssemblyName GetAssemblyName()
         {
             CheckManifestModule();
-            return module.Assembly.GetName();
+            return _module.Assembly.GetName();
         }
 
-        public AssemblyName[] GetReferencedAssemblies()
-        {
-            return module.__GetReferencedAssemblies();
-        }
+        /// <summary>
+        /// Gets the names of the assemblies the module references.
+        /// </summary>
+        /// <returns>The referenced assembly names.</returns>
+        public AssemblyName[] GetReferencedAssemblies() => _module.__GetReferencedAssemblies();
 
+        /// <summary>
+        /// Releases the underlying module, unless it has been loaded as an assembly with <see cref="ToAssembly"/>.
+        /// </summary>
         public void Dispose()
         {
-            if (!imported)
-                module.Dispose();
+            if (!_imported)
+                _module.Dispose();
         }
 
+        /// <summary>
+        /// Hands the module over to be loaded as an assembly. After this call, disposing the raw module no longer
+        /// releases the underlying module.
+        /// </summary>
+        /// <returns>The assembly the module is the manifest module of.</returns>
+        /// <exception cref="InvalidOperationException">The module has already been loaded.</exception>
         internal AssemblyReader ToAssembly()
         {
-            if (imported)
+            if (_imported)
                 throw new InvalidOperationException();
 
-            imported = true;
-            return (AssemblyReader)module.Assembly;
-        }
-
-        internal Module ToModule(Assembly assembly)
-        {
-            if (module.Assembly != null)
-                throw new InvalidOperationException();
-
-            imported = true;
-            module.SetAssembly(assembly);
-            return module;
+            _imported = true;
+            return (AssemblyReader)_module.Assembly;
         }
 
     }

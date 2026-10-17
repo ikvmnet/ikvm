@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -21,101 +21,90 @@
   jeroen@frijters.net
   
 */
-using System;
-
-using IKVM.Reflection.Metadata;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// Represents a field defined in the FieldDef table of a module that was read from a file.
+    /// </summary>
     sealed class FieldDefImpl : FieldInfo
     {
 
-        readonly ModuleReader module;
-        readonly TypeDefImpl declaringType;
-        readonly int index;
+        readonly ModuleReader _module;
+        readonly TypeDefImpl _declaringType;
+        readonly FieldDefinitionHandle _handle;
+        readonly FieldDefinition _definition;
 
-        FieldSignature lazyFieldSig;
+        FieldSignature _lazyFieldSig;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="declaringType"></param>
-        /// <param name="index"></param>
-        internal FieldDefImpl(ModuleReader module, TypeDefImpl declaringType, int index)
+        /// <param name="module">The module that defines the field.</param>
+        /// <param name="declaringType">The type that defines the field, which may be the module's &lt;Module&gt; pseudo type.</param>
+        /// <param name="handle">The handle of the field's FieldDef row.</param>
+        internal FieldDefImpl(ModuleReader module, TypeDefImpl declaringType, FieldDefinitionHandle handle)
         {
-            this.module = module;
-            this.declaringType = declaringType;
-            this.index = index;
+            _module = module;
+            _declaringType = declaringType;
+            _handle = handle;
+            _definition = module.Metadata.GetFieldDefinition(handle);
         }
 
-        public override FieldAttributes Attributes
-        {
-            get { return (FieldAttributes)module.FieldTable.records[index].Flags; }
-        }
+        /// <inheritdoc />
+        public override FieldAttributes Attributes => (FieldAttributes)_definition.Attributes;
 
-        public override Type DeclaringType
-        {
-            get { return declaringType.IsModulePseudoType ? null : declaringType; }
-        }
+        /// <summary>
+        /// Gets the class that declares this field, or <see langword="null"/> if the field is a global field defined on
+        /// the module's &lt;Module&gt; pseudo type.
+        /// </summary>
+        public override Type DeclaringType => _declaringType.IsModulePseudoType ? null : _declaringType;
 
-        public override string Name
-        {
-            get { return module.GetString(module.FieldTable.records[index].Name); }
-        }
+        /// <inheritdoc />
+        public override string Name => _module.GetString(_definition.Name);
 
-        public override string ToString()
-        {
-            return this.FieldType.Name + " " + this.Name;
-        }
+        /// <inheritdoc />
+        public override string ToString() => FieldType.Name + " " + Name;
 
-        public override Module Module
-        {
-            get { return module; }
-        }
+        /// <inheritdoc />
+        public override Module Module => _module;
 
-        public override int MetadataToken
-        {
-            get { return (FieldTable.Index << 24) + index + 1; }
-        }
+        /// <inheritdoc />
+        public override int MetadataToken => MetadataTokens.GetToken(_handle);
 
-        public override object GetRawConstantValue()
-        {
-            return module.ConstantTable.GetRawConstantValue(module, this.MetadataToken);
-        }
+        /// <inheritdoc />
+        public override object GetRawConstantValue() => _module.GetConstantValue(_definition.GetDefaultValue());
 
+        /// <inheritdoc />
         public override bool __TryGetFieldOffset(out int offset)
         {
-            foreach (int i in this.Module.FieldLayoutTable.Filter(index + 1))
-            {
-                offset = Module.FieldLayoutTable.records[i].Offset;
+            offset = _definition.GetOffset();
+            if (offset != -1)
                 return true;
-            }
 
             offset = 0;
             return false;
         }
 
-        internal override FieldSignature FieldSignature
-        {
-            get { return lazyFieldSig ??= FieldSignature.ReadSig(module, module.GetBlobReader(module.FieldTable.records[index].Signature), declaringType); }
-        }
+        /// <summary>
+        /// Gets the signature of the field, reading it from the metadata on first use.
+        /// </summary>
+        internal override FieldSignature FieldSignature =>
+            _lazyFieldSig ??= FieldSignature.ReadSig(_module, _module.GetBlobReader(_definition.Signature), _declaringType);
 
-        internal override int ImportTo(Emit.ModuleBuilder module)
-        {
-            return module.ImportMethodOrField(declaringType, this.Name, this.FieldSignature);
-        }
+        /// <inheritdoc />
+        internal override int ImportTo(Emit.ModuleBuilder module) => module.ImportMethodOrField(_declaringType, Name, FieldSignature);
 
-        internal override int GetCurrentToken()
-        {
-            return this.MetadataToken;
-        }
+        /// <inheritdoc />
+        internal override int GetCurrentToken() => MetadataToken;
 
-        internal override bool IsBaked
-        {
-            get { return true; }
-        }
+        /// <summary>
+        /// Gets a value indicating whether the field is complete. A field read from a file is always complete.
+        /// </summary>
+        internal override bool IsBaked => true;
 
     }
 

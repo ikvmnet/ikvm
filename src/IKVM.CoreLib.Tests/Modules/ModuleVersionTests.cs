@@ -127,6 +127,29 @@ namespace IKVM.CoreLib.Tests.Modules
             v.Build[1].AsInteger().Should().Be(0);
         }
 
+        [TestMethod]
+        public void CompareIsLexicographic()
+        {
+            ModuleVersion.Parse("1.10").CompareTo(ModuleVersion.Parse("1.2.3")).Should().BePositive();
+            ModuleVersion.Parse("1.2").CompareTo(ModuleVersion.Parse("1.2.1")).Should().BeNegative();
+            ModuleVersion.Parse("1.2.3").CompareTo(ModuleVersion.Parse("1.2.3")).Should().Be(0);
+        }
+
+        [TestMethod]
+        public void CompareStringComponentsOrdinally()
+        {
+            // a culture-sensitive comparison puts "a" before "B", Java's String.compareTo puts "B" first
+            ModuleVersion.Parse("1.0-B").CompareTo(ModuleVersion.Parse("1.0-a")).Should().BeNegative();
+        }
+
+        [TestMethod]
+        public void CompareInvalidVersions()
+        {
+            default(ModuleVersion).CompareTo(default).Should().Be(0);
+            ModuleVersion.Parse("1").CompareTo(default).Should().BePositive();
+            default(ModuleVersion).CompareTo(ModuleVersion.Parse("1")).Should().BeNegative();
+        }
+
     }
 
 }

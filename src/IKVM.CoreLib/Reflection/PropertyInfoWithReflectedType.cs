@@ -24,149 +24,131 @@
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Wraps a property obtained through a type other than the one that declares it, such as an inherited property
+    /// returned from a derived type. The wrapper delegates to the underlying property but remembers the type it was
+    /// obtained through, which takes part in equality and is carried over to the accessor methods and index
+    /// parameters it returns.
+    /// </summary>
     sealed class PropertyInfoWithReflectedType : PropertyInfo
     {
 
-        readonly Type reflectedType;
-        readonly PropertyInfo property;
+        readonly Type _reflectedType;
+        readonly PropertyInfo _property;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="reflectedType"></param>
-        /// <param name="property"></param>
+        /// <param name="reflectedType">The type the property was obtained through.</param>
+        /// <param name="property">The underlying property.</param>
         internal PropertyInfoWithReflectedType(Type reflectedType, PropertyInfo property)
         {
-            this.reflectedType = reflectedType;
-            this.property = property;
+            _reflectedType = reflectedType;
+            _property = property;
         }
 
-        public override PropertyAttributes Attributes
-        {
-            get { return property.Attributes; }
-        }
+        /// <inheritdoc />
+        public override PropertyAttributes Attributes => _property.Attributes;
 
-        public override bool CanRead
-        {
-            get { return property.CanRead; }
-        }
+        /// <inheritdoc />
+        public override bool CanRead => _property.CanRead;
 
-        public override bool CanWrite
-        {
-            get { return property.CanWrite; }
-        }
+        /// <inheritdoc />
+        public override bool CanWrite => _property.CanWrite;
 
-        public override MethodInfo GetGetMethod(bool nonPublic)
-        {
-            return SetReflectedType(property.GetGetMethod(nonPublic), reflectedType);
-        }
+        /// <summary>
+        /// Returns the public or non-public get accessor for this property, obtained through the same reflected type
+        /// as this property.
+        /// </summary>
+        /// <param name="nonPublic">Indicates whether a non-public get accessor should be returned.</param>
+        /// <returns>The get accessor, or <see langword="null"/> if there is none or it is non-public and <paramref name="nonPublic"/> is <see langword="false"/>.</returns>
+        public override MethodInfo GetGetMethod(bool nonPublic) => SetReflectedType(_property.GetGetMethod(nonPublic), _reflectedType);
 
-        public override MethodInfo GetSetMethod(bool nonPublic)
-        {
-            return SetReflectedType(property.GetSetMethod(nonPublic), reflectedType);
-        }
+        /// <summary>
+        /// Returns the set accessor for this property, obtained through the same reflected type as this property.
+        /// </summary>
+        /// <param name="nonPublic">Indicates whether the accessor should be returned if it is non-public.</param>
+        /// <returns>The set accessor, or <see langword="null"/> if there is none or it is non-public and <paramref name="nonPublic"/> is <see langword="false"/>.</returns>
+        public override MethodInfo GetSetMethod(bool nonPublic) => SetReflectedType(_property.GetSetMethod(nonPublic), _reflectedType);
 
-        public override MethodInfo[] GetAccessors(bool nonPublic)
-        {
-            return SetReflectedType(property.GetAccessors(nonPublic), reflectedType);
-        }
+        /// <summary>
+        /// Returns an array whose elements reflect the public and, if specified, non-public accessors of this
+        /// property, obtained through the same reflected type as this property.
+        /// </summary>
+        /// <param name="nonPublic">Indicates whether non-public methods should be returned in the array.</param>
+        /// <returns>An array of the accessors of this property.</returns>
+        public override MethodInfo[] GetAccessors(bool nonPublic) => SetReflectedType(_property.GetAccessors(nonPublic), _reflectedType);
 
-        public override object GetRawConstantValue()
-        {
-            return property.GetRawConstantValue();
-        }
+        /// <inheritdoc />
+        public override object GetRawConstantValue() => _property.GetRawConstantValue();
 
-        internal override bool IsPublic
-        {
-            get { return property.IsPublic; }
-        }
+        /// <inheritdoc />
+        internal override bool IsPublic => _property.IsPublic;
 
-        internal override bool IsNonPrivate
-        {
-            get { return property.IsNonPrivate; }
-        }
+        /// <inheritdoc />
+        internal override bool IsNonPrivate => _property.IsNonPrivate;
 
-        internal override bool IsStatic
-        {
-            get { return property.IsStatic; }
-        }
+        /// <inheritdoc />
+        internal override bool IsStatic => _property.IsStatic;
 
-        internal override PropertySignature PropertySignature
-        {
-            get { return property.PropertySignature; }
-        }
+        /// <inheritdoc />
+        internal override PropertySignature PropertySignature => _property.PropertySignature;
 
+        /// <summary>
+        /// Returns the index parameters of the underlying property, each wrapped so that its member is this wrapper.
+        /// </summary>
+        /// <returns>An array containing the parameters for the indexes, or an empty array if the property is not indexed.</returns>
         public override ParameterInfo[] GetIndexParameters()
         {
-            var parameters = property.GetIndexParameters();
-            for (int i = 0; i < parameters.Length; i++)
+            var parameters = _property.GetIndexParameters();
+            for (var i = 0; i < parameters.Length; i++)
                 parameters[i] = new ParameterInfoWrapper(this, parameters[i]);
 
             return parameters;
         }
 
-        internal override PropertyInfo BindTypeParameters(Type type)
-        {
-            return property.BindTypeParameters(type);
-        }
+        /// <inheritdoc />
+        internal override PropertyInfo BindTypeParameters(Type type) => _property.BindTypeParameters(type);
 
-        public override string ToString()
-        {
-            return property.ToString();
-        }
+        /// <inheritdoc />
+        public override string ToString() => _property.ToString();
 
-        public override bool __IsMissing
-        {
-            get { return property.__IsMissing; }
-        }
+        /// <inheritdoc />
+        public override bool __IsMissing => _property.__IsMissing;
 
-        public override Type DeclaringType
-        {
-            get { return property.DeclaringType; }
-        }
+        /// <inheritdoc />
+        public override Type DeclaringType => _property.DeclaringType;
 
-        public override Type ReflectedType
-        {
-            get { return reflectedType; }
-        }
-
+        /// <summary>
+        /// Determines whether the specified object is a wrapper of the same property obtained through the same type.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> wraps the same property and reflected type; otherwise, <see langword="false"/>.</returns>
         public override bool Equals(object obj)
         {
             var other = obj as PropertyInfoWithReflectedType;
             return other != null
-                && other.reflectedType == reflectedType
-                && other.property == property;
+                && other._reflectedType == _reflectedType
+                && other._property == _property;
         }
 
-        public override int GetHashCode()
-        {
-            return reflectedType.GetHashCode() ^ property.GetHashCode();
-        }
+        /// <inheritdoc />
+        public override int GetHashCode() => _reflectedType.GetHashCode() ^ _property.GetHashCode();
 
-        public override int MetadataToken
-        {
-            get { return property.MetadataToken; }
-        }
+        /// <inheritdoc />
+        public override int MetadataToken => _property.MetadataToken;
 
-        public override Module Module
-        {
-            get { return property.Module; }
-        }
+        /// <inheritdoc />
+        public override Module Module => _property.Module;
 
-        public override string Name
-        {
-            get { return property.Name; }
-        }
+        /// <inheritdoc />
+        public override string Name => _property.Name;
 
-        internal override bool IsBaked
-        {
-            get { return property.IsBaked; }
-        }
+        /// <inheritdoc />
+        internal override bool IsBaked => _property.IsBaked;
 
-        internal override int GetCurrentToken()
-        {
-            return property.GetCurrentToken();
-        }
+        /// <inheritdoc />
+        internal override int GetCurrentToken() => _property.GetCurrentToken();
 
     }
 

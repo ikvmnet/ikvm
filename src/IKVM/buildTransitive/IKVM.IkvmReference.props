@@ -3,6 +3,11 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
+    <!-- Lets Visual Studio offer IkvmReference UI in any project using the IKVM package -->
+    <ItemGroup>
+        <ProjectCapability Include="IkvmReferences" />
+    </ItemGroup>
+
     <ItemDefinitionGroup>
         <IkvmReference>
             <AssemblyName></AssemblyName>
@@ -25,6 +30,8 @@
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <Static>false</Static>
             <Optimize>$(Optimize)</Optimize>
+            <StrictFinalFieldSemantics>false</StrictFinalFieldSemantics>
+            <RemoveAssertions>false</RemoveAssertions>
         </IkvmReference>
     </ItemDefinitionGroup>
 

@@ -26,49 +26,44 @@ using System.Diagnostics;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Wraps a constructor obtained through a type other than its declaring type, so that, as in System.Reflection,
+    /// the same constructor reflected through different types does not compare equal.
+    /// </summary>
     sealed class ConstructorInfoWithReflectedType : ConstructorInfo
     {
 
-        readonly Type reflectedType;
-        readonly ConstructorInfo ctor;
+        readonly Type _reflectedType;
+        readonly ConstructorInfo _ctor;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="reflectedType"></param>
-        /// <param name="ctor"></param>
+        /// <param name="reflectedType">The type through which the constructor was obtained. Must not be its declaring type.</param>
+        /// <param name="ctor">The constructor to wrap.</param>
         internal ConstructorInfoWithReflectedType(Type reflectedType, ConstructorInfo ctor)
         {
             Debug.Assert(reflectedType != ctor.DeclaringType);
-            this.reflectedType = reflectedType;
-            this.ctor = ctor;
+            _reflectedType = reflectedType;
+            _ctor = ctor;
         }
 
+        /// <summary>
+        /// Returns whether the specified object wraps the same constructor obtained through the same type.
+        /// </summary>
+        /// <param name="obj">The object to compare with this instance.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> wraps the same constructor and reflected type; otherwise <see langword="false"/>.</returns>
         public override bool Equals(object obj)
         {
             var other = obj as ConstructorInfoWithReflectedType;
-            return other != null && other.reflectedType == reflectedType && other.ctor == ctor;
+            return other != null && other._reflectedType == _reflectedType && other._ctor == _ctor;
         }
 
-        public override int GetHashCode()
-        {
-            return reflectedType.GetHashCode() ^ ctor.GetHashCode();
-        }
+        /// <inheritdoc />
+        public override int GetHashCode() => _reflectedType.GetHashCode() ^ _ctor.GetHashCode();
 
-        public override Type ReflectedType
-        {
-            get { return reflectedType; }
-        }
-
-        internal override MethodInfo GetMethodInfo()
-        {
-            return ctor.GetMethodInfo();
-        }
-
-        internal override MethodInfo GetMethodOnTypeDefinition()
-        {
-            return ctor.GetMethodOnTypeDefinition();
-        }
+        /// <inheritdoc />
+        internal override MethodInfo GetMethodInfo() => _ctor.GetMethodInfo();
 
     }
 

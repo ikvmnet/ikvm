@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -21,94 +21,47 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Metadata;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
 using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
 {
 
-    internal sealed class ManifestResourceInfo
+    /// <summary>
+    /// Provides information about where a manifest resource is located.
+    /// </summary>
+    sealed class ManifestResourceInfo
     {
 
-        readonly ModuleReader module;
-        readonly int index;
+        readonly ModuleReader _module;
+        readonly EntityHandle _implementation;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="index"></param>
-        internal ManifestResourceInfo(ModuleReader module, int index)
+        /// <param name="module">The module whose manifest contains the resource.</param>
+        /// <param name="implementation">The Implementation of the ManifestResource row, nil for a resource embedded in the module.</param>
+        internal ManifestResourceInfo(ModuleReader module, EntityHandle implementation)
         {
-            this.module = module;
-            this.index = index;
+            _module = module;
+            _implementation = implementation;
         }
 
-        public ResourceAttributes __ResourceAttributes
-        {
-            get { return (ResourceAttributes)module.ManifestResourceTable.records[index].Flags; }
-        }
+        /// <summary>
+        /// Gets the containing assembly for the manifest resource, or <see langword="null"/> if the resource is not
+        /// located in another assembly.
+        /// </summary>
+        public Assembly ReferencedAssembly =>
+            _implementation.Kind == HandleKind.AssemblyReference && _implementation.IsNil == false ? _module.ResolveAssemblyRef(MetadataTokens.GetRowNumber(_implementation) - 1) : null;
 
-        public int __Offset
-        {
-            get { return module.ManifestResourceTable.records[index].Offset; }
-        }
-
-        public ResourceLocation ResourceLocation
-        {
-            get
-            {
-                var implementation = module.ManifestResourceTable.records[index].Implementation;
-                if ((implementation >> 24) == AssemblyRefTable.Index)
-                {
-                    var asm = ReferencedAssembly;
-                    if (asm == null || asm.__IsMissing)
-                        return ResourceLocation.ContainedInAnotherAssembly;
-
-                    return asm.GetManifestResourceInfo(module.GetString(module.ManifestResourceTable.records[index].Name)).ResourceLocation | ResourceLocation.ContainedInAnotherAssembly;
-                }
-                else if ((implementation >> 24) == FileTable.Index)
-                {
-                    if ((implementation & 0xFFFFFF) == 0)
-                        return ResourceLocation.ContainedInManifestFile | ResourceLocation.Embedded;
-
-                    return 0;
-                }
-                else
-                {
-                    throw new BadImageFormatException();
-                }
-            }
-        }
-
-        public Assembly ReferencedAssembly
-        {
-            get
-            {
-                var implementation = module.ManifestResourceTable.records[index].Implementation;
-                if ((implementation >> 24) == AssemblyRefTable.Index)
-                    return module.ResolveAssemblyRef((implementation & 0xFFFFFF) - 1);
-
-                return null;
-            }
-        }
-
-        public string FileName
-        {
-            get
-            {
-                var implementation = module.ManifestResourceTable.records[index].Implementation;
-                if ((implementation >> 24) == FileTable.Index)
-                {
-                    if ((implementation & 0xFFFFFF) == 0)
-                        return null;
-                    else
-                        return module.GetString(module.FileTable.records[(implementation & 0xFFFFFF) - 1].Name);
-                }
-
-                return null;
-            }
-        }
+        /// <summary>
+        /// Gets the name of the file that contains the manifest resource, or <see langword="null"/> if the resource is
+        /// not located in a separate file of the same assembly.
+        /// </summary>
+        public string FileName =>
+            _implementation.Kind == HandleKind.AssemblyFile && _implementation.IsNil == false ? _module.GetFileName(MetadataTokens.GetRowNumber(_implementation) - 1) : null;
 
     }
 

@@ -1654,11 +1654,30 @@ namespace IKVM.Runtime
 
                 MethodInfo UnwrapLocalRefMethod => LocalRefStructType.GetMethod("UnwrapLocalRef");
 
-                MethodInfo WriteLineMethod => context.Resolver.ResolveCoreType(typeof(Console).FullName).AsReflection().GetMethod("WriteLine", [context.Types.Object]);
-
                 MethodInfo MonitorEnterMethod => context.Resolver.ResolveCoreType(typeof(System.Threading.Monitor).FullName).AsReflection().GetMethod("Enter", [context.Types.Object]);
 
                 MethodInfo MonitorExitMethod => context.Resolver.ResolveCoreType(typeof(System.Threading.Monitor).FullName).AsReflection().GetMethod("Exit", [context.Types.Object]);
+
+                /// <summary>
+                /// Gets the type that a value of the given type has in the signature of the native method.
+                /// Every type in that signature is blittable, so that nothing is converted on the way: .NET would
+                /// marshal a char as a single ANSI byte and a bool as a four byte BOOL, where JNI has the two byte
+                /// jchar and the one byte jboolean.
+                /// </summary>
+                /// <param name="context"></param>
+                /// <param name="type"></param>
+                /// <returns></returns>
+                static Type GetNativeType(RuntimeContext context, RuntimeJavaType type)
+                {
+                    if (type == context.PrimitiveJavaTypeFactory.BOOLEAN)
+                        return context.Types.Byte;
+                    else if (type == context.PrimitiveJavaTypeFactory.CHAR)
+                        return context.Types.UInt16;
+                    else if (type.IsPrimitive)
+                        return type.TypeAsSignatureType;
+                    else
+                        return context.Types.IntPtr;
+                }
 
                 internal void Generate(RuntimeByteCodeJavaType.FinishContext context, CodeEmitter ilGenerator, RuntimeByteCodeJavaType wrapper, RuntimeJavaMethod mw, TypeBuilder typeBuilder, ClassFile classFile, Method m, RuntimeJavaType[] args, bool thruProxy)
                 {
@@ -1717,7 +1736,7 @@ namespace IKVM.Runtime
                     modargs[0] = context.context.Types.IntPtr;
                     modargs[1] = context.context.Types.IntPtr;
                     for (int i = 0; i < args.Length; i++)
-                        modargs[i + 2] = args[i].TypeAsSignatureType;
+                        modargs[i + 2] = GetNativeType(context.context, args[i]);
                     int add = 0;
                     if (!m.IsStatic)
                     {
@@ -1763,13 +1782,7 @@ namespace IKVM.Runtime
 
                     ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
 
-                    Type realRetType;
-                    if (retTypeWrapper == context.Context.PrimitiveJavaTypeFactory.BOOLEAN)
-                        realRetType = context.Context.Types.Byte;
-                    else if (retTypeWrapper.IsPrimitive)
-                        realRetType = retTypeWrapper.TypeAsSignatureType;
-                    else
-                        realRetType = context.Context.Types.IntPtr;
+                    var realRetType = GetNativeType(context.context, retTypeWrapper);
                     ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, realRetType, modargs);
 
                     CodeEmitterLocal retValue = null;
@@ -1808,11 +1821,6 @@ namespace IKVM.Runtime
 
                     var retLabel = ilGenerator.DefineLabel();
                     ilGenerator.EmitLeave(retLabel);
-                    ilGenerator.BeginCatchBlock(context.context.Types.Object);
-                    ilGenerator.Emit(OpCodes.Ldstr, "*** exception in native code ***");
-                    ilGenerator.Emit(OpCodes.Call, WriteLineMethod);
-                    ilGenerator.Emit(OpCodes.Call, WriteLineMethod);
-                    ilGenerator.Emit(OpCodes.Rethrow);
                     ilGenerator.BeginFinallyBlock();
                     ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
                     ilGenerator.Emit(OpCodes.Call, LeaveLocalRefStructMethod);

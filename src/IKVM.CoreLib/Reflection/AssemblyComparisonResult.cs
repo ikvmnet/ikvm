@@ -25,20 +25,71 @@
 namespace IKVM.Reflection
 {
 
-    internal enum AssemblyComparisonResult
+    /// <summary>
+    /// Describes the outcome of comparing two assembly identities, mirroring the result of the Fusion
+    /// <c>CompareAssemblyIdentity</c> API.
+    /// </summary>
+    enum AssemblyComparisonResult
     {
 
+        /// <summary>
+        /// The result of the comparison is not known.
+        /// </summary>
         Unknown = 0,
+
+        /// <summary>
+        /// The identities are equivalent, all fields match.
+        /// </summary>
         EquivalentFullMatch = 1,
+
+        /// <summary>
+        /// The identities are equivalent, and both are not strong named.
+        /// </summary>
         EquivalentWeakNamed = 2,
+
+        /// <summary>
+        /// The identities are equivalent because the versions are unified by the framework.
+        /// </summary>
         EquivalentFXUnified = 3,
+
+        /// <summary>
+        /// The identities are equivalent because the versions are unified by policy.
+        /// </summary>
         EquivalentUnified = 4,
+
+        /// <summary>
+        /// The identities are not equivalent, because the versions do not match.
+        /// </summary>
         NonEquivalentVersion = 5,
+
+        /// <summary>
+        /// The identities are not equivalent.
+        /// </summary>
         NonEquivalent = 6,
+
+        /// <summary>
+        /// The partial identity is equivalent, all fields it specifies match.
+        /// </summary>
         EquivalentPartialMatch = 7,
+
+        /// <summary>
+        /// The partial identity is equivalent, and both are not strong named.
+        /// </summary>
         EquivalentPartialWeakNamed = 8,
+
+        /// <summary>
+        /// The partial identity is equivalent because the versions are unified by policy.
+        /// </summary>
         EquivalentPartialUnified = 9,
+
+        /// <summary>
+        /// The partial identity is equivalent because the versions are unified by the framework.
+        /// </summary>
         EquivalentPartialFXUnified = 10,
+
+        /// <summary>
+        /// The partial identity is not equivalent, because the versions do not match.
+        /// </summary>
         NonEquivalentPartialVersion = 11,
 
     }

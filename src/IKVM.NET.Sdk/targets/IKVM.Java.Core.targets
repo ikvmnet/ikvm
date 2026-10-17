@@ -53,9 +53,13 @@
             </_ReferenceExport>
         </ItemGroup>
 
-        <IkvmReferenceExportItemPrepare StateFile="$(_IkvmReferenceExportItemPrepareStateFile)" Items="@(_ReferenceExport)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" References="@(ReferencePathWithRefAssemblies)">
+        <IkvmReferenceExportItemPrepare StateFile="$(_IkvmReferenceExportItemPrepareStateFile)" Items="@(_ReferenceExport)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" References="@(ReferencePathWithRefAssemblies)" CacheDir="$(IkvmExportCacheDir)">
             <Output TaskParameter="Items" ItemName="__ReferenceExport" />
         </IkvmReferenceExportItemPrepare>
+
+        <ItemGroup>
+            <FileWrites Include="$(_IkvmReferenceExportItemPrepareStateFile)" />
+        </ItemGroup>
 
         <ItemGroup>
             <__ReferenceExport Update="@(__ReferenceExport)">
@@ -73,13 +77,24 @@
         </ItemGroup>
     </Target>
 
-    <!-- Abstract target to conduct actual assembly exports. Overridden either by Command or Task implementation. -->
-    <Target Name="_ExportReference" DependsOnTargets="ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
+    <!-- Abstract target to conduct actual assembly exports. Overridden either by Command or Task implementation. Runs for each export, creating the ones missing from the cache. -->
+    <Target Name="_ExportReference" DependsOnTargets="ResolveReferenceExports" Outputs="%(ReferenceExport.CachePath)">
         <Error Text="_ExportReference not implemented." />
     </Target>
 
-    <Target Name="_ExportReferences" DependsOnTargets="ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="@(ReferenceExport->'%(CachePath)')">
-        <CallTarget Targets="_ExportReference" />
+    <!--
+    An export is cached at a path named by the identity of the assembly it was exported from, so an export that exists
+    is never stale, whatever the timestamps say. Exports are shared by every project, so they are never touched.
+    -->
+    <Target Name="_GetMissingReferenceExports" DependsOnTargets="ResolveReferenceExports">
+        <ItemGroup>
+            <_MissingReferenceExport Remove="@(_MissingReferenceExport)" />
+            <_MissingReferenceExport Include="@(ReferenceExport)" Condition="!Exists('%(ReferenceExport.CachePath)')" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="_ExportReferences" DependsOnTargets="ResolveReferenceExports;_GetMissingReferenceExports">
+        <CallTarget Targets="_ExportReference" Condition=" '@(_MissingReferenceExport)' != '' " />
     </Target>
 
     <PropertyGroup>
@@ -114,42 +129,26 @@
         <_CompileJavaResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).javac.rsp</_CompileJavaResponseFile>
     </PropertyGroup>
 
-    <UsingTask TaskName="ClasspathToClasspathFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-        <ParameterGroup>
-            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
-            <Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
-        </ParameterGroup>
-        <Task>
-            <Using Namespace="System"/>
-            <Using Namespace="System.IO"/>
-            <Code Type="Fragment" Language="cs">
-                <![CDATA[
-var files = new List<ITaskItem>();
-foreach (var item in Items)
-    if (File.Exists(item.ItemSpec))
-        files.Add(item);
-    else if (Directory.Exists(item.ItemSpec))
-        foreach (var file in Directory.GetFiles(item.ItemSpec, "*", SearchOption.AllDirectories))
-            files.Add(new TaskItem(file));
-
-Files = files.ToArray();
-]]>
-            </Code>
-        </Task>
-    </UsingTask>
-
     <!-- Classpath can contain both files and directories. We transform it to files so Inputs can recognize it. -->
     <Target Name="_ResolveClasspathFiles" DependsOnTargets="GetReferenceClasspath;ExportReferences">
-        <ClasspathToClasspathFiles Items="@(Classpath)">
-            <Output TaskParameter="Files" ItemName="ClasspathFiles" />
-        </ClasspathToClasspathFiles>
+        <ItemGroup>
+            <_ClasspathDirectory Remove="@(_ClasspathDirectory)" />
+            <_ClasspathDirectory Include="@(Classpath)" Condition="$([System.IO.Directory]::Exists('%(Classpath.FullPath)'))" />
+            <ClasspathFiles Include="@(Classpath)" Condition="$([System.IO.File]::Exists('%(Classpath.FullPath)'))" />
+            <ClasspathFiles Include="$([MSBuild]::EnsureTrailingSlash('%(_ClasspathDirectory.Identity)'))**" Condition=" '%(_ClasspathDirectory.Identity)' != '' " />
+            <_ClasspathDirectory Remove="@(_ClasspathDirectory)" />
+        </ItemGroup>
     </Target>
 
     <!-- Classpath can contain both files and directories. We transform it to files so Inputs can recognize it. -->
     <Target Name="_ResolveBootClasspathFiles" DependsOnTargets="GetReferenceBootClasspath;ExportReferences">
-        <ClasspathToClasspathFiles Items="@(BootClasspath)">
-            <Output TaskParameter="Files" ItemName="BootClasspathFiles" />
-        </ClasspathToClasspathFiles>
+        <ItemGroup>
+            <_BootClasspathDirectory Remove="@(_BootClasspathDirectory)" />
+            <_BootClasspathDirectory Include="@(BootClasspath)" Condition="$([System.IO.Directory]::Exists('%(BootClasspath.FullPath)'))" />
+            <BootClasspathFiles Include="@(BootClasspath)" Condition="$([System.IO.File]::Exists('%(BootClasspath.FullPath)'))" />
+            <BootClasspathFiles Include="$([MSBuild]::EnsureTrailingSlash('%(_BootClasspathDirectory.Identity)'))**" Condition=" '%(_BootClasspathDirectory.Identity)' != '' " />
+            <_BootClasspathDirectory Remove="@(_BootClasspathDirectory)" />
+        </ItemGroup>
     </Target>
 
     <!-- Abstract target to conduct actual Java compilation. Overridden either by Command or Task implementation. -->
@@ -173,7 +172,7 @@ Files = files.ToArray();
     <Target Name="CompileJava" DependsOnTargets="$(CompileJavaDependsOn)">
         <ItemGroup>
             <Convert Include="$(ClassOutputPath)**\*.class" />
-            <Header Include="$(HeaderOutputPath)**\*.h)" />
+            <Header Include="$(HeaderOutputPath)**\*.h" />
         </ItemGroup>
     </Target>
 

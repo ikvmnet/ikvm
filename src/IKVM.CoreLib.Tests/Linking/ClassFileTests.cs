@@ -1,7 +1,11 @@
-﻿using System.IO;
+﻿using System.Buffers;
+using System.IO;
 
 using FluentAssertions;
 
+using IKVM.ByteCode;
+using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Encoding;
 using IKVM.CoreLib.Linking;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -46,6 +50,40 @@ namespace IKVM.CoreLib.Tests.Linking
         public void CanLoadClassFile()
         {
             new ClassFile(new TestLinkingContext(false), IKVM.ByteCode.Decoding.ClassFile.Read(Path.Combine("Linking", "classes", "classfiletests", "ClassFileTests0.class")), "classfiletests.ClassFileTests0", ClassFileParseOptions.None, []);
+        }
+
+        [TestMethod]
+        public void InstructionsDoNotContainDataFromPreviouslyParsedCode()
+        {
+            // instructions are parsed into a pooled array, so put junk into the pooled arrays first
+            for (int size = 16; size <= 1024; size *= 2)
+            {
+                var junk = ArrayPool<Instruction<TestJavaType, TestJavaMember, TestJavaField, TestJavaMethod>>.Shared.Rent(size);
+                for (int i = 0; i < junk.Length; i++)
+                    junk[i].PatchOpCode(NormalizedOpCode.Iinc, 123, 456);
+
+                ArrayPool<Instruction<TestJavaType, TestJavaMember, TestJavaField, TestJavaMethod>>.Shared.Return(junk);
+            }
+
+            var builder = new ClassFileBuilder(49, AccessFlag.Public, "InstructionPoolTest", "java/lang/Object");
+            var code = new BlobBuilder();
+            new CodeBuilder(code).AconstNull().Pop().Return();
+            var attributes = new AttributeTableBuilder(builder.Constants);
+            attributes.Code(1, 0, code, e => { }, null);
+            builder.AddMethod(AccessFlag.Public | AccessFlag.Static, "m", "()V", attributes);
+            var buffer = new BlobBuilder();
+            builder.Serialize(buffer);
+
+            using var classFile = new ClassFile(new TestLinkingContext(false), IKVM.ByteCode.Decoding.ClassFile.Read(buffer.ToArray()), "InstructionPoolTest", ClassFileParseOptions.None, []);
+            var instructions = classFile.Methods[0].Instructions;
+
+            // three instructions and the terminating nop, none of which have operands
+            instructions.Should().HaveCount(4);
+            foreach (var instruction in instructions)
+            {
+                instruction.Arg1.Should().Be(0);
+                instruction.Arg2.Should().Be(0);
+            }
         }
 
     }
