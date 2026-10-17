@@ -32,8 +32,10 @@ jobs:
       run: |
         $v = (Invoke-RestMethod https://api.nuget.org/v3-flatcontainer/ikvm/index.json).versions | Where-Object { $_ -notmatch '-' } | Select-Object -Last 1
         "IKVM version: $v" | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
-        dotnet build experiments\dll-search\e2e -c Release -p:IkvmVersion=$v -o "$env:RUNNER_TEMP\e2e"
-        if ($LASTEXITCODE) { throw "build failed" }
+        Push-Location experiments\dll-search\e2e; dotnet --version
+        dotnet build . -c Release -p:IkvmVersion=$v -o "$env:RUNNER_TEMP\e2e"
+        $code = $LASTEXITCODE; Pop-Location
+        if ($code) { throw "build failed" }
         $jvm = Get-ChildItem "$env:RUNNER_TEMP\e2e" -Recurse -Filter jvm.dll | Select-Object -First 1
         "IKVM_BIN=$($jvm.DirectoryName)" >> $env:GITHUB_ENV
         Get-ChildItem $jvm.DirectoryName | Select-Object Name, Length | Format-Table | Out-String | Write-Host
