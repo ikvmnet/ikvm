@@ -87,7 +87,7 @@ namespace IKVM.Tools.Exporter.Tests
                 ret.Should().Be(0);
 
                 using var zip = ZipFile.OpenRead(options.Output);
-                var entry = zip.GetEntry(typeof(Fixtures.ByRefLikeMembers).FullName.Replace('.', '/') + ".class");
+                var entry = zip.GetEntry("cli/" + typeof(Fixtures.ByRefLikeMembers).FullName.Replace('.', '/') + ".class");
                 entry.Should().NotBeNull();
 
                 using var stream = entry.Open();
