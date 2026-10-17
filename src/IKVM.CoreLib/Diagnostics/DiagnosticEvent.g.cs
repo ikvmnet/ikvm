@@ -81,6 +81,14 @@ namespace IKVM.CoreLib.Diagnostics
         public static DiagnosticEvent GenericJniInfo(string arg0, Exception? exception = null, DiagnosticLocation location = default) => Diagnostic.GenericJniInfo.Event([arg0], exception, location);
 
         /// <summary>
+        /// The 'UnsupportedClassVersion' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Info: Skipping class "{arg0}". ({arg1})
+        /// </remarks>
+        public static DiagnosticEvent UnsupportedClassVersion(string arg0, string arg1, Exception? exception = null, DiagnosticLocation location = default) => Diagnostic.UnsupportedClassVersion.Event([arg0, arg1], exception, location);
+
+        /// <summary>
         /// The 'ClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
@@ -423,6 +431,22 @@ namespace IKVM.CoreLib.Diagnostics
 /// Warning: {arg0}
         /// </remarks>
         public static DiagnosticEvent GenericJniWarning(string arg0, Exception? exception = null, DiagnosticLocation location = default) => Diagnostic.GenericJniWarning.Event([arg0], exception, location);
+
+        /// <summary>
+        /// The 'UnsupportedClassVersionSkipped' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Warning: {arg0} class(es) in "{arg1}" target {arg2} and were skipped; IKVM supports class files up to version 52.0 (Java 8). (first skipped class: "{arg3}")
+        /// </remarks>
+        public static DiagnosticEvent UnsupportedClassVersionSkipped(string arg0, string arg1, string arg2, string arg3, Exception? exception = null, DiagnosticLocation location = default) => Diagnostic.UnsupportedClassVersionSkipped.Event([arg0, arg1, arg2, arg3], exception, location);
+
+        /// <summary>
+        /// The 'NoClassesCompiled' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Warning: No classes were compiled from "{arg0}": all {arg1} class(es) failed to compile, so the output assembly contains no types from it. See the preceding warnings for the reasons.
+        /// </remarks>
+        public static DiagnosticEvent NoClassesCompiled(string arg0, string arg1, Exception? exception = null, DiagnosticLocation location = default) => Diagnostic.NoClassesCompiled.Event([arg0, arg1], exception, location);
 
         /// <summary>
         /// The 'UnableToCreateProxy' diagnostic.

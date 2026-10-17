@@ -1588,6 +1588,10 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 throw new global::java.lang.ClassFormatError("Incompatible magic value");
             }
+            catch (UnsupportedClassVersionException e)
+            {
+                throw new global::java.lang.UnsupportedClassVersionError(UnsupportedClassVersionError.FormatMessage(e.Version));
+            }
             catch (ByteCodeException e)
             {
                 throw new global::java.lang.ClassFormatError(e.Message);
