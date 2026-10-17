@@ -6,5 +6,9 @@
         <RootNamespace>project.lib</RootNamespace>
     </PropertyGroup>
 
+    <ItemGroup>
+        <AssemblyMetadata Include="ProjectLibMetadataKey" Value="ProjectLibMetadataValue" />
+    </ItemGroup>
+
     <Import Sdk="IKVM.NET.Sdk" Version="$(PackageVersion)" Project="Sdk.targets" />
 </Project>
