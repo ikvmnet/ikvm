@@ -1,0 +1,11 @@
+<Project>
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+
+    <!-- Optionally take control of the versions of the packages the SDK references implicitly. -->
+    <ItemGroup Condition=" '$(IkvmCentralPackageVersions)' == 'true' ">
+        <PackageVersion Include="IKVM" Version="$(PackageVersion)" />
+        <PackageVersion Include="IKVM.MSBuild" Version="$(PackageVersion)" />
+    </ItemGroup>
+</Project>
