@@ -63,3 +63,13 @@ jobs:
         "`n### E2E: patched jvm.dll (LOAD_WITH_ALTERED_SEARCH_PATH)`n" | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
         & "$env:RUNNER_TEMP\e2e-patched\e2e.exe" "$r\H" 2>&1 | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
         Pop-Location
+    - name: E2E in-process PATH change (released and patched jvm.dll)
+      run: |
+        $r = "$env:RUNNER_TEMP\dlltest"
+        $env:PATH = "$env:SystemRoot\system32;$env:SystemRoot;$env:SystemRoot\System32\WindowsPowerShell\v1.0;$env:ProgramFiles\dotnet"
+        Push-Location "$r\W"
+        foreach ($v in 'e2e','e2e-patched') {
+          "`n### E2E in-process PATH: $v`n" | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
+          & "$env:RUNNER_TEMP\$v\e2e.exe" "$r\H" "$r\X" "$r\Y" 2>&1 | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
+        }
+        Pop-Location

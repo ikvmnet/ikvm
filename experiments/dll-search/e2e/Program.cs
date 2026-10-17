@@ -18,6 +18,14 @@ static class Program
         Console.WriteLine("|---|---|");
         Console.WriteLine($"| host exe | {Environment.ProcessPath} |");
         Console.WriteLine($"| java.home | {java.lang.System.getProperty("java.home")} |");
+        if (args.Length > 2)
+        {
+            // dependency dir is added to PATH only after startup, from inside the process
+            Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";" + args[2]);
+            Try("in-process PATH: System.load(X\\xa.dll)", () => java.lang.System.load(Path.Combine(args[1], "xa.dll")));
+            Try("in-process PATH: System.load(X\\xa2.dll)", () => java.lang.System.load(Path.Combine(args[1], "xa2.dll")));
+            return;
+        }
         Try("System.loadLibrary(\"xa\")  xa(X on PATH) -> yb(Y on PATH)", () => java.lang.System.loadLibrary("xa"));
         Try("System.loadLibrary(\"xa2\") xa2(X) -> xm(X) -> yb(Y on PATH)", () => java.lang.System.loadLibrary("xa2"));
         Try("System.load(H\\hp.dll)  hp -> hq -> hr, all in H", () => java.lang.System.load(Path.Combine(hdir, "hp.dll")));
