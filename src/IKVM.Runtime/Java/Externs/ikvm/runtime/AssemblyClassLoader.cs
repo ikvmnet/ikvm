@@ -24,7 +24,7 @@
 using System;
 using System.Reflection;
 
-using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Exceptions;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 
@@ -83,10 +83,10 @@ namespace IKVM.Java.Externs.ikvm.runtime
                 JVM.Context.Diagnostics.GenericClassLoadingInfo($"Failed to load class \"{name}\" from {_this}: {x.Message}");
                 throw x.InnerException;
             }
-            catch (RetargetableJavaException x)
+            catch (TranslatableJavaException e)
             {
-                JVM.Context.Diagnostics.GenericClassLoadingInfo($"Failed to load class \"{name}\" from {_this}: {x.Message}");
-                throw x.ToJava();
+                JVM.Context.Diagnostics.GenericClassLoadingInfo($"Failed to load class \"{name}\" from {_this}: {e.Message}");
+                throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
             }
 #endif
         }

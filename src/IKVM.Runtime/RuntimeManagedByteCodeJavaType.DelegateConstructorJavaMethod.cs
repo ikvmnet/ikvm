@@ -22,6 +22,8 @@
   
 */
 
+using IKVM.CoreLib.Runtime;
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -51,7 +53,7 @@ namespace IKVM.Runtime
             /// <param name="iface"></param>
             /// <param name="mods"></param>
             DelegateConstructorJavaMethod(RuntimeJavaType tw, RuntimeJavaType iface, ExModifiers mods) :
-               base(tw, StringConstants.INIT, "(" + iface.SigName + ")V", null, tw.Context.PrimitiveJavaTypeFactory.VOID, new RuntimeJavaType[] { iface }, mods.Modifiers, mods.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None)
+               base(tw, StringConstants.INIT, "(" + iface.SignatureName + ")V", null, tw.Context.PrimitiveJavaTypeFactory.VOID, [iface], mods.Modifiers, mods.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None)
             {
 
             }

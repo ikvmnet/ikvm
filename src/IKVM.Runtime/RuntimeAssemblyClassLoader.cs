@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -29,14 +30,16 @@ using System.Threading;
 using System.Runtime.Serialization;
 using System.Runtime.CompilerServices;
 
-using IKVM.CoreLib.Diagnostics;
 using IKVM.Attributes;
 using IKVM.Runtime.Syntax;
+using IKVM.CoreLib.Runtime;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 
 using Type = IKVM.Reflection.Type;
+using IKVM.CoreLib.Diagnostics;
+
 #else
 using System.Reflection;
 

@@ -24,6 +24,8 @@
 
 using System;
 
+using IKVM.CoreLib.Linking;
+
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -34,24 +36,22 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
-
 namespace IKVM.Runtime
 {
 
     static class AtomicReferenceFieldUpdaterEmitter
     {
 
-        internal static bool Emit(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaType wrapper, CodeEmitter ilgen, ClassFile classFile, int i, ClassFile.Method.Instruction[] code, InstructionFlags[] flags)
+        internal static bool Emit(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaType wrapper, CodeEmitter ilgen, ClassFile classFile, int i, Instruction[] code, InstructionFlags[] flags)
         {
             if (i >= 3
                 && (flags[i - 0] & InstructionFlags.BranchTarget) == 0
                 && (flags[i - 1] & InstructionFlags.BranchTarget) == 0
                 && (flags[i - 2] & InstructionFlags.BranchTarget) == 0
                 && (flags[i - 3] & InstructionFlags.BranchTarget) == 0
-                && code[i - 1].NormalizedOpCode == NormalizedByteCode.__ldc_nothrow
-                && code[i - 2].NormalizedOpCode == NormalizedByteCode.__ldc
-                && code[i - 3].NormalizedOpCode == NormalizedByteCode.__ldc)
+                && code[i - 1].NormalizedOpCode == NormalizedOpCode.LdcNothrow
+                && code[i - 2].NormalizedOpCode == NormalizedOpCode.Ldc
+                && code[i - 3].NormalizedOpCode == NormalizedOpCode.Ldc)
             {
                 // we now have a structural match, now we need to make sure that the argument values are what we expect
                 RuntimeJavaType tclass = classFile.GetConstantPoolClassType(code[i - 3].Arg1);
@@ -59,7 +59,7 @@ namespace IKVM.Runtime
                 string fieldName = classFile.GetConstantPoolConstantString(code[i - 1].Arg1);
                 if (tclass == wrapper && !vclass.IsUnloadable && !vclass.IsPrimitive && !vclass.IsNonPrimitiveValueType)
                 {
-                    RuntimeJavaField field = wrapper.GetFieldWrapper(fieldName, vclass.SigName);
+                    RuntimeJavaField field = wrapper.GetFieldWrapper(fieldName, vclass.SignatureName);
                     if (field != null && !field.IsStatic && field.IsVolatile && field.DeclaringType == wrapper && field.FieldTypeWrapper == vclass)
                     {
                         // everything matches up, now call the actual emitter

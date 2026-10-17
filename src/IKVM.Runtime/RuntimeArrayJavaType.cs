@@ -87,7 +87,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override string SigName
+        internal override string SignatureName
         {
             get
             {
@@ -186,11 +186,11 @@ namespace IKVM.Runtime
             // (in particular instantiations of generic types from mscorlib that
             // have ReflectionOnly type parameters).
             for (int i = 0; i < dims; i++)
-            {
                 type = type.MakeArrayType();
-            }
+
             return type;
         }
+
     }
 
 }

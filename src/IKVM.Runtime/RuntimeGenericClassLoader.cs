@@ -24,6 +24,8 @@
 using System;
 using System.Text;
 
+using IKVM.CoreLib.Runtime;
+
 namespace IKVM.Runtime
 {
 

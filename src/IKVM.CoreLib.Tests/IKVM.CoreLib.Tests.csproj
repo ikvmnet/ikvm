@@ -22,6 +22,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <JavaBuild Include="Linking\*.java" TargetDir="Linking\classes\" TargetJar="Linking\classes.jar" Release="8" />
+    </ItemGroup>
+
+    <ItemGroup>
         <JavaBuild Include="res\Modules\automatic\alib\**\*.java" TargetDir="res\Modules\automatic\alib\" TargetJar="res\Modules\automatic\jars\alib.jar" />
         <JavaBuild Include="res\Modules\automatic\m\**\*.java" ModulePath="res\Modules\automatic\jars" TargetDir="res\Modules\automatic\m\" TargetJar="res\Modules\automatic\jars\m.jar" />
         <JavaBuild Include="res\Modules\m3\**\*.java" ModulePath="res\Modules" TargetDir="res\Modules\m3\" TargetJar="res\Modules\jars\m3.jar" />
@@ -62,6 +66,8 @@
         <PropertyGroup>
             <JavacExe>$(JdkPath)\bin\javac</JavacExe>
             <JarExe>$(JdkPath)\bin\jar</JarExe>
+            <_JavaBuildRelease>%(JavaBuild.Release)</_JavaBuildRelease>
+            <_JavaBuildRelease Condition=" '$(_JavaBuildRelease)' == '' ">9</_JavaBuildRelease>
             <_JavaBuildTargetDir>%(JavaBuild.TargetDir)</_JavaBuildTargetDir>
             <_JavaBuildTargetDirTmp>$(IntermediateOutputPath)java\$(_JavaBuildTargetDir)</_JavaBuildTargetDirTmp>
             <_JavaBuildTargetJar>%(JavaBuild.TargetJar)</_JavaBuildTargetJar>
@@ -71,9 +77,9 @@
 
         <RemoveDir Directories="$(_JavaBuildTargetDirTmp)" />
         <MakeDir Directories="$(_JavaBuildTargetDirTmp)" />
-        <Exec Command="&quot;$(JavacExe)&quot; --release 9 -p $(_JavaBuildModulePathTmp) -d $(_JavaBuildTargetDirTmp) @(JavaBuild, ' ')" Condition=" '%(JavaBuild.ModulePath)' != '' " />
-        <Exec Command="&quot;$(JavacExe)&quot; --release 9 -d $(_JavaBuildTargetDirTmp) @(JavaBuild, ' ')" Condition=" '%(JavaBuild.ModulePath)' == '' " />
-        <Exec Command="&quot;$(JarExe)&quot; -cf $(_JavaBuildTargetJarTmp) -C $(_JavaBuildTargetDirTmp) ." />
+        <Exec Command="&quot;$(JavacExe)&quot; --release $(_JavaBuildRelease) -p $(_JavaBuildModulePathTmp) -d $(_JavaBuildTargetDirTmp) @(JavaBuild, ' ')" Condition=" '%(JavaBuild.ModulePath)' != '' " />
+        <Exec Command="&quot;$(JavacExe)&quot; --release $(_JavaBuildRelease) -d $(_JavaBuildTargetDirTmp) @(JavaBuild, ' ')" Condition=" '%(JavaBuild.ModulePath)' == '' " />
+        <Exec Command="&quot;$(JarExe)&quot; -cf $(_JavaBuildTargetJarTmp) -C $(_JavaBuildTargetDirTmp) ." Condition=" '%(JavaBuild.TargetJar)' != '' " />
         <ItemGroup>
             <FileWrites Include="$(_JavaBuildTargetDirTmp)\**\*.class" />
             <FileWrites Include="$(_JavaBuildTargetJarTmp)" />

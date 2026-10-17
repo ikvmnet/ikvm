@@ -23,6 +23,7 @@
 */
 using System;
 
+using IKVM.CoreLib.Runtime;
 using IKVM.Attributes;
 
 #if IMPORTER
