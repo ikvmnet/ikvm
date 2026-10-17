@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Diagnostics;
 using System.Reflection;
 
 using IKVM.Runtime;
@@ -56,6 +57,37 @@ namespace IKVM.Java.Externs.ikvm.@internal
             throw new NotImplementedException();
 #else
             return JVM.Context.AssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
+#endif
+        }
+
+        /// <summary>
+        /// Walks the current stack and returns the first method that is visible to Java, skipping the frames of
+        /// <see cref="global::ikvm.@internal.CallerID"/> itself and frames hidden from stack walks, which includes
+        /// frames without a declaring type. Returns <c>null</c> if no such frame exists.
+        /// </summary>
+        /// <returns></returns>
+        public static MethodBase GetCallerMethod()
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            var trace = new StackTrace(1, false);
+            for (int i = 0; i < trace.FrameCount; i++)
+            {
+                var method = trace.GetFrame(i)?.GetMethod();
+                if (method == null)
+                    continue;
+
+                if (method.DeclaringType == typeof(global::ikvm.@internal.CallerID))
+                    continue;
+
+                if (IKVM.Java.Externs.sun.reflect.Reflection.IsHideFromStackWalk(method))
+                    continue;
+
+                return method;
+            }
+
+            return null;
 #endif
         }
 
