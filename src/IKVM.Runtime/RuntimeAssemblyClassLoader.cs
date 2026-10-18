@@ -423,7 +423,7 @@ namespace IKVM.Runtime
                     foreach (var jar in jarList)
                         urls.Add(MakeResourceURL(assembly, jar));
 
-                    Interlocked.CompareExchange(ref urlClassPath, new sun.misc.URLClassPath(urls.ToArray()), null);
+                    Interlocked.CompareExchange(ref urlClassPath, new sun.misc.URLClassPath(urls.ToArray(), ResourceURLStreamHandlerFactory.Instance, null), null);
                 }
 
                 return urlClassPath.findResources(name, true);
@@ -806,67 +806,16 @@ namespace IKVM.Runtime
             return null;
         }
 
-#if !IMPORTER && !EXPORTER && !FIRST_PASS
-
-        /// <summary>
-        /// Set while the current thread is searching resources for a dynamically loaded class.
-        /// </summary>
-        [ThreadStatic]
-        static bool findingDynamic;
-
-#endif
-
         RuntimeJavaType LoadDynamic(string name)
         {
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
-            // searching the resources can itself load classes: building the resource URLs looks up URL stream handlers,
-            // which with java.protocol.handler.pkgs set probes for classes such as "<pkg>.file.Handler" before the handler is cached
-            // such a nested lookup cannot be satisfied by a search that has not completed, and would otherwise recurse until the stack overflows
-            if (findingDynamic)
-                return null;
-
             var classFile = name.Replace('.', '/') + ".class";
-            var loader = (RuntimeAssemblyClassLoader)null;
-            var url = (java.net.URL)null;
-
-            findingDynamic = true;
-            try
-            {
-                foreach (var res in Context.ClassLoaderFactory.GetBootstrapClassLoader().FindDelegateResources(classFile))
-                {
-                    loader = res.Loader;
-                    url = res.URL;
-                    break;
-                }
-
-                if (url == null)
-                {
-                    foreach (var res in FindDelegateResources(classFile))
-                    {
-                        loader = res.Loader;
-                        url = res.URL;
-                        break;
-                    }
-                }
-
-                if (url == null)
-                {
-                    foreach (var u in FindResources(classFile))
-                    {
-                        loader = this;
-                        url = u;
-                        break;
-                    }
-                }
-            }
-            finally
-            {
-                findingDynamic = false;
-            }
-
-            // defining the class happens outside of the search, so that it can load its own dynamic dependencies
-            if (url != null)
-                return loader.DefineDynamic(name, url);
+            foreach (var res in Context.ClassLoaderFactory.GetBootstrapClassLoader().FindDelegateResources(classFile))
+                return res.Loader.DefineDynamic(name, res.URL);
+            foreach (var res in FindDelegateResources(classFile))
+                return res.Loader.DefineDynamic(name, res.URL);
+            foreach (var url in FindResources(classFile))
+                return DefineDynamic(name, url);
 #endif
             return null;
         }
@@ -933,9 +882,53 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return new java.io.File(Path.Combine(VfsTable.GetAssemblyResourcesPath(JVM.Vfs.Context, asm, JVM.Properties.HomePath), name)).toURI().toURL();
+            return MakeFileURL(Path.Combine(VfsTable.GetAssemblyResourcesPath(JVM.Vfs.Context, asm, JVM.Properties.HomePath), name));
 #endif
         }
+
+#if !FIRST_PASS
+
+        /// <summary>
+        /// Creates a 'file:' URL for the given path, equivalent to <c>new File(path).toURI().toURL()</c>, but bound to the built-in
+        /// 'file' handler instead of looking one up.
+        /// </summary>
+        /// <remarks>
+        /// Looking up a handler consults 'java.protocol.handler.pkgs', which probes the bootstrap class loader for classes such as
+        /// "&lt;pkg&gt;.file.Handler". On HotSpot the bootstrap class path is searched natively and never does this. Here the search
+        /// itself creates these URLs, so a lookup would re-enter the search before any handler is cached.
+        /// </remarks>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        static java.net.URL MakeFileURL(string path)
+        {
+            var spec = new java.io.File(path).toURI().toString();
+
+            // specifying a handler requires NetPermission("specifyStreamHandler"), which the caller of the search may not have
+            return (java.net.URL)java.security.AccessController.doPrivileged(new global::IKVM.Runtime.Util.Java.Security.FuncPrivilegedAction<java.net.URL>(() => new java.net.URL(null, spec, ResourceURLStreamHandlerFactory.Instance.createURLStreamHandler("file"))));
+        }
+
+        /// <summary>
+        /// Provides the built-in handlers for the URLs that make up assembly resources, the same way <c>sun.misc.Launcher</c> does for
+        /// the bootstrap class path.
+        /// </summary>
+        sealed class ResourceURLStreamHandlerFactory : java.net.URLStreamHandlerFactory
+        {
+
+            internal static readonly ResourceURLStreamHandlerFactory Instance = new ResourceURLStreamHandlerFactory();
+
+            public java.net.URLStreamHandler createURLStreamHandler(string protocol)
+            {
+                return protocol switch
+                {
+                    "file" => new sun.net.www.protocol.file.Handler(),
+                    "jar" => new sun.net.www.protocol.jar.Handler(),
+                    _ => null,
+                };
+            }
+
+        }
+
+#endif
 
         internal IEnumerable<java.net.URL> FindResources(string unmangledName)
         {
@@ -1020,7 +1013,7 @@ namespace IKVM.Runtime
             {
                 var tw = FindLoadedClass(unmangledName.Substring(0, unmangledName.Length - 6).Replace('/', '.'));
                 if (tw != null && tw.ClassLoader == this && !tw.IsArray && !tw.IsDynamic)
-                    yield return new java.io.File(Path.Combine(VfsTable.GetAssemblyClassesPath(JVM.Vfs.Context, assemblyLoader.Assembly, JVM.Properties.HomePath), unmangledName)).toURI().toURL();
+                    yield return MakeFileURL(Path.Combine(VfsTable.GetAssemblyClassesPath(JVM.Vfs.Context, assemblyLoader.Assembly, JVM.Properties.HomePath), unmangledName));
             }
 #endif
         }

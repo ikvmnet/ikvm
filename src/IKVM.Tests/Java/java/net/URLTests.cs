@@ -27,7 +27,8 @@ namespace IKVM.Tests.Java.java.net
 
                 public static void main(String[] args) throws Exception {
                     System.out.println("main");
-                    System.out.println(new java.net.URL(args[0]).openConnection().getClass().getName());
+                    for (String arg : args)
+                        System.out.println(new java.net.URL(arg).openConnection().getClass().getName());
                 }
 
             }
@@ -58,7 +59,8 @@ namespace IKVM.Tests.Java.java.net
             """;
 
         /// <summary>
-        /// Launches a new JVM with the given 'java.protocol.handler.pkgs' value, running a main class that opens a connection to an http URL.
+        /// Launches a new JVM with the given 'java.protocol.handler.pkgs' value, running a main class that opens a connection to an http
+        /// and a file URL and prints the connection types.
         /// </summary>
         /// <param name="pkgs"></param>
         /// <returns></returns>
@@ -94,7 +96,7 @@ namespace IKVM.Tests.Java.java.net
                 var o = new StringBuilder();
                 var e = new StringBuilder();
                 var r = await Cli.Wrap(exe)
-                    .WithArguments(new[] { $"-Djava.protocol.handler.pkgs={pkgs}", "-cp", jar, "ikvm.tests.handlerpkgs.Main", "http://www.site.com/" })
+                    .WithArguments(new[] { $"-Djava.protocol.handler.pkgs={pkgs}", "-cp", jar, "ikvm.tests.handlerpkgs.Main", "http://www.site.com/", new global::java.io.File(jar).toURI().toString() })
                     .WithStandardOutputPipe(PipeTarget.ToStringBuilder(o))
                     .WithStandardErrorPipe(PipeTarget.ToStringBuilder(e))
                     .WithValidation(CommandResultValidation.None)
@@ -115,6 +117,7 @@ namespace IKVM.Tests.Java.java.net
             r.ExitCode.Should().Be(0, r.StdErr);
             r.StdOut.Should().Contain("main");
             r.StdOut.Should().Contain("sun.net.www.protocol.http.HttpURLConnection");
+            r.StdOut.Should().Contain("sun.net.www.protocol.file.FileURLConnection");
         }
 
         [TestMethod]
@@ -124,6 +127,7 @@ namespace IKVM.Tests.Java.java.net
             r.ExitCode.Should().Be(0, r.StdErr);
             r.StdOut.Should().Contain("main");
             r.StdOut.Should().Contain("ikvm.tests.handlerpkgs.http.Handler$Connection");
+            r.StdOut.Should().Contain("sun.net.www.protocol.file.FileURLConnection");
         }
 
         [TestMethod]
