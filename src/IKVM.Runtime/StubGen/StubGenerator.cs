@@ -955,7 +955,7 @@ namespace IKVM.Runtime.StubGen
 
                 if (((byte)v[0]) == IKVM.Attributes.AnnotationDefaultAttribute.TAG_CLASS)
                 {
-                    encoder.Class(builder.Constants.GetOrAddUtf8(DecodeTypeName((string)v[1])));
+                    encoder.Class(builder.Constants.GetOrAddUtf8((string)v[1]));
                     return;
                 }
 
@@ -1033,44 +1033,34 @@ namespace IKVM.Runtime.StubGen
             throw new InvalidOperationException();
         }
 
-#endif
-
         static string EncodeTypeName(RuntimeJavaType tw)
         {
             return tw.SigName.Replace('.', '/');
         }
 
-        /// <summary>
-        /// Decodes a type name stored by the importer in our internal annotation format into a Java type descriptor.
-        /// The importer stores class and enum values as "L" + the assembly qualified .NET name + ";", with '.' replaced
-        /// by '/', which is not a valid descriptor, so we resolve the .NET type back to its Java type.
-        /// </summary>
-        /// <param name="typeName"></param>
-        /// <returns></returns>
-        string DecodeTypeName(string typeName)
+        static string DecodeTypeName(string typeName)
         {
-#if !FIRST_PASS
+#if !FIRST_PASS && !EXPORTER
             int index = typeName.IndexOf(',');
-            if (index > 1 && typeName.Length > index + 1 && typeName[0] == 'L' && typeName[typeName.Length - 1] == ';')
+            if (index > 0)
             {
-                var name = typeName.Substring(1, index - 1).Replace('/', '.');
-                var assemblyName = typeName.Substring(index + 1, typeName.Length - index - 2).Replace('/', '.').Trim();
-
+                // HACK if we have an assembly qualified type name we have to resolve it to a Java class name
+                // (at the very least we should use the right class loader here)
                 try
                 {
-                    var type = context.Resolver.ResolveAssembly(assemblyName)?.GetType(name)?.AsReflection();
-                    if (type != null && context.ClassLoaderFactory.GetJavaTypeFromType(type) is RuntimeJavaType tw)
-                        return EncodeTypeName(tw);
+                    typeName = "L" + java.lang.Class.forName(typeName.Substring(1, typeName.Length - 2).Replace('/', '.')).getName().Replace('.', '/') + ";";
                 }
                 catch
                 {
-                    // leave the name as is if it cannot be resolved
+
                 }
             }
 #endif
 
             return typeName;
         }
+
+#endif
 
         object[] UnpackArray(IList<CustomAttributeTypedArgument> list)
         {
@@ -1379,14 +1369,14 @@ namespace IKVM.Runtime.StubGen
                 // tag of CLASS indicates CLASS
                 if (type == IKVM.Attributes.AnnotationDefaultAttribute.TAG_CLASS)
                 {
-                    encoder.Class(builder.Constants.GetOrAddUtf8(DecodeTypeName((string)data[1].Value)));
+                    encoder.Class(builder.Constants.GetOrAddUtf8((string)data[1].Value));
                     return;
                 }
 
                 // tag of ENUM indicates ENUM
                 if (type == IKVM.Attributes.AnnotationDefaultAttribute.TAG_ENUM)
                 {
-                    encoder.Enum(builder.Constants.GetOrAddUtf8(DecodeTypeName((string)data[1].Value)), builder.Constants.GetOrAddUtf8((string)data[2].Value));
+                    encoder.Enum(builder.Constants.GetOrAddUtf8((string)data[1].Value), builder.Constants.GetOrAddUtf8((string)data[2].Value));
                     return;
                 }
 
@@ -1395,7 +1385,7 @@ namespace IKVM.Runtime.StubGen
                 {
                     encoder.Annotation(e =>
                     {
-                        e.Annotation(builder.Constants.GetOrAddUtf8(DecodeTypeName((string)data[1].Value)), e2 =>
+                        e.Annotation(builder.Constants.GetOrAddUtf8((string)data[1].Value), e2 =>
                         {
                             for (int i = 2; i < data.Count; i += 2)
                                 e2.Element(builder.Constants.GetOrAddUtf8((string)data[i].Value), e3 => EncodeElementValue(builder, ref e3, data[i + 1]));
