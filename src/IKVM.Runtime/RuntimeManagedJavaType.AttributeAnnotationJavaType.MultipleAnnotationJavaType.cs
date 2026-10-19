@@ -60,7 +60,7 @@ namespace IKVM.Runtime
                 protected override void LazyPublishMembers()
                 {
                     RuntimeJavaType tw = declaringType.MakeArrayType(1);
-                    SetMethods(new RuntimeJavaMethod[] { new DynamicOnlyJavaMethod(this, "value", "()" + tw.SigName, tw, Array.Empty<RuntimeJavaType>(), MemberFlags.None) });
+                    SetMethods(new RuntimeJavaMethod[] { new DynamicOnlyJavaMethod(this, "value", "()" + tw.SignatureName, tw, Array.Empty<RuntimeJavaType>(), MemberFlags.None) });
                     SetFields(Array.Empty<RuntimeJavaField>());
                 }
 

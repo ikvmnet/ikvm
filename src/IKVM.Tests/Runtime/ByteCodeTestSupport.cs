@@ -7,7 +7,12 @@ using IKVM.ByteCode.Buffers;
 using IKVM.ByteCode.Encoding;
 using IKVM.Runtime;
 
-using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
+using IKVM.CoreLib.Linking;
+using IKVM.CoreLib.Runtime;
+
+using ClassFile = IKVM.CoreLib.Linking.ClassFile<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+using Instruction = IKVM.CoreLib.Linking.Instruction<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+using Method = IKVM.CoreLib.Linking.Method<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
 
 namespace IKVM.Tests.Runtime
 {
@@ -112,12 +117,12 @@ namespace IKVM.Tests.Runtime
         {
             var javaClass = new ByteArrayClassLoader().Define(name, bytes);
             var type = RuntimeJavaType.FromClass(javaClass);
-            var classFile = new IKVM.Runtime.ClassFile(JVM.Context, JVM.Context.Diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(bytes), name, type.ClassLoader.ClassFileParseOptions, null);
+            var classFile = new ClassFile(JVM.Context, IKVM.ByteCode.Decoding.ClassFile.Read(bytes), name, type.ClassLoader.ClassFileParseOptions, []);
             classFile.Link(type, LoadMode.Link);
             return new LoadedClass(javaClass, type, classFile);
         }
 
-        LoadedClass(java.lang.Class javaClass, RuntimeJavaType type, IKVM.Runtime.ClassFile classFile)
+        LoadedClass(java.lang.Class javaClass, RuntimeJavaType type, ClassFile classFile)
         {
             JavaClass = javaClass;
             Type = type;
@@ -128,7 +133,7 @@ namespace IKVM.Tests.Runtime
 
         public RuntimeJavaType Type { get; }
 
-        public IKVM.Runtime.ClassFile ClassFile { get; }
+        public ClassFile ClassFile { get; }
 
         /// <summary>
         /// Gets the compiled .NET type. This compiles every method of the class.
@@ -155,7 +160,7 @@ namespace IKVM.Tests.Runtime
     sealed class AnalyzedMethod
     {
 
-        public AnalyzedMethod(LoadedClass clazz, IKVM.Runtime.ClassFile.Method method, RuntimeJavaMethod javaMethod)
+        public AnalyzedMethod(LoadedClass clazz, Method method, RuntimeJavaMethod javaMethod)
         {
             Class = clazz;
             Method = method;
@@ -164,11 +169,11 @@ namespace IKVM.Tests.Runtime
 
         public LoadedClass Class { get; }
 
-        public IKVM.Runtime.ClassFile.Method Method { get; }
+        public Method Method { get; }
 
         public RuntimeJavaMethod JavaMethod { get; }
 
-        public IKVM.Runtime.ClassFile.Method.Instruction[] Instructions => Method.Instructions;
+        public Instruction[] Instructions => Method.Instructions;
 
         public CodeInfo CodeInfo { get; private set; }
 
@@ -213,7 +218,7 @@ namespace IKVM.Tests.Runtime
         {
             var l = new (int, int, int, int)[Exceptions.Length];
             for (int i = 0; i < l.Length; i++)
-                l[i] = (Exceptions[i].startIndex, Exceptions[i].endIndex, Exceptions[i].handlerIndex, Exceptions[i].ordinal);
+                l[i] = (Exceptions[i].StartIndex, Exceptions[i].EndIndex, Exceptions[i].HandlerIndex, Exceptions[i].Ordinal);
 
             return l;
         }

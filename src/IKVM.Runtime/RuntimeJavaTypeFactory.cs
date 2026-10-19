@@ -32,7 +32,6 @@ using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
 using ProtectionDomain = System.Object;
 #else
-using System.Reflection;
 using System.Reflection.Emit;
 
 using ProtectionDomain = java.security.ProtectionDomain;

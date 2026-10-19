@@ -52,7 +52,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="declaringType"></param>
             internal CloneJavaMethod(RuntimeManagedJavaType declaringType) :
-                base(declaringType, "clone", "()Ljava.lang.Object;", null, declaringType.Context.JavaBase.TypeOfJavaLangObject, Array.Empty<RuntimeJavaType>(), Modifiers.Protected | Modifiers.Final, MemberFlags.None)
+                base(declaringType, "clone", "()Ljava.lang.Object;", null, declaringType.Context.JavaBase.TypeOfJavaLangObject, [], Modifiers.Protected | Modifiers.Final, MemberFlags.None)
             {
 
             }

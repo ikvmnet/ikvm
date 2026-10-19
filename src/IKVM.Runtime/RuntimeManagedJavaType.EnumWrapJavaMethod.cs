@@ -47,7 +47,7 @@ namespace IKVM.Runtime
             /// <param name="declaringType"></param>
             /// <param name="fieldType"></param>
             internal EnumWrapJavaMethod(RuntimeManagedJavaType declaringType, RuntimeJavaType fieldType) :
-                base(declaringType, "wrap", "(" + fieldType.SigName + ")" + declaringType.SigName, null, declaringType, new RuntimeJavaType[] { fieldType }, Modifiers.Static | Modifiers.Public, MemberFlags.None)
+                base(declaringType, "wrap", "(" + fieldType.SignatureName + ")" + declaringType.SignatureName, null, declaringType, [fieldType], Modifiers.Static | Modifiers.Public, MemberFlags.None)
             {
 
             }

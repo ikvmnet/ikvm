@@ -15,9 +15,9 @@ namespace IKVM.Runtime.Accessors
     internal abstract class FieldAccessor
     {
 
-        readonly Type type;
-        readonly string name;
-        FieldInfo field;
+        readonly Type _type;
+        readonly string _name;
+        FieldInfo _field;
 
         /// <summary>
         /// Initializes a new instance.
@@ -27,24 +27,24 @@ namespace IKVM.Runtime.Accessors
         /// <exception cref="ArgumentNullException"></exception>
         protected FieldAccessor(Type type, string name)
         {
-            this.type = type ?? throw new ArgumentNullException(nameof(type));
-            this.name = name ?? throw new ArgumentNullException(nameof(name));
+            this._type = type ?? throw new ArgumentNullException(nameof(type));
+            this._name = name ?? throw new ArgumentNullException(nameof(name));
         }
 
         /// <summary>
         /// Gets the type which contains the field being accessed.
         /// </summary>
-        protected Type Type => type;
+        protected Type Type => _type;
 
         /// <summary>
         /// Gets the name of the field being accessed.
         /// </summary>
-        protected string Name => name;
+        protected string Name => _name;
 
         /// <summary>
         /// Gets the field being accessed.
         /// </summary>
-        protected FieldInfo Field => AccessorUtil.LazyGet(ref field, () => type.GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)) ?? throw new InvalidOperationException();
+        protected FieldInfo Field => AccessorUtil.LazyGet(ref _field, () => _type.GetField(_name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)) ?? throw new InvalidOperationException();
 
     }
 
@@ -67,8 +67,8 @@ namespace IKVM.Runtime.Accessors
             return AccessorUtil.LazyGet(ref location, () => new FieldAccessor<TField>(type, name));
         }
 
-        Func<TField> getter;
-        Action<TField> setter;
+        Func<TField> _getter;
+        Action<TField> _setter;
 
         /// <summary>
         /// Initializes a new instance.
@@ -84,12 +84,12 @@ namespace IKVM.Runtime.Accessors
         /// <summary>
         /// Gets the getter for the field.
         /// </summary>
-        Func<TField> Getter => AccessorUtil.LazyGet(ref getter, MakeGetter);
+        Func<TField> Getter => AccessorUtil.LazyGet(ref _getter, MakeGetter);
 
         /// <summary>
         /// Gets the setter for the field.
         /// </summary>
-        Action<TField> Setter => AccessorUtil.LazyGet(ref setter, MakeSetter);
+        Action<TField> Setter => AccessorUtil.LazyGet(ref _setter, MakeSetter);
 
         /// <summary>
         /// Creates a new getter.
@@ -185,10 +185,10 @@ namespace IKVM.Runtime.Accessors
             return AccessorUtil.LazyGet(ref location, () => new FieldAccessor<TObject, TField>(type, name));
         }
 
-        GetterDelegate getter;
-        SetterDelegate setter;
-        ExchangeDelegate exchange;
-        CompareExchangeDelegate compareExchange;
+        GetterDelegate _getter;
+        SetterDelegate _setter;
+        ExchangeDelegate _exchange;
+        CompareExchangeDelegate _compareExchange;
 
         /// <summary>
         /// Initializes a new instance.
@@ -204,22 +204,22 @@ namespace IKVM.Runtime.Accessors
         /// <summary>
         /// Gets the getter for the field.
         /// </summary>
-        GetterDelegate Getter => AccessorUtil.LazyGet(ref getter, MakeGetter);
+        GetterDelegate Getter => AccessorUtil.LazyGet(ref _getter, MakeGetter);
 
         /// <summary>
         /// Gets the setter for the field.
         /// </summary>
-        SetterDelegate Setter => AccessorUtil.LazyGet(ref setter, MakeSetter);
+        SetterDelegate Setter => AccessorUtil.LazyGet(ref _setter, MakeSetter);
 
         /// <summary>
         /// Gets the exchange operation for the field.
         /// </summary>
-        ExchangeDelegate Exchange => AccessorUtil.LazyGet(ref exchange, MakeExchange);
+        ExchangeDelegate Exchange => AccessorUtil.LazyGet(ref _exchange, MakeExchange);
 
         /// <summary>
         /// Gets the compare and exchange operation for the field.
         /// </summary>
-        CompareExchangeDelegate CompareExchange => AccessorUtil.LazyGet(ref compareExchange, MakeCompareExchange);
+        CompareExchangeDelegate CompareExchange => AccessorUtil.LazyGet(ref _compareExchange, MakeCompareExchange);
 
         /// <summary>
         /// Creates a new getter.
