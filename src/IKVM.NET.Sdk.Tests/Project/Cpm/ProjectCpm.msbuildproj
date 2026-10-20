@@ -1,0 +1,10 @@
+﻿<Project>
+    <Import Sdk="IKVM.NET.Sdk" Version="$(PackageVersion)" Project="Sdk.props" />
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <RootNamespace>project.cpm</RootNamespace>
+    </PropertyGroup>
+
+    <Import Sdk="IKVM.NET.Sdk" Version="$(PackageVersion)" Project="Sdk.targets" />
+</Project>

@@ -23,14 +23,32 @@
     <Import Project="$(MSBuildThisFileDirectory)IKVM.NET.Sdk.Java.targets" />
 
     <ItemGroup Condition=" '$(DisableImplicitIkvmPackageReference)' != 'true' ">
-        <PackageReference Include="IKVM" Version="$(IkvmVersion)" IsImplicitlyDefined="true" />
-        <PackageReference Include="IKVM.MSBuild" Version="$(IkvmVersion)" IsImplicitlyDefined="true" />
+        <_IkvmImplicitPackageReference Include="IKVM" Version="$(IkvmVersion)" />
+        <_IkvmImplicitPackageReference Include="IKVM.MSBuild" Version="$(IkvmVersion)" />
     </ItemGroup>
 
     <!-- Inline tasks require some packages present. -->
     <ItemGroup Condition=" '$(UseIkvmTasks)' == 'false' ">
-        <PackageReference Include="System.Collections.Immutable" Version="8.0.0" PrivateAssets="all" GeneratePathProperty="true" IsImplicitlyDefined="true" />
-        <PackageReference Include="System.Reflection.Metadata" Version="8.0.1" PrivateAssets="all" GeneratePathProperty="true" IsImplicitlyDefined="true" />
+        <_IkvmImplicitPackageReference Include="System.Collections.Immutable" Version="8.0.0" PrivateAssets="all" GeneratePathProperty="true" />
+        <_IkvmImplicitPackageReference Include="System.Reflection.Metadata" Version="8.0.1" PrivateAssets="all" GeneratePathProperty="true" />
+    </ItemGroup>
+
+    <!--
+    Under Central Package Management, NuGet rejects a PackageVersion item for an implicitly defined package (NU1009). If
+    the user has declared a PackageVersion for one of our implicit packages, emit a regular unversioned reference so the
+    central version applies. Otherwise emit an implicitly defined reference carrying the SDK's version, which works both
+    with and without Central Package Management.
+    -->
+    <ItemGroup>
+        <_IkvmImplicitPackageReferenceWithoutCentralVersion Include="@(_IkvmImplicitPackageReference)" Exclude="@(PackageVersion)" Condition=" '$(ManagePackageVersionsCentrally)' == 'true' " />
+        <_IkvmImplicitPackageReferenceWithoutCentralVersion Include="@(_IkvmImplicitPackageReference)" Condition=" '$(ManagePackageVersionsCentrally)' != 'true' " />
+        <_IkvmImplicitPackageReferenceWithCentralVersion Include="@(_IkvmImplicitPackageReference)" Exclude="@(_IkvmImplicitPackageReferenceWithoutCentralVersion)" />
+        <_IkvmImplicitPackageReferenceWithCentralVersion Update="@(_IkvmImplicitPackageReferenceWithCentralVersion)" Version="" />
+        <PackageReference Include="@(_IkvmImplicitPackageReferenceWithoutCentralVersion)" IsImplicitlyDefined="true" />
+        <PackageReference Include="@(_IkvmImplicitPackageReferenceWithCentralVersion)" />
+        <_IkvmImplicitPackageReference Remove="@(_IkvmImplicitPackageReference)" />
+        <_IkvmImplicitPackageReferenceWithoutCentralVersion Remove="@(_IkvmImplicitPackageReferenceWithoutCentralVersion)" />
+        <_IkvmImplicitPackageReferenceWithCentralVersion Remove="@(_IkvmImplicitPackageReferenceWithCentralVersion)" />
     </ItemGroup>
 
 </Project>
