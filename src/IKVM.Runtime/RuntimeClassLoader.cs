@@ -26,9 +26,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Text;
 
-using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Linking;
+using IKVM.CoreLib.Runtime;
+using IKVM.Runtime.Accessors.Java.Lang;
 
 #if NETCOREAPP
 using System.Runtime.Loader;
@@ -39,12 +42,11 @@ using IKVM.Reflection;
 
 using Type = IKVM.Reflection.Type;
 using ProtectionDomain = System.Object;
+
 #else
 using System.Reflection;
 
 using ProtectionDomain = java.security.ProtectionDomain;
-using System.Collections.Immutable;
-using System.Text;
 #endif
 
 #if IMPORTER
@@ -248,6 +250,7 @@ namespace IKVM.Runtime
         }
 
 #if !EXPORTER
+
         internal RuntimeJavaType DefineClass(ClassFile f, ProtectionDomain protectionDomain)
         {
 #if !IMPORTER
@@ -713,7 +716,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         static RuntimeJavaType CreateArrayType(string name, RuntimeJavaType elementJavaType, int dimensions)
         {
-            Debug.Assert(new string('[', dimensions) + elementJavaType.SigName == name);
+            Debug.Assert(new string('[', dimensions) + elementJavaType.SignatureName == name);
             Debug.Assert(!elementJavaType.IsUnloadable && !elementJavaType.IsVerifierType && !elementJavaType.IsArray);
             Debug.Assert(dimensions >= 1);
 

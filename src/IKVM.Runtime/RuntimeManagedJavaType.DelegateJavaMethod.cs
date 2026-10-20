@@ -54,9 +54,9 @@ namespace IKVM.Runtime
             /// <param name="declaringType"></param>
             /// <param name="iface"></param>
             internal DelegateJavaMethod(RuntimeJavaType declaringType, DelegateInnerClassJavaType iface) :
-                base(declaringType, "<init>", "(" + iface.SigName + ")V", null, declaringType.Context.PrimitiveJavaTypeFactory.VOID, new RuntimeJavaType[] { iface }, Modifiers.Public, MemberFlags.Intrinsic)
+                base(declaringType, "<init>", "(" + iface.SignatureName + ")V", null, declaringType.Context.PrimitiveJavaTypeFactory.VOID, [iface], Modifiers.Public, MemberFlags.Intrinsic)
             {
-                this.delegateConstructor = declaringType.TypeAsTBD.GetConstructor(new Type[] { DeclaringType.Context.Types.Object, DeclaringType.Context.Types.IntPtr });
+                this.delegateConstructor = declaringType.TypeAsTBD.GetConstructor([DeclaringType.Context.Types.Object, DeclaringType.Context.Types.IntPtr]);
                 this.iface = iface;
             }
 

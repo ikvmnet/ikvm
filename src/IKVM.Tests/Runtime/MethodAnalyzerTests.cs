@@ -9,7 +9,12 @@ using IKVM.Runtime;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
+using IKVM.CoreLib.Linking;
+using IKVM.CoreLib.Runtime;
+
+using ClassFile = IKVM.CoreLib.Linking.ClassFile<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+using Instruction = IKVM.CoreLib.Linking.Instruction<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+using Method = IKVM.CoreLib.Linking.Method<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
 
 namespace IKVM.Tests.Runtime
 {
@@ -262,7 +267,7 @@ namespace IKVM.Tests.Runtime
             var m = Analyze(c, "m", "()V");
             RuntimeVerifierJavaType.IsFaultBlockException(m.CodeInfo.GetRawStackTypeWrapper(2, 0)).Should().BeTrue();
             m.Exceptions.Length.Should().Be(1);
-            m.Exceptions[0].isFinally.Should().BeFalse();
+            m.Exceptions[0].IsFinally.Should().BeFalse();
             m.Reachability(0, false).Should().Equal(R, R, R | B, U);
             m.Reachability(0, true).Should().Equal(R, R, U, U);
         }
@@ -696,8 +701,8 @@ namespace IKVM.Tests.Runtime
             });
 
             var m = Analyze(c, "m", "()V");
-            m.Instructions[0].NormalizedOpCode.Should().Be(NormalizedByteCode.__ldc_nothrow);
-            m.Instructions[2].NormalizedOpCode.Should().Be(NormalizedByteCode.__ldc);
+            m.Instructions[0].NormalizedOpCode.Should().Be(NormalizedOpCode.LdcNothrow);
+            m.Instructions[2].NormalizedOpCode.Should().Be(NormalizedOpCode.Ldc);
             m.CodeInfo.GetRawStackTypeWrapper(3, 0).Should().BeSameAs(JVM.Context.JavaBase.TypeOfJavaLangClass);
         }
 
@@ -788,7 +793,7 @@ namespace IKVM.Tests.Runtime
             });
 
             var m = Analyze(c, "m", "()V");
-            m.Instructions[0].NormalizedOpCode.Should().Be(NormalizedByteCode.__static_error);
+            m.Instructions[0].NormalizedOpCode.Should().Be(NormalizedOpCode.StaticError);
             m.Instructions[0].HardError.Should().Be(HardError.NoSuchMethodError);
             m.Errors[m.Instructions[0].HardErrorMessageId].Should().Contain("missing");
         }
@@ -805,7 +810,7 @@ namespace IKVM.Tests.Runtime
             });
 
             var m = Analyze(c, "m", "()V");
-            m.Instructions[0].NormalizedOpCode.Should().Be(NormalizedByteCode.__static_error);
+            m.Instructions[0].NormalizedOpCode.Should().Be(NormalizedOpCode.StaticError);
             m.Instructions[0].HardError.Should().Be(HardError.IncompatibleClassChangeError);
         }
 
@@ -821,7 +826,7 @@ namespace IKVM.Tests.Runtime
             });
 
             var m = Analyze(c, "m", "()V");
-            m.Instructions[0].NormalizedOpCode.Should().Be(NormalizedByteCode.__static_error);
+            m.Instructions[0].NormalizedOpCode.Should().Be(NormalizedOpCode.StaticError);
             m.Instructions[0].HardError.Should().Be(HardError.NoSuchFieldError);
             m.Errors[m.Instructions[0].HardErrorMessageId].Should().Contain("missing");
         }
@@ -839,12 +844,12 @@ namespace IKVM.Tests.Runtime
             var m = Analyze(c, "m", "()V");
             if (m.Class.Type.ClassLoader.DisableDynamicBinding)
             {
-                m.Instructions[0].NormalizedOpCode.Should().Be(NormalizedByteCode.__static_error);
+                m.Instructions[0].NormalizedOpCode.Should().Be(NormalizedOpCode.StaticError);
                 m.Instructions[0].HardError.Should().Be(HardError.NoClassDefFoundError);
             }
             else
             {
-                m.Instructions[0].NormalizedOpCode.Should().Be(NormalizedByteCode.__dynamic_invokestatic);
+                m.Instructions[0].NormalizedOpCode.Should().Be(NormalizedOpCode.DynamicInvokeStatic);
             }
         }
 
@@ -911,7 +916,7 @@ namespace IKVM.Tests.Runtime
 
         static int[] GotoFinallyIndexes(AnalyzedMethod m)
         {
-            return Enumerable.Range(0, m.Instructions.Length).Where(i => m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__goto_finally).ToArray();
+            return Enumerable.Range(0, m.Instructions.Length).Where(i => m.Instructions[i].NormalizedOpCode == NormalizedOpCode.GotoFinally).ToArray();
         }
 
         [TestMethod]
@@ -919,9 +924,9 @@ namespace IKVM.Tests.Runtime
         {
             var m = AnalyzeJavac("tryFinally", "()V");
             m.Exceptions.Length.Should().Be(1);
-            m.Exceptions[0].isFinally.Should().BeTrue();
+            m.Exceptions[0].IsFinally.Should().BeTrue();
 
-            var handler = m.Exceptions[0].handlerIndex;
+            var handler = m.Exceptions[0].HandlerIndex;
             RuntimeVerifierJavaType.IsFaultBlockException(m.CodeInfo.GetRawStackTypeWrapper(handler, 0)).Should().BeTrue();
 
             var gotos = GotoFinallyIndexes(m);
@@ -937,9 +942,9 @@ namespace IKVM.Tests.Runtime
         {
             var m = AnalyzeJavac("tryCatch", "()V");
             m.Exceptions.Length.Should().Be(1);
-            m.Exceptions[0].isFinally.Should().BeFalse();
-            m.Exceptions[0].catchType.IsNil.Should().BeFalse();
-            m.CodeInfo.GetRawStackTypeWrapper(m.Exceptions[0].handlerIndex, 0).Name.Should().Be("java.lang.RuntimeException");
+            m.Exceptions[0].IsFinally.Should().BeFalse();
+            m.Exceptions[0].CatchType.IsNil.Should().BeFalse();
+            m.CodeInfo.GetRawStackTypeWrapper(m.Exceptions[0].HandlerIndex, 0).Name.Should().Be("java.lang.RuntimeException");
             GotoFinallyIndexes(m).Should().BeEmpty();
         }
 
@@ -948,8 +953,8 @@ namespace IKVM.Tests.Runtime
         {
             var m = AnalyzeJavac("tryCatchFinally", "()V");
             var entries = Enumerable.Range(0, m.Exceptions.Length).Select(i => m.Exceptions[i]).ToArray();
-            entries.Where(i => i.catchType.IsNil == false).Should().ContainSingle().Which.isFinally.Should().BeFalse();
-            entries.Should().Contain(i => i.catchType.IsNil && i.isFinally);
+            entries.Where(i => i.CatchType.IsNil == false).Should().ContainSingle().Which.IsFinally.Should().BeFalse();
+            entries.Should().Contain(i => i.CatchType.IsNil && i.IsFinally);
             GotoFinallyIndexes(m).Should().NotBeEmpty();
         }
 
@@ -960,7 +965,7 @@ namespace IKVM.Tests.Runtime
             // neither block has the single exit that conversion requires
             var m = AnalyzeJavac("nestedFinally", "()V");
             m.ExceptionEntries().Should().Equal((0, 1, 9, 1), (0, 1, 3, 0), (1, 3, 9, 1), (3, 7, 9, 1));
-            Enumerable.Range(0, m.Exceptions.Length).Select(i => m.Exceptions[i]).Should().OnlyContain(i => i.catchType.IsNil && i.isFinally == false);
+            Enumerable.Range(0, m.Exceptions.Length).Select(i => m.Exceptions[i]).Should().OnlyContain(i => i.CatchType.IsNil && i.IsFinally == false);
             GotoFinallyIndexes(m).Should().BeEmpty();
         }
 
@@ -972,11 +977,11 @@ namespace IKVM.Tests.Runtime
             // javac protects the monitorexit in the handler with a second handler that covers itself
             m.Method.ExceptionTable.Length.Should().Be(2);
             m.Exceptions.Length.Should().Be(1);
-            m.Exceptions[0].isFinally.Should().BeTrue();
+            m.Exceptions[0].IsFinally.Should().BeTrue();
 
             var gotos = GotoFinallyIndexes(m);
             gotos.Should().HaveCount(1);
-            m.Instructions[gotos[0]].HandlerIndex.Should().Be(m.Exceptions[0].handlerIndex);
+            m.Instructions[gotos[0]].HandlerIndex.Should().Be(m.Exceptions[0].HandlerIndex);
         }
 
         [TestMethod]
@@ -984,13 +989,13 @@ namespace IKVM.Tests.Runtime
         {
             var m = AnalyzeJavac("loopFinally", "(I)I");
             m.Exceptions.Length.Should().Be(1);
-            m.Exceptions[0].isFinally.Should().BeTrue();
+            m.Exceptions[0].IsFinally.Should().BeTrue();
             GotoFinallyIndexes(m).Should().HaveCount(1);
 
             // everything except the finally handler is reachable without fault blocks
             var full = m.Reachability(0, false);
             var skip = m.Reachability(0, true);
-            var handler = m.Exceptions[0].handlerIndex;
+            var handler = m.Exceptions[0].HandlerIndex;
             full[handler].Should().Be(R | B);
             skip[handler].Should().Be(U);
             for (int i = 0; i < handler; i++)

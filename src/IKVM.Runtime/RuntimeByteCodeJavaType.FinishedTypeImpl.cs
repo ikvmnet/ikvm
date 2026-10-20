@@ -25,6 +25,7 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Runtime;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -55,6 +56,17 @@ namespace IKVM.Runtime
             readonly Metadata metadata;
             readonly RuntimeJavaType host;
 
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="type"></param>
+            /// <param name="innerclasses"></param>
+            /// <param name="declaringTypeWrapper"></param>
+            /// <param name="reflectiveModifiers"></param>
+            /// <param name="metadata"></param>
+            /// <param name="clinitMethod"></param>
+            /// <param name="finalizeMethod"></param>
+            /// <param name="host"></param>
             internal FinishedTypeImpl(Type type, RuntimeJavaType[] innerclasses, RuntimeJavaType declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata, MethodInfo clinitMethod, MethodInfo finalizeMethod, RuntimeJavaType host)
             {
                 this.type = type;
@@ -85,28 +97,14 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal override Modifiers ReflectiveModifiers
-            {
-                get
-                {
-                    return reflectiveModifiers;
-                }
-            }
+            internal override Modifiers ReflectiveModifiers => reflectiveModifiers;
 
-            internal override Type Type
-            {
-                get
-                {
-                    return type;
-                }
-            }
+            internal override Type Type => type;
 
             internal override void EmitRunClassConstructor(CodeEmitter ilgen)
             {
                 if (clinitMethod != null)
-                {
                     ilgen.Emit(OpCodes.Call, clinitMethod);
-                }
             }
 
             internal override DynamicImpl Finish()

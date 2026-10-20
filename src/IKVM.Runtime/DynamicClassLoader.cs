@@ -27,8 +27,6 @@ using System.Runtime.Serialization;
 
 using IKVM.CoreLib.Diagnostics;
 
-using static System.Diagnostics.DebuggableAttribute;
-
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -392,9 +390,9 @@ namespace IKVM.Runtime
             context.AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
 
             // determine debugging mode
-            var debugMode = DebuggingModes.Default | DebuggingModes.IgnoreSymbolStoreSequencePoints;
+            var debugMode = System.Diagnostics.DebuggableAttribute.DebuggingModes.Default | System.Diagnostics.DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints;
             if (JVM.EmitSymbols)
-                debugMode |= DebuggingModes.DisableOptimizations;
+                debugMode |= System.Diagnostics.DebuggableAttribute.DebuggingModes.DisableOptimizations;
 
             context.AttributeHelper.SetDebuggingModes(assemblyBuilder, debugMode);
 
