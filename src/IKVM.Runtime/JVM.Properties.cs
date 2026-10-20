@@ -364,8 +364,12 @@ namespace IKVM.Runtime
 					// prefix with LD_LIBRARY_PATH
 					var ld_library_path = SafeGetEnvironmentVariable("LD_LIBRARY_PATH");
 					if (ld_library_path != null)
-						foreach (var i in ld_library_path.Split(Path.PathSeparator).Reverse())
+					{
+						var l = ld_library_path.Split(Path.PathSeparator);
+						l.Reverse();
+                        foreach (var i in l)
 							libraryPath.Insert(0, i);
+					}
 				}
 
 				if (RuntimeUtil.IsOSX)

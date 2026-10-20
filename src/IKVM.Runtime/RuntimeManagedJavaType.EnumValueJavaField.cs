@@ -51,7 +51,7 @@ namespace IKVM.Runtime
             /// <param name="tw"></param>
             /// <param name="fieldType"></param>
             internal EnumValueJavaField(RuntimeManagedJavaType tw, RuntimeJavaType fieldType) :
-                base(tw, fieldType, "Value", fieldType.SigName, new ExModifiers(Modifiers.Public | Modifiers.Final, false), null)
+                base(tw, fieldType, "Value", fieldType.SignatureName, new ExModifiers(Modifiers.Public | Modifiers.Final, false), null)
             {
                 underlyingType = EnumHelper.GetUnderlyingType(tw.type);
             }

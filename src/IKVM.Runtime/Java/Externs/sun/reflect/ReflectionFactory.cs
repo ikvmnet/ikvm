@@ -23,17 +23,18 @@
 */
 using System;
 using System.Reflection;
-#if !NO_REF_EMIT
-using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
-
-#endif
 using System.Runtime.Serialization;
 using System.Security;
 
+using IKVM.CoreLib.Exceptions;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Util.Java.Security;
+
+#if !NO_REF_EMIT
+using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
+#endif
 
 namespace IKVM.Java.Externs.sun.reflect
 {
@@ -784,9 +785,9 @@ namespace IKVM.Java.Externs.sun.reflect
                     if ((mw.IsStatic || mw.DeclaringType.IsInterface) && mw.DeclaringType.HasStaticInitializer)
                         invoker = new Invoker(new RunClassInit(this, mw.DeclaringType, invoker).invoke);
                 }
-                catch (RetargetableJavaException x)
+                catch (TranslatableJavaException e)
                 {
-                    throw x.ToJava();
+                    throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
                 }
             }
 
@@ -955,9 +956,9 @@ namespace IKVM.Java.Externs.sun.reflect
                     // generate invoker
                     invoker = (Invoker)dm.CreateDelegate(typeof(Invoker));
                 }
-                catch (RetargetableJavaException e)
+                catch (TranslatableJavaException e)
                 {
-                    throw e.ToJava();
+                    throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
                 }
             }
 
@@ -991,24 +992,25 @@ namespace IKVM.Java.Externs.sun.reflect
 
             internal FastSerializationConstructorAccessorImpl(global::java.lang.reflect.Constructor constructorToCall, global::java.lang.Class classToInstantiate)
             {
-                RuntimeJavaMethod constructor = RuntimeJavaMethod.FromExecutable(constructorToCall);
+                var constructor = RuntimeJavaMethod.FromExecutable(constructorToCall);
                 if (constructor.GetParameters().Length != 0)
-                {
                     throw new NotImplementedException("Serialization constructor cannot have parameters");
-                }
+
                 constructor.Link();
                 constructor.ResolveMethod();
+
                 Type type;
                 try
                 {
-                    RuntimeJavaType wrapper = RuntimeJavaType.FromClass(classToInstantiate);
+                    var wrapper = RuntimeJavaType.FromClass(classToInstantiate);
                     wrapper.Finish();
                     type = wrapper.TypeAsBaseType;
                 }
-                catch (RetargetableJavaException x)
+                catch (TranslatableJavaException e)
                 {
-                    throw x.ToJava();
+                    throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
                 }
+
                 DynamicMethod dm = DynamicMethodUtil.Create("__<SerializationCtor>", constructor.DeclaringType.TypeAsBaseType, true, typeof(object), null);
                 CodeEmitter ilgen = JVM.Context.CodeEmitterFactory.Create(dm);
                 ilgen.Emit(OpCodes.Ldtoken, type);
@@ -2063,10 +2065,11 @@ namespace IKVM.Java.Externs.sun.reflect
                     fieldTypeWrapper.Finish();
                     fw.DeclaringType.Finish();
                 }
-                catch (RetargetableJavaException x)
+                catch (TranslatableJavaException e)
                 {
-                    throw x.ToJava();
+                    throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
                 }
+
                 fw.ResolveField();
                 DynamicMethod dm = DynamicMethodUtil.Create("__<Getter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, fieldType, new Type[] { typeof(IReflectionException), typeof(object), typeof(object) });
                 CodeEmitter ilgen = JVM.Context.CodeEmitterFactory.Create(dm);
@@ -2109,10 +2112,11 @@ namespace IKVM.Java.Externs.sun.reflect
                     fieldTypeWrapper.Finish();
                     fw.DeclaringType.Finish();
                 }
-                catch (RetargetableJavaException x)
+                catch (TranslatableJavaException e)
                 {
-                    throw x.ToJava();
+                    throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
                 }
+
                 fw.ResolveField();
                 DynamicMethod dm = DynamicMethodUtil.Create("__<Setter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, null, new Type[] { typeof(IReflectionException), typeof(object), fieldType, typeof(object) });
                 CodeEmitter ilgen = JVM.Context.CodeEmitterFactory.Create(dm);
@@ -2219,7 +2223,7 @@ namespace IKVM.Java.Externs.sun.reflect
         public static global::sun.reflect.FieldAccessor newFieldAccessor(object thisFactory, global::java.lang.reflect.Field field, bool overrideAccessCheck)
         {
 #if FIRST_PASS
-		return null;
+            return null;
 #else
             // we look at the modifiers of the Field object to allow Unsafe to give us a fake Field take doesn't have the final flag set
             int modifiers = field.getModifiers();
@@ -2239,7 +2243,7 @@ namespace IKVM.Java.Externs.sun.reflect
         public static global::sun.reflect.MethodAccessor newMethodAccessor(object thisFactory, global::java.lang.reflect.Method method)
         {
 #if FIRST_PASS
-		return null;
+            return null;
 #else
             RuntimeJavaMethod mw = RuntimeJavaMethod.FromExecutable(method);
 #if !NO_REF_EMIT
@@ -2255,7 +2259,7 @@ namespace IKVM.Java.Externs.sun.reflect
         public static global::sun.reflect.ConstructorAccessor newConstructorAccessor0(object thisFactory, global::java.lang.reflect.Constructor constructor)
         {
 #if FIRST_PASS
-		return null;
+            return null;
 #else
             RuntimeJavaMethod mw = RuntimeJavaMethod.FromExecutable(constructor);
             if (ActivatorConstructorAccessor.IsSuitable(mw))
@@ -2279,7 +2283,7 @@ namespace IKVM.Java.Externs.sun.reflect
         public static global::sun.reflect.ConstructorAccessor newConstructorAccessorForSerialization(global::java.lang.Class classToInstantiate, global::java.lang.reflect.Constructor constructorToCall)
         {
 #if FIRST_PASS
-		return null;
+            return null;
 #else
             try
             {

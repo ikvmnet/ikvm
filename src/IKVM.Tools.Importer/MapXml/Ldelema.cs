@@ -26,6 +26,7 @@ using System.Xml.Linq;
 
 using IKVM.Runtime;
 using IKVM.Reflection.Emit;
+using IKVM.CoreLib.Runtime;
 
 namespace IKVM.Tools.Importer.MapXml
 {

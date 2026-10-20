@@ -22,11 +22,15 @@
   
 */
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Collections.Concurrent;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Linking;
+using IKVM.CoreLib.Runtime;
+using IKVM.CoreLib.Exceptions;
+
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -121,7 +125,7 @@ namespace IKVM.Runtime
                     if (wrapper.IsGhost && m.IsVirtual)
                     {
                         // note that a GhostMethodWrapper can also represent a default interface method
-                        methods[i] = new RuntimeGhostJavaMethod(wrapper, m.Name, m.Signature, null, null, null, null, m.Modifiers, flags);
+                        methods[i] = new RuntimeGhostJavaMethod(wrapper, m.Name, m.Signature, null, null, null, null, (Modifiers)m.AccessFlags, flags);
                     }
                     else if (m.IsConstructor && wrapper.IsDelegate)
                     {
@@ -131,12 +135,12 @@ namespace IKVM.Runtime
                     {
                         // we can't use callvirt to call interface private instance methods (because we have to compile them as static methods,
                         // since the CLR doesn't support interface instance methods), so need a special MethodWrapper
-                        methods[i] = new RuntimePrivateInterfaceJavaMethod(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
+                        methods[i] = new RuntimePrivateInterfaceJavaMethod(wrapper, m.Name, m.Signature, null, null, null, (Modifiers)m.AccessFlags, flags);
                     }
                     else if (classFile.IsInterface && m.IsVirtual && !m.IsAbstract)
                     {
                         // note that a GhostMethodWrapper can also represent a default interface method
-                        methods[i] = new RuntimeDefaultInterfaceJavaMethod(wrapper, m.Name, m.Signature, null, null, null, null, m.Modifiers, flags);
+                        methods[i] = new RuntimeDefaultInterfaceJavaMethod(wrapper, m.Name, m.Signature, null, null, null, null, (Modifiers)m.AccessFlags, flags);
                     }
                     else
                     {
@@ -147,7 +151,7 @@ namespace IKVM.Runtime
                                 flags |= MemberFlags.ExplicitOverride;
                         }
 
-                        methods[i] = new RuntimeTypicalJavaMethod(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
+                        methods[i] = new RuntimeTypicalJavaMethod(wrapper, m.Name, m.Signature, null, null, null, (Modifiers)m.AccessFlags, flags);
                     }
                 }
 
@@ -178,7 +182,7 @@ namespace IKVM.Runtime
 #if !IMPORTER
                         fieldType = wrapper.Context.ClassLoaderFactory.GetBootstrapClassLoader().FieldTypeWrapperFromSig(fld.Signature, LoadMode.LoadOrThrow);
 #endif
-                        fields[i] = new RuntimeConstantJavaField(wrapper, fieldType, fld.Name, fld.Signature, fld.Modifiers, null, fld.ConstantValue, MemberFlags.None);
+                        fields[i] = new RuntimeConstantJavaField(wrapper, fieldType, fld.Name, fld.Signature, (Modifiers)fld.AccessFlags, null, fld.ConstantValue, MemberFlags.None);
                     }
                     else if (fld.IsProperty)
                     {
@@ -186,7 +190,7 @@ namespace IKVM.Runtime
                     }
                     else
                     {
-                        fields[i] = RuntimeJavaField.Create(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal));
+                        fields[i] = RuntimeJavaField.Create(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers((Modifiers)fld.AccessFlags, fld.IsInternal));
                     }
                 }
 #if IMPORTER
@@ -197,7 +201,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-            bool SupportsCallerID(ClassFile.Method method)
+            bool SupportsCallerID(Method method)
             {
                 if ((classFile.Name == "sun.reflect.Reflection" && method.Name == "getCallerClass") || (classFile.Name == "java.lang.SecurityManager" && method.Name == "checkMemberAccess"))
                 {
@@ -309,7 +313,7 @@ namespace IKVM.Runtime
                             {
                                 enclosingClassWrapper = wrapper.classLoader.TryLoadClassByName(enclosingClassName) as RuntimeByteCodeJavaType;
                             }
-                            catch (RetargetableJavaException x)
+                            catch (TranslatableJavaException x)
                             {
                                 wrapper.ClassLoader.Diagnostics.GenericCompilerWarning($"Unable to load outer class {enclosingClassName} for inner class {f.Name} ({x.GetType().Name}: {x.Message})");
                             }
@@ -406,9 +410,11 @@ namespace IKVM.Runtime
                         typeAttribs |= TypeAttributes.Interface | TypeAttributes.Abstract;
 #if IMPORTER
                         // if any "meaningless" bits are set, preserve them
-                        setModifiers |= (f.Modifiers & (Modifiers)0x99CE) != 0;
+                        setModifiers |= ((ushort)f.AccessFlags & (ushort)0x99CE) != 0;
+
                         // by default we assume interfaces are abstract, so in the exceptional case we need a ModifiersAttribute
-                        setModifiers |= (f.Modifiers & Modifiers.Abstract) == 0;
+                        setModifiers |= ((ushort)f.AccessFlags & (ushort)Modifiers.Abstract) == 0;
+
                         if (enclosing != null && !cantNest)
                         {
                             if (wrapper.IsGhost)
@@ -442,9 +448,11 @@ namespace IKVM.Runtime
                         typeAttribs |= TypeAttributes.Class;
 #if IMPORTER
                         // if any "meaningless" bits are set, preserve them
-                        setModifiers |= (f.Modifiers & (Modifiers)0x99CE) != 0;
+                        setModifiers |= ((ushort)f.AccessFlags & (ushort)0x99CE) != 0;
+
                         // by default we assume ACC_SUPER for classes, so in the exceptional case we need a ModifiersAttribute
                         setModifiers |= !f.IsSuper;
+
                         if (enclosing != null && !cantNest)
                         {
                             // LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
@@ -486,7 +494,7 @@ namespace IKVM.Runtime
                             {
                                 exists = wrapper.ClassLoader.TryLoadClassByName(name) != null;
                             }
-                            catch (RetargetableJavaException)
+                            catch (TranslatableJavaException)
                             {
 
                             }
@@ -516,7 +524,7 @@ namespace IKVM.Runtime
                         AddCliEnum();
                     }
 
-                    AddInnerClassAttribute(enclosing != null, outerClass.innerClass.IsNotNil, mangledTypeName, outerClass.accessFlags);
+                    AddInnerClassAttribute(enclosing != null, outerClass.innerClass.IsNotNil, mangledTypeName, (Modifiers)outerClass.accessFlags);
                     if (classFile.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(classFile.Annotations))
                     {
                         wrapper.Context.AttributeHelper.SetDeprecatedAttribute(typeBuilder);
@@ -562,9 +570,9 @@ namespace IKVM.Runtime
                         }
                     }
                     // NOTE in Whidbey we can (and should) use CompilerGeneratedAttribute to mark Synthetic types
-                    if (setModifiers || classFile.IsInternal || (classFile.Modifiers & (Modifiers.Synthetic | Modifiers.Annotation | Modifiers.Enum)) != 0)
+                    if (setModifiers || classFile.IsInternal || ((Modifiers)classFile.AccessFlags & (Modifiers.Synthetic | Modifiers.Annotation | Modifiers.Enum)) != 0)
                     {
-                        wrapper.Context.AttributeHelper.SetModifiers(typeBuilder, classFile.Modifiers, classFile.IsInternal);
+                        wrapper.Context.AttributeHelper.SetModifiers(typeBuilder, (Modifiers)classFile.AccessFlags, classFile.IsInternal);
                     }
 #endif // IMPORTER
                     if (hasclinit)
@@ -649,7 +657,7 @@ namespace IKVM.Runtime
                     var hasfields = false;
 
                     // If we have any public static fields, the cctor trigger must (and may) be public as well
-                    foreach (ClassFile.Field fld in classFile.Fields)
+                    foreach (var fld in classFile.Fields)
                     {
                         if (fld.IsPublic && fld.IsStatic)
                         {
@@ -686,34 +694,32 @@ namespace IKVM.Runtime
             }
 
 #if IMPORTER
-            private ClassFile.InnerClass getOuterClass()
+
+            InnerClass getOuterClass()
             {
-                ClassFile.InnerClass[] innerClasses = classFile.InnerClasses;
+                var innerClasses = classFile.InnerClasses;
                 if (innerClasses != null)
-                {
                     for (int j = 0; j < innerClasses.Length; j++)
-                    {
                         if (innerClasses[j].innerClass.IsNotNil && classFile.GetConstantPoolClass(innerClasses[j].innerClass) == classFile.Name)
-                        {
                             return innerClasses[j];
-                        }
-                    }
-                }
-                return new ClassFile.InnerClass();
+
+                return new InnerClass();
             }
 
-            private bool IsSideEffectFreeStaticInitializerOrNoop(ClassFile.Method m, out bool noop)
+            private bool IsSideEffectFreeStaticInitializerOrNoop(Method m, out bool noop)
             {
                 if (m.ExceptionTable.Length != 0)
                 {
                     noop = false;
                     return false;
                 }
+
                 noop = true;
+
                 for (int i = 0; i < m.Instructions.Length; i++)
                 {
-                    NormalizedByteCode bc;
-                    while ((bc = m.Instructions[i].NormalizedOpCode) == NormalizedByteCode.__goto)
+                    NormalizedOpCode bc;
+                    while ((bc = m.Instructions[i].NormalizedOpCode) == NormalizedOpCode.Goto)
                     {
                         int target = m.Instructions[i].TargetIndex;
                         if (target <= i)
@@ -726,9 +732,9 @@ namespace IKVM.Runtime
                         // uses a goto to remove the (now unused) code
                         i = target;
                     }
-                    if (bc == NormalizedByteCode.__getstatic || bc == NormalizedByteCode.__putstatic)
+                    if (bc == NormalizedOpCode.GetStatic || bc == NormalizedOpCode.PutStatic)
                     {
-                        ClassFile.ConstantPoolItemFieldref fld = classFile.SafeGetFieldref(m.Instructions[i].Arg1);
+                        var fld = classFile.SafeGetFieldref(checked((ushort)m.Instructions[i].Arg1));
                         if (fld == null || fld.Class != classFile.Name)
                         {
                             noop = false;
@@ -736,18 +742,20 @@ namespace IKVM.Runtime
                         }
                         // don't allow getstatic to load non-primitive fields, because that would
                         // cause the verifier to try to load the type
-                        if (bc == NormalizedByteCode.__getstatic && "L[".IndexOf(fld.Signature[0]) != -1)
+                        if (bc == NormalizedOpCode.GetStatic && "L[".IndexOf(fld.Signature[0]) != -1)
                         {
                             noop = false;
                             return false;
                         }
-                        ClassFile.Field field = classFile.GetField(fld.Name, fld.Signature);
+
+                        var field = classFile.GetField(fld.Name, fld.Signature);
                         if (field == null)
                         {
                             noop = false;
                             return false;
                         }
-                        if (bc == NormalizedByteCode.__putstatic)
+
+                        if (bc == NormalizedOpCode.PutStatic)
                         {
                             if (field.IsProperty && field.PropertySetter != null)
                             {
@@ -761,15 +769,15 @@ namespace IKVM.Runtime
                             return false;
                         }
                     }
-                    else if (ByteCodeMetaData.CanThrowException(bc))
+                    else if (OpCodeMetaData.CanThrowException(bc))
                     {
                         noop = false;
                         return false;
                     }
-                    else if (bc == NormalizedByteCode.__aconst_null
-                        || (bc == NormalizedByteCode.__iconst && m.Instructions[i].Arg1 == 0)
-                        || bc == NormalizedByteCode.__return
-                        || bc == NormalizedByteCode.__nop)
+                    else if (bc == NormalizedOpCode.AconstNull
+                        || (bc == NormalizedOpCode.Iconst && m.Instructions[i].Arg1 == 0)
+                        || bc == NormalizedOpCode.Return
+                        || bc == NormalizedOpCode.Nop)
                     {
                         // valid instructions in a potential noop <clinit>
                     }
@@ -1033,7 +1041,7 @@ namespace IKVM.Runtime
 
                 var methodAttribs = MethodAttributes.HideBySig;
 #if IMPORTER
-                var setModifiers = fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0;
+                var setModifiers = fld.IsInternal || ((Modifiers)fld.AccessFlags & (Modifiers.Synthetic | Modifiers.Enum)) != 0;
 #endif
                 if (fld.IsPrivate)
                 {
@@ -1108,7 +1116,7 @@ namespace IKVM.Runtime
                     // if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
                     // the Java modifiers
                     if (setModifiers)
-                        wrapper.Context.AttributeHelper.SetModifiers(field, fld.Modifiers, fld.IsInternal);
+                        wrapper.Context.AttributeHelper.SetModifiers(field, (Modifiers)fld.AccessFlags, fld.IsInternal);
 
                     if (fld.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(fld.Annotations))
                         wrapper.Context.AttributeHelper.SetDeprecatedAttribute(field);
@@ -1881,7 +1889,7 @@ namespace IKVM.Runtime
                                 {
                                     // the mask comes from RECOGNIZED_INNER_CLASS_MODIFIERS in src/hotspot/share/vm/classfile/classFileParser.cpp
                                     // (minus ACC_SUPER)
-                                    mods = innerclasses[i].accessFlags & (Modifiers)0x761F;
+                                    mods = (Modifiers)innerclasses[i].accessFlags & (Modifiers)0x761F;
                                     if (classFile.IsInterface)
                                         mods |= Modifiers.Abstract;
 
@@ -1893,7 +1901,7 @@ namespace IKVM.Runtime
 
                     // the mask comes from JVM_RECOGNIZED_CLASS_MODIFIERS in src/hotspot/share/vm/prims/jvm.h
                     // (minus ACC_SUPER)
-                    mods = classFile.Modifiers & (Modifiers)0x7611;
+                    mods = (Modifiers)classFile.AccessFlags & (Modifiers)0x7611;
                     if (classFile.IsInterface)
                         mods |= Modifiers.Abstract;
 
@@ -1907,7 +1915,7 @@ namespace IKVM.Runtime
             /// <param name="m"></param>
             /// <param name="explicitOverride"></param>
             /// <returns></returns>
-            RuntimeJavaMethod[] FindBaseMethods(ClassFile.Method m, out bool explicitOverride)
+            RuntimeJavaMethod[] FindBaseMethods(Method m, out bool explicitOverride)
             {
                 Debug.Assert(!classFile.IsInterface);
                 Debug.Assert(m.Name != "<init>");
@@ -2274,9 +2282,9 @@ namespace IKVM.Runtime
 
             MethodAttributes GetPropertyAccess(RuntimeJavaMethod mw)
             {
-                var sig = mw.ReturnType.SigName;
+                var sig = mw.ReturnType.SignatureName;
                 if (sig == "V")
-                    sig = mw.GetParameters()[0].SigName;
+                    sig = mw.GetParameters()[0].SignatureName;
 
                 int access = -1;
                 foreach (var field in classFile.Fields)
@@ -2431,7 +2439,7 @@ namespace IKVM.Runtime
                     MethodBuilder method;
                     bool setModifiers = false;
 
-                    if (methods[index].HasCallerID && (m.Modifiers & Modifiers.VarArgs) != 0)
+                    if (methods[index].HasCallerID && ((Modifiers)m.AccessFlags & Modifiers.VarArgs) != 0)
                     {
                         // the implicit callerID parameter was added at the end so that means we shouldn't use ParamArrayAttribute,
                         // so we need to explicitly record that the method is varargs
@@ -2462,11 +2470,11 @@ namespace IKVM.Runtime
 #if IMPORTER
                     wrapper.Context.AttributeHelper.SetThrowsAttribute(method, exceptions);
 
-                    if (setModifiers || m.IsInternal || (m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0)
-                        wrapper.Context.AttributeHelper.SetModifiers(method, m.Modifiers, m.IsInternal);
+                    if (setModifiers || m.IsInternal || ((Modifiers)m.AccessFlags & (Modifiers.Synthetic | Modifiers.Bridge)) != 0)
+                        wrapper.Context.AttributeHelper.SetModifiers(method, (Modifiers)m.AccessFlags, m.IsInternal);
 
                     // synthetic and bridge methods should not be visible to the user and set as compiler generated
-                    if ((m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0 && (m.IsPublic || m.IsProtected) && wrapper.IsPublic && !IsAccessBridge(classFile, m))
+                    if (((Modifiers)m.AccessFlags & (Modifiers.Synthetic | Modifiers.Bridge)) != 0 && (m.IsPublic || m.IsProtected) && wrapper.IsPublic && !IsAccessBridge(classFile, m))
                     {
                         wrapper.Context.AttributeHelper.SetCompilerGenerated(method);
                         wrapper.Context.AttributeHelper.SetEditorBrowsableNever(method);
@@ -2526,8 +2534,8 @@ namespace IKVM.Runtime
             {
                 get
                 {
-                    foreach (var field in fields)
-                        if (field.IsSerialVersionUID)
+                    foreach (var f in fields)
+                        if (f.IsSerialVersionUID)
                             return true;
 
                     return false;
@@ -2539,7 +2547,7 @@ namespace IKVM.Runtime
                 return mw.GetDefineMethodHelper().DefineConstructor(wrapper, typeBuilder, GetMethodAccess(mw) | MethodAttributes.HideBySig);
             }
 
-            MethodBuilder GenerateMethod(int index, ClassFile.Method m, ref bool setModifiers)
+            MethodBuilder GenerateMethod(int index, Method m, ref bool setModifiers)
             {
                 var attribs = MethodAttributes.HideBySig;
                 if (m.IsNative)
@@ -2621,7 +2629,7 @@ namespace IKVM.Runtime
                     attribs |= MethodAttributes.SpecialName;
                 }
 #if IMPORTER
-                if ((m.Modifiers & Modifiers.Bridge) != 0 && (m.IsPublic || m.IsProtected) && wrapper.IsPublic)
+                if (((Modifiers)m.AccessFlags & Modifiers.Bridge) != 0 && (m.IsPublic || m.IsProtected) && wrapper.IsPublic)
                 {
                     string sigbase = m.Signature.Substring(0, m.Signature.LastIndexOf(')') + 1);
                     foreach (var mw in methods)
@@ -2713,7 +2721,7 @@ namespace IKVM.Runtime
                             !m.IsAbstract && !m.IsNative &&
                             (!m.IsFinal || classFile.IsFinal) &&
                             m.Instructions.Length > 0 &&
-                            m.Instructions[0].NormalizedOpCode == NormalizedByteCode.__return)
+                            m.Instructions[0].NormalizedOpCode == NormalizedOpCode.Return)
                         {
                             // we've got an empty finalize method, so we don't need to override the real finalizer
                             // (not having a finalizer makes a huge perf difference)
@@ -2862,7 +2870,7 @@ namespace IKVM.Runtime
                 return mb;
             }
 
-            private static MethodAttributes GetMethodAccess(RuntimeJavaMethod mw)
+            static MethodAttributes GetMethodAccess(RuntimeJavaMethod mw)
             {
                 switch (mw.Modifiers & Modifiers.AccessMask)
                 {
@@ -2878,28 +2886,30 @@ namespace IKVM.Runtime
             }
 
 #if IMPORTER
+
             // The classic example of an access bridge is StringBuilder.length(), the JDK 6 compiler
             // generates this to work around a reflection problem (which otherwise wouldn't surface the
             // length() method, because it is defined in the non-public base class AbstractStringBuilder.)
-            private static bool IsAccessBridge(ClassFile classFile, ClassFile.Method m)
+            static bool IsAccessBridge(ClassFile classFile, Method m)
             {
                 // HACK this is a pretty gross hack
                 // We look at the method body to figure out if the bridge method calls another method with the exact
                 // same name/signature and if that is the case, we assume that it is an access bridge.
                 // This code is based on the javac algorithm in addBridgeIfNeeded(...) in com/sun/tools/javac/comp/TransTypes.java.
-                if ((m.Modifiers & (Modifiers.Abstract | Modifiers.Native | Modifiers.Public | Modifiers.Bridge)) == (Modifiers.Public | Modifiers.Bridge))
+                if ((m.AccessFlags & (ClassFileAccessFlags.Abstract | ClassFileAccessFlags.Native | ClassFileAccessFlags.Public | ClassFileAccessFlags.Bridge)) == (ClassFileAccessFlags.Public | ClassFileAccessFlags.Bridge))
                 {
-                    foreach (ClassFile.Method.Instruction instr in m.Instructions)
+                    foreach (var instr in m.Instructions)
                     {
-                        if (instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
+                        if (instr.NormalizedOpCode == NormalizedOpCode.InvokeSpecial)
                         {
-                            ClassFile.ConstantPoolItemMI cpi = classFile.SafeGetMethodref(instr.Arg1);
+                            var cpi = classFile.SafeGetMethodref(instr.Arg1);
                             return cpi != null && cpi.Name == m.Name && cpi.Signature == m.Signature;
                         }
                     }
                 }
                 return false;
             }
+
 #endif // IMPORTER
 
             internal override Type Type

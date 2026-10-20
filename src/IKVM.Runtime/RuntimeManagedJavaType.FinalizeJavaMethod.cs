@@ -21,8 +21,6 @@
   jeroen@frijters.net
   
 */
-using System;
-
 using IKVM.Attributes;
 
 #if IMPORTER || EXPORTER
@@ -48,7 +46,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="declaringType"></param>
             internal FinalizeJavaMethod(RuntimeManagedJavaType declaringType) :
-                base(declaringType, "finalize", "()V", null, declaringType.Context.PrimitiveJavaTypeFactory.VOID, Array.Empty<RuntimeJavaType>(), Modifiers.Protected | Modifiers.Final, MemberFlags.None)
+                base(declaringType, "finalize", "()V", null, declaringType.Context.PrimitiveJavaTypeFactory.VOID, [], Modifiers.Protected | Modifiers.Final, MemberFlags.None)
             {
 
             }

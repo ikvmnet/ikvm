@@ -39,6 +39,7 @@ using IKVM.Tools.Importer;
 
 namespace IKVM.Runtime
 {
+
     /// <summary>
     /// Maintains instances of <see cref="RuntimeAssemblyClassLoader"/>.
     /// </summary>

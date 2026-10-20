@@ -27,6 +27,7 @@ using System.Collections.Generic;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Runtime;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -194,7 +195,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        protected override bool EmitMapXmlMethodPrologueAndOrBody(CodeEmitter ilgen, ClassFile f, ClassFile.Method m)
+        protected override bool EmitMapXmlMethodPrologueAndOrBody(CodeEmitter ilgen, ClassFile f, Method m)
         {
             var prologue = classLoader.GetMethodPrologue(new MethodKey(f.Name, m.Name, m.Signature));
             if (prologue != null)
@@ -613,7 +614,7 @@ namespace IKVM.Tools.Importer
                             typeBuilder.AddInterfaceImplementation(tw.TypeAsBaseType);
                             if (iface.Methods != null)
                             {
-                                foreach (Method m in iface.Methods)
+                                foreach (var m in iface.Methods)
                                 {
                                     var mw = tw.GetMethod(m.Name, m.Sig, false);
                                     if (mw == null)
@@ -1047,7 +1048,7 @@ namespace IKVM.Tools.Importer
             /// </summary>
             /// <param name="cpi"></param>
             /// <param name="code"></param>
-            internal ReplacedMethodWrapper(ClassFile.ConstantPoolItemMI cpi, IKVM.Tools.Importer.MapXml.InstructionList code) :
+            internal ReplacedMethodWrapper(ConstantPoolItemMI cpi, IKVM.Tools.Importer.MapXml.InstructionList code) :
                 base(cpi.GetClassType(), cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
             {
                 this.code = code;

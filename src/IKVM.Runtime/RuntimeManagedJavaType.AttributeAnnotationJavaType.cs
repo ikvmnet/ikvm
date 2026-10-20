@@ -266,7 +266,7 @@ namespace IKVM.Runtime
                 /// <param name="returnType"></param>
                 /// <param name="optional"></param>
                 private AttributeAnnotationJavaMethod(AttributeAnnotationJavaType tw, string name, RuntimeJavaType returnType, bool optional) :
-                    base(tw, name, "()" + returnType.SigName, returnType, Array.Empty<RuntimeJavaType>(), MemberFlags.None)
+                    base(tw, name, "()" + returnType.SignatureName, returnType, Array.Empty<RuntimeJavaType>(), MemberFlags.None)
                 {
                     this.optional = optional;
                 }

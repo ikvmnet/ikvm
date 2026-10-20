@@ -52,10 +52,22 @@
     </PropertyGroup>
 
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <PreprocessorDefinitions Include="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_MT;_DLL" />
+        <PreprocessorDefinitions Include="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_MT" />
         <AdditionalCompileOptions Include="-fms-extensions" />
+    </ItemGroup>
+
+    <!--
+        Hybrid CRT: the static VC runtime and C++ library (libcmt, libvcruntime, libcpmt) with the dynamic UCRT
+        (ucrt.lib -> ucrtbase.dll, an OS component since Windows 10). The libraries then need no Visual C++
+        Redistributable, and still share one heap, stdio and environment through ucrtbase.dll. The dynamic VC runtime
+        libraries are excluded so that anything still requiring VCRUNTIME140.dll or MSVCP140.dll fails to link.
+    -->
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <AdditionalLinkOptions Include="-Wl,/NODEFAULTLIB:libucrt" />
-        <Dependencies Include="ucrt;msvcrt;msvcprt;libvcruntime;kernel32" />
+        <AdditionalLinkOptions Include="-Wl,/NODEFAULTLIB:msvcrt" />
+        <AdditionalLinkOptions Include="-Wl,/NODEFAULTLIB:vcruntime" />
+        <AdditionalLinkOptions Include="-Wl,/NODEFAULTLIB:msvcprt" />
+        <Dependencies Include="ucrt;libcmt;libcpmt;libvcruntime;kernel32" />
     </ItemGroup>
 
     <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
