@@ -25,6 +25,8 @@ using System;
 using System.Runtime.Serialization;
 using System.Security;
 
+using IKVM.Attributes;
+
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -93,7 +95,7 @@ namespace IKVM.Runtime
         internal MethodBuilder AddAutomagicSerialization(RuntimeByteCodeJavaType wrapper, TypeBuilder typeBuilder)
         {
             MethodBuilder serializationCtor = null;
-            if ((wrapper.Modifiers & IKVM.Attributes.Modifiers.Enum) != 0)
+            if ((wrapper.Modifiers & Modifiers.Enum) != 0)
             {
                 MarkSerializable(typeBuilder);
             }

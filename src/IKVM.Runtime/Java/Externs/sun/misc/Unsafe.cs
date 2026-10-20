@@ -9,6 +9,7 @@ using System.Runtime.Serialization;
 using System.Threading;
 
 using IKVM.ByteCode;
+using IKVM.CoreLib.Exceptions;
 using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.sun.misc
@@ -1433,6 +1434,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="c"></param>
         public static void ensureClassInitialized(object self, global::java.lang.Class c)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             var tw = RuntimeJavaType.FromClass(c);
             if (tw.IsArray == false)
             {
@@ -1440,13 +1444,14 @@ namespace IKVM.Java.Externs.sun.misc
                 {
                     tw.Finish();
                 }
-                catch (RetargetableJavaException x)
+                catch (TranslatableJavaException e)
                 {
-                    throw x.ToJava();
+                    throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
                 }
 
                 tw.RunClassInit();
             }
+#endif
         }
 
         /// <summary>
@@ -1553,9 +1558,29 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
+                if (cpPatches is not null)
+                {
+                    var temp = new object[cpPatches.Length];
+
+                    for (int i = 0; i < cpPatches.Length; i++)
+                    {
+                        temp[i] = cpPatches[i] switch
+                        {
+                            global::java.lang.Class clazz => RuntimeJavaType.FromClass(clazz),
+                            global::java.lang.Integer integer_ => integer_.intValue(),
+                            global::java.lang.Long long_ => long_.longValue(),
+                            global::java.lang.Float float_ => float_.floatValue(),
+                            global::java.lang.Double double_ => double_.doubleValue(),
+                            _ => cpPatches[i],
+                        };
+                    }
+
+                    cpPatches = temp;
+                }
+
                 var tw = RuntimeJavaType.FromClass(hostClass);
                 var cl = tw.ClassLoader;
-                var cf = new IKVM.Runtime.ClassFile(JVM.Context, JVM.Context.Diagnostics, ReadClass(data), "<Unknown>", cl.ClassFileParseOptions, cpPatches);
+                var cf = new ClassFile(JVM.Context, ReadClass(data), "<Unknown>", cl.ClassFileParseOptions, cpPatches ?? []);
 
                 // if this happens, the OpenJDK is probably trying to load an OpenJDK class file as a resource,
                 // make sure the build process includes the original class file as a resource in that case
@@ -1564,9 +1589,9 @@ namespace IKVM.Java.Externs.sun.misc
 
                 return cl.GetTypeWrapperFactory().DefineClassImpl(null, tw, cf, cl, hostClass.pd).ClassObject;
             }
-            catch (RetargetableJavaException e)
+            catch (TranslatableJavaException e)
             {
-                throw e.ToJava();
+                throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
             }
 #endif
         }

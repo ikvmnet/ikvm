@@ -909,7 +909,14 @@ namespace IKVM.Runtime
 #endif
         }
 
-        [HideFromJava]
+        /// <summary>
+        /// Maps the given exception to a form suitable for exposure to Java code.
+        /// </summary>
+        /// <typeparam name="TTarget"></typeparam>
+        /// <param name="e"></param>
+        /// <param name="remap"></param>
+        /// <param name="unused"></param>
+        /// <returns></returns>[HideFromJava]
         internal T MapException<T>(Exception e, bool remap, bool unused)
             where T : Exception
         {

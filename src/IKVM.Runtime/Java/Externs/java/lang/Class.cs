@@ -24,6 +24,8 @@
 using System;
 using System.Collections.Generic;
 
+using IKVM.Attributes;
+using IKVM.CoreLib.Exceptions;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 
@@ -95,9 +97,9 @@ namespace IKVM.Java.Externs.java.lang
                 {
                     throw e.InnerException;
                 }
-                catch (RetargetableJavaException e)
+                catch (TranslatableJavaException e)
                 {
-                    throw e.ToJava();
+                    throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
                 }
             }
 
@@ -110,9 +112,9 @@ namespace IKVM.Java.Externs.java.lang
                 {
                     javaType.Finish();
                 }
-                catch (RetargetableJavaException e)
+                catch (TranslatableJavaException e)
                 {
-                    throw e.ToJava();
+                    throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
                 }
 
                 javaType.RunClassInit();
@@ -281,7 +283,7 @@ namespace IKVM.Java.Externs.java.lang
 
         public static string getSigName(global::java.lang.Class thisClass)
         {
-            return RuntimeJavaType.FromClass(thisClass).SigName;
+            return RuntimeJavaType.FromClass(thisClass).SignatureName;
         }
 
         public static global::java.lang.ClassLoader getClassLoader0(global::java.lang.Class thisClass)
@@ -318,7 +320,7 @@ namespace IKVM.Java.Externs.java.lang
         {
             // the 0x7FFF mask comes from JVM_ACC_WRITTEN_FLAGS in hotspot\src\share\vm\utilities\accessFlags.hpp
             // masking out ACC_SUPER comes from instanceKlass::compute_modifier_flags() in hotspot\src\share\vm\oops\instanceKlass.cpp
-            const int mask = 0x7FFF & (int)~IKVM.Attributes.Modifiers.Super;
+            const int mask = 0x7FFF & (int)~Modifiers.Super;
             return (int)RuntimeJavaType.FromClass(thisClass).ReflectiveModifiers & mask;
         }
 
@@ -340,6 +342,9 @@ namespace IKVM.Java.Externs.java.lang
 
         public static object[] getEnclosingMethod0(global::java.lang.Class thisClass)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
                 var type = RuntimeJavaType.FromClass(thisClass);
@@ -351,14 +356,18 @@ namespace IKVM.Java.Externs.java.lang
 
                 return [type.ClassLoader.LoadClassByName(enc[0]).ClassObject, enc[1], enc[2]?.Replace('.', '/')];
             }
-            catch (RetargetableJavaException x)
+            catch (TranslatableJavaException e)
             {
-                throw x.ToJava();
+                throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
             }
+#endif
         }
 
         public static global::java.lang.Class getDeclaringClass0(global::java.lang.Class thisClass)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
                 var type = RuntimeJavaType.FromClass(thisClass);
@@ -380,10 +389,11 @@ namespace IKVM.Java.Externs.java.lang
 
                 throw new IncompatibleClassChangeError(string.Format("{0} and {1} disagree on InnerClasses attribute", declaringType.Name, type.Name));
             }
-            catch (RetargetableJavaException x)
+            catch (TranslatableJavaException e)
             {
-                throw x.ToJava();
+                throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
             }
+#endif
         }
 
         public static global::java.security.ProtectionDomain getProtectionDomain0(global::java.lang.Class thisClass)
@@ -469,9 +479,9 @@ namespace IKVM.Java.Externs.java.lang
                     {
                         map.put(a.annotationType(), FreezeOrWrapAttribute(a));
                     }
-                    else if (obj is IKVM.Attributes.DynamicAnnotationAttribute)
+                    else if (obj is DynamicAnnotationAttribute)
                     {
-                        a = (global::java.lang.annotation.Annotation)JVM.NewAnnotation(loader.GetJavaClassLoader(), ((IKVM.Attributes.DynamicAnnotationAttribute)obj).Definition);
+                        a = (global::java.lang.annotation.Annotation)JVM.NewAnnotation(loader.GetJavaClassLoader(), ((DynamicAnnotationAttribute)obj).Definition);
                         if (a != null)
                             map.put(a.annotationType(), a);
                     }
@@ -512,9 +522,9 @@ namespace IKVM.Java.Externs.java.lang
             {
                 type.Finish();
             }
-            catch (RetargetableJavaException x)
+            catch (TranslatableJavaException e)
             {
-                throw x.ToJava();
+                throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
             }
 
             return AnnotationsToMap(type.ClassLoader, type.GetDeclaredAnnotations());
@@ -552,9 +562,9 @@ namespace IKVM.Java.Externs.java.lang
 
                 return list.ToArray();
             }
-            catch (RetargetableJavaException x)
+            catch (TranslatableJavaException e)
             {
-                throw x.ToJava();
+                throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
             }
 #endif
         }
@@ -586,9 +596,9 @@ namespace IKVM.Java.Externs.java.lang
 
                 return list.ToArray();
             }
-            catch (RetargetableJavaException x)
+            catch (TranslatableJavaException e)
             {
-                throw x.ToJava();
+                throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
             }
 #endif
         }
@@ -621,9 +631,9 @@ namespace IKVM.Java.Externs.java.lang
 
                 return list.ToArray();
             }
-            catch (RetargetableJavaException x)
+            catch (TranslatableJavaException e)
             {
-                throw x.ToJava();
+                throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
             }
 #endif
         }
@@ -652,16 +662,16 @@ namespace IKVM.Java.Externs.java.lang
 
                 return list;
             }
-            catch (RetargetableJavaException x)
+            catch (TranslatableJavaException e)
             {
-                throw x.ToJava();
+                throw JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
             }
 #endif
         }
 
         public static bool desiredAssertionStatus0(global::java.lang.Class clazz)
         {
-            return IKVM.Runtime.Assertions.IsEnabled(RuntimeJavaType.FromClass(clazz));
+            return Assertions.IsEnabled(RuntimeJavaType.FromClass(clazz));
         }
 
     }

@@ -25,40 +25,33 @@ using System;
 
 using IKVM.Runtime;
 
-#if IMPORTER || EXPORTER
-using Type = IKVM.Reflection.Type;
-#endif
-
 namespace IKVM.Attributes
 {
+
     // NOTE this attribute is also used by annotation attribute classes,
     // to give them a different name in the Java world ($Proxy[Annotation]).
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
 	public sealed class InnerClassAttribute : Attribute
 	{
-		private string innerClassName;
-		private Modifiers modifiers;
 
+		readonly string innerClassName;
+		readonly Modifiers modifiers;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="innerClassName"></param>
+        /// <param name="modifiers"></param>
 		public InnerClassAttribute(string innerClassName, Modifiers modifiers)
 		{
 			this.innerClassName = UnicodeUtil.UnescapeInvalidSurrogates(innerClassName);
 			this.modifiers = modifiers;
 		}
 
-		public string InnerClassName
-		{
-			get
-			{
-				return innerClassName;
-			}
-		}
+        public string InnerClassName => innerClassName;
 
-		public Modifiers Modifiers
-		{
-			get
-			{
-				return modifiers;
-			}
-		}
-	}
+        public Modifiers Modifiers => modifiers;
+
+    }
+
 }

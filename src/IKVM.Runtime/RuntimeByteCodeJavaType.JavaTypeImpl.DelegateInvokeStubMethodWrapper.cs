@@ -51,39 +51,45 @@ namespace IKVM.Runtime
 
                 readonly Type delegateType;
 
-                internal DelegateInvokeStubMethodWrapper(RuntimeJavaType declaringType, Type delegateType, string sig)
-                    : base(declaringType, RuntimeManagedJavaType.GetDelegateInvokeStubName(delegateType), sig, null, null, null, Modifiers.Public | Modifiers.Final, MemberFlags.HideFromReflection)
+                /// <summary>
+                /// Initializes a new instance.
+                /// </summary>
+                /// <param name="declaringType"></param>
+                /// <param name="delegateType"></param>
+                /// <param name="sig"></param>
+                internal DelegateInvokeStubMethodWrapper(RuntimeJavaType declaringType, Type delegateType, string sig) :
+                    base(declaringType, RuntimeManagedJavaType.GetDelegateInvokeStubName(delegateType), sig, null, null, null, Modifiers.Public | Modifiers.Final, MemberFlags.HideFromReflection)
                 {
                     this.delegateType = delegateType;
                 }
 
                 internal MethodInfo DoLink(TypeBuilder tb)
                 {
-                    RuntimeJavaMethod mw = this.DeclaringType.GetMethod("Invoke", this.Signature, true);
-
-                    MethodInfo invoke = delegateType.GetMethod("Invoke");
-                    ParameterInfo[] parameters = invoke.GetParameters();
-                    Type[] parameterTypes = new Type[parameters.Length];
+                    var mw = this.DeclaringType.GetMethod("Invoke", Signature, true);
+                    var invoke = delegateType.GetMethod("Invoke");
+                    var parameters = invoke.GetParameters();
+                    var parameterTypes = new Type[parameters.Length];
                     for (int i = 0; i < parameterTypes.Length; i++)
-                    {
                         parameterTypes[i] = parameters[i].ParameterType;
-                    }
-                    MethodBuilder mb = tb.DefineMethod(this.Name, MethodAttributes.Public, invoke.ReturnType, parameterTypes);
+
+                    var mb = tb.DefineMethod(Name, MethodAttributes.Public, invoke.ReturnType, parameterTypes);
                     DeclaringType.Context.AttributeHelper.HideFromReflection(mb);
-                    CodeEmitter ilgen = DeclaringType.Context.CodeEmitterFactory.Create(mb);
+
+                    var ilgen = DeclaringType.Context.CodeEmitterFactory.Create(mb);
                     if (mw == null || mw.IsStatic || !mw.IsPublic)
                     {
                         ilgen.EmitThrow(mw == null || mw.IsStatic ? "java.lang.AbstractMethodError" : "java.lang.IllegalAccessError", DeclaringType.Name + ".Invoke" + Signature);
                         ilgen.DoEmit();
                         return mb;
                     }
-                    CodeEmitterLocal[] byrefs = new CodeEmitterLocal[parameters.Length];
+
+                    var byrefs = new CodeEmitterLocal[parameters.Length];
                     for (int i = 0; i < parameters.Length; i++)
                     {
                         if (parameters[i].ParameterType.IsByRef)
                         {
-                            Type elemType = parameters[i].ParameterType.GetElementType();
-                            CodeEmitterLocal local = ilgen.DeclareLocal(RuntimeArrayJavaType.MakeArrayType(elemType, 1));
+                            var elemType = parameters[i].ParameterType.GetElementType();
+                            var local = ilgen.DeclareLocal(RuntimeArrayJavaType.MakeArrayType(elemType, 1));
                             byrefs[i] = local;
                             ilgen.Emit(OpCodes.Ldc_I4_1);
                             ilgen.Emit(OpCodes.Newarr, elemType);

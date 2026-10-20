@@ -23,9 +23,7 @@
 */
 
 using IKVM.ByteCode;
-
-using Instruction = IKVM.Runtime.ClassFile.Method.Instruction;
-using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
+using IKVM.CoreLib.Linking;
 
 namespace IKVM.Runtime
 {
@@ -73,12 +71,12 @@ namespace IKVM.Runtime
             return true;
         }
 
-        internal bool Match(int offset, NormalizedByteCode opcode)
+        internal bool Match(int offset, NormalizedOpCode opcode)
         {
             return Code[OpcodeIndex + offset].NormalizedOpCode == opcode;
         }
 
-        internal bool Match(int offset, NormalizedByteCode opcode, int arg)
+        internal bool Match(int offset, NormalizedOpCode opcode, int arg)
         {
             return Code[OpcodeIndex + offset].NormalizedOpCode == opcode && Code[OpcodeIndex + offset].Arg1 == arg;
         }
@@ -88,14 +86,14 @@ namespace IKVM.Runtime
             return ma.GetStackTypeWrapper(OpcodeIndex + offset, pos);
         }
 
-        internal ClassFile.ConstantPoolItemMI GetMethodref(int offset)
+        internal ConstantPoolItemMI GetMethodref(int offset)
         {
-            return ClassFile.GetMethodref(Code[OpcodeIndex + offset].Arg1);
+            return ClassFile.GetMethodref(checked((ushort)Code[OpcodeIndex + offset].Arg1));
         }
 
-        internal ClassFile.ConstantPoolItemFieldref GetFieldref(int offset)
+        internal ConstantPoolItemFieldref GetFieldref(int offset)
         {
-            return ClassFile.GetFieldref(Code[OpcodeIndex + offset].Arg1);
+            return ClassFile.GetFieldref(checked((ushort)Code[OpcodeIndex + offset].Arg1));
         }
 
         internal RuntimeJavaType GetClassLiteral(int offset)
@@ -108,12 +106,12 @@ namespace IKVM.Runtime
             return ClassFile.GetConstantPoolConstantString(new StringConstantHandle(checked((ushort)Code[OpcodeIndex + offset].Arg1)));
         }
 
-        internal ClassFile.ConstantType GetConstantType(int offset)
+        internal ConstantType GetConstantType(int offset)
         {
             return ClassFile.GetConstantPoolConstantType(new ConstantHandle(ConstantKind.Unknown, checked((ushort)Code[OpcodeIndex + offset].Arg1)));
         }
 
-        internal void PatchOpCode(int offset, NormalizedByteCode opc)
+        internal void PatchOpCode(int offset, NormalizedOpCode opc)
         {
             Code[OpcodeIndex + offset].PatchOpCode(opc);
         }
