@@ -4,9 +4,12 @@ using System.Linq;
 using FluentAssertions;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Linking;
 using IKVM.Runtime;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using ClassFile = IKVM.CoreLib.Linking.ClassFile<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
 
 namespace IKVM.Tests.Runtime
 {
@@ -24,7 +27,7 @@ namespace IKVM.Tests.Runtime
         {
             using var stream = new MemoryStream();
             JVM.Context.StubGenerator.Write(stream, RuntimeJavaType.FromClass(clazz), true, true, true, true, false);
-            return new ClassFile(JVM.Context, JVM.Context.Diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(stream.ToArray()), clazz.getName(), ClassFileParseOptions.None, null);
+            return new ClassFile(JVM.Context, IKVM.ByteCode.Decoding.ClassFile.Read(stream.ToArray()), clazz.getName(), ClassFileParseOptions.None, []);
         }
 
         [TestMethod]
