@@ -50,6 +50,8 @@
 
     <ItemGroup>
         <DotNetClangProjectReference Include="..\libikvm-tests\libikvm-tests.clangproj" />
+        <DotNetClangProjectReference Include="..\libikvm-tests-dep\libikvm-tests-dep.clangproj" />
+        <DotNetClangProjectReference Include="..\libikvm-tests-dependent\libikvm-tests-dependent.clangproj" />
     </ItemGroup>
 
     <Choose>

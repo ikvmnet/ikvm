@@ -155,6 +155,8 @@
     <Project Path="src/libfontmanager/libfontmanager.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
     <Project Path="src/libfreetype/libfreetype.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
     <Project Path="src/libiava/libiava.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libikvm-tests-dep/libikvm-tests-dep.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libikvm-tests-dependent/libikvm-tests-dependent.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
     <Project Path="src/libikvm-tests/libikvm-tests.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
     <Project Path="src/libikvm/libikvm.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
     <Project Path="src/libj2gss/libj2gss.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />

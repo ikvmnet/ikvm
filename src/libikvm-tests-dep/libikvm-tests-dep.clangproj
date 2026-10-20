@@ -1,0 +1,10 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\lib.props" />
+    <PropertyGroup>
+        <TargetName>ikvm-tests-dep</TargetName>
+        <OutputType>dll</OutputType>
+    </PropertyGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\lib.targets" />
+</Project>
