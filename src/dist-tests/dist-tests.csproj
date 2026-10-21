@@ -19,12 +19,10 @@
         <TestTarget Include="IKVM.Java.Tests|net8.0" ProjectName="IKVM.Java.Tests" TargetFramework="net8.0" />
         <TestTarget Include="IKVM.Tests|net472" ProjectName="IKVM.Tests" TargetFramework="net472" />
         <TestTarget Include="IKVM.Tests|net6.0" ProjectName="IKVM.Tests" TargetFramework="net6.0" />
-        <TestTarget Include="IKVM.Tests|net7.0" ProjectName="IKVM.Tests" TargetFramework="net7.0" />
         <TestTarget Include="IKVM.Tests|net8.0" ProjectName="IKVM.Tests" TargetFramework="net8.0" />
         <TestTarget Include="IKVM.Tests|net10.0" ProjectName="IKVM.Tests" TargetFramework="net10.0" />
         <TestTarget Include="IKVM.Tools.Tests|net472" ProjectName="IKVM.Tools.Tests" TargetFramework="net472" />
         <TestTarget Include="IKVM.Tools.Tests|net6.0" ProjectName="IKVM.Tools.Tests" TargetFramework="net6.0" />
-        <TestTarget Include="IKVM.Tools.Tests|net7.0" ProjectName="IKVM.Tools.Tests" TargetFramework="net7.0" />
         <TestTarget Include="IKVM.Tools.Tests|net8.0" ProjectName="IKVM.Tools.Tests" TargetFramework="net8.0" />
         <TestTarget Include="IKVM.Tools.Tests|net10.0" ProjectName="IKVM.Tools.Tests" TargetFramework="net10.0" />
         <TestTarget Include="IKVM.Tools.Exporter.Tests|net472" ProjectName="IKVM.Tools.Exporter.Tests" TargetFramework="net472" />
@@ -37,7 +35,6 @@
         <TestTarget Include="IKVM.Tools.Importer.Tests|net10.0" ProjectName="IKVM.Tools.Importer.Tests" TargetFramework="net10.0" />
         <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net472" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net472" />
         <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net6.0" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net6.0" />
-        <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net7.0" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net7.0" />
         <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net8.0" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net8.0" />
         <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net10.0" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net10.0" />
         <TestTarget Include="IKVM.MSBuild.Tests|net10.0" ProjectName="IKVM.MSBuild.Tests" TargetFramework="net10.0" />

@@ -23,10 +23,11 @@
 */
 using System;
 using System.Diagnostics;
-
-using IKVM.Attributes;
-
 using System.Threading;
+
+using IKVM.CoreLib.Runtime;
+using IKVM.CoreLib.Linking;
+using IKVM.Attributes;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -41,7 +42,7 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    abstract class RuntimeJavaField : RuntimeJavaMember
+    abstract class RuntimeJavaField : RuntimeJavaMember, ILinkingField<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>
     {
 
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
@@ -715,6 +716,15 @@ namespace IKVM.Runtime
 #endif
 
 #endif
+
+        #region ILinkingField<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>
+
+        void ILinkingField<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.Link(LoadMode mode)
+        {
+            Link(mode);
+        }
+
+        #endregion
 
     }
 

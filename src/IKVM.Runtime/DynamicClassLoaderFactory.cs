@@ -25,20 +25,17 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Collections.Concurrent;
 
+using IKVM.CoreLib.Exceptions;
 
 #if IMPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
 using IKVM.Tools.Importer;
-
-using Type = IKVM.Reflection.Type;
-using ProtectionDomain = System.Object;
 #else
 using System.Reflection;
 #endif
 
 namespace IKVM.Runtime
 {
+
     /// <summary>
     /// Maintains instances of <see cref="DynamicClassLoader"/>.
     /// </summary>
@@ -95,9 +92,9 @@ namespace IKVM.Runtime
                     type.Finish();
                     return type.TypeAsTBD.Assembly;
                 }
-                catch (RetargetableJavaException e)
+                catch (TranslatableJavaException e)
                 {
-                    throw e.ToJava();
+                    throw context.ExceptionHelper.MapException<Exception>(e, true, false);
                 }
             }
 

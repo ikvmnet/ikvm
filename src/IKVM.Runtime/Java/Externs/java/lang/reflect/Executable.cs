@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 
+using IKVM.CoreLib.Runtime;
 using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.java.lang.reflect

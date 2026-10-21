@@ -22,6 +22,7 @@
   
 */
 using IKVM.Attributes;
+using IKVM.CoreLib.Runtime;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;

@@ -25,6 +25,7 @@ using System;
 using System.Runtime.InteropServices;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Linking;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -32,14 +33,12 @@ using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
 #else
-using System.Reflection;
-using System.Reflection.Emit;
 #endif
 
 namespace IKVM.Runtime
 {
 
-    abstract class RuntimeJavaMember
+    abstract class RuntimeJavaMember : ILinkingMember<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>
     {
 
         /// <summary>

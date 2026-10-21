@@ -23,14 +23,13 @@
 */
 using System;
 
-using IKVM.CoreLib.Diagnostics;
+using IKVM.Attributes;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
-
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -77,8 +76,8 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="declaringType"></param>
         /// <param name="fld"></param>
-        internal RuntimeByteCodePropertyJavaField(RuntimeJavaType declaringType, ClassFile.Field fld) :
-            base(declaringType, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal), null)
+        internal RuntimeByteCodePropertyJavaField(RuntimeJavaType declaringType, Field fld) :
+            base(declaringType, null, fld.Name, fld.Signature, new ExModifiers((Modifiers)fld.AccessFlags, fld.IsInternal), null)
         {
             getter = GetMethod(fld.PropertyGetter, "()" + fld.Signature, fld.IsStatic);
             setter = GetMethod(fld.PropertySetter, "(" + fld.Signature + ")V", fld.IsStatic);

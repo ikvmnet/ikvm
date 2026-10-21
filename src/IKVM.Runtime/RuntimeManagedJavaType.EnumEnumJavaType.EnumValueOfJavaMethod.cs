@@ -40,7 +40,7 @@ namespace IKVM.Runtime
                 /// </summary>
                 /// <param name="declaringType"></param>
                 internal EnumValueOfJavaMethod(RuntimeJavaType declaringType) :
-                    base(declaringType, "valueOf", "(Ljava.lang.String;)" + declaringType.SigName, null, declaringType, new RuntimeJavaType[] { declaringType.Context.JavaBase.TypeOfJavaLangString}, Modifiers.Public | Modifiers.Static, MemberFlags.None)
+                    base(declaringType, "valueOf", "(Ljava.lang.String;)" + declaringType.SignatureName, null, declaringType, [declaringType.Context.JavaBase.TypeOfJavaLangString], Modifiers.Public | Modifiers.Static, MemberFlags.None)
                 {
 
                 }
@@ -51,7 +51,7 @@ namespace IKVM.Runtime
 
                 internal override object Invoke(object obj, object[] args)
                 {
-                    var values = this.DeclaringType.GetFields();
+                    var values = DeclaringType.GetFields();
                     for (int i = 0; i < values.Length; i++)
                         if (values[i].Name.Equals(args[0]))
                             return values[i].GetValue(null);

@@ -962,19 +962,35 @@ int JNICALL JVM_GetHostName(char* name, int namelen)
 }
 
 #ifdef WIN32
+inline bool os_is_absolute_path(LPCWSTR path)
+{
+    // drive letter followed by a separator, or a UNC or device path
+    return (path[0] != L'\0' && path[1] == L':' && (path[2] == L'\\' || path[2] == L'/')) || (path[0] == L'\\' && path[1] == L'\\');
+}
+
 void* os_dll_load(const char* filename, char* ebuf, int ebuflen)
 {
     size_t sfilename = (size_t)::MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
     LPWSTR wfilename = new WCHAR[sfilename];
     ::MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, sfilename);
 
+    // dependencies are searched for in the directory of the library itself, which lets the JDK libraries find their
+    // siblings in the IKVM home regardless of where the host executable lives
     void* result = ::LoadLibraryExW(wfilename, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+
+    // the above excludes the standard search path, including PATH, which a native Java does search for the dependencies
+    // of a JNI library: retry with the altered search path, which searches the directory of the library and then the
+    // standard search path, for this call only; it is only defined for absolute paths
+    if (result == NULL && ::GetLastError() == ERROR_MOD_NOT_FOUND && os_is_absolute_path(wfilename)) {
+        result = ::LoadLibraryExW(wfilename, 0, LOAD_WITH_ALTERED_SEARCH_PATH);
+    }
+
+    DWORD errcode = GetLastError();
     delete[] wfilename;
     if (result != NULL) {
         return result;
     }
 
-    DWORD errcode = GetLastError();
     if (errcode == ERROR_MOD_NOT_FOUND) {
         strncpy(ebuf, "Can't find dependent libraries", ebuflen - 1);
         ebuf[ebuflen - 1] = '\0';

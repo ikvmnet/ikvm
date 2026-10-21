@@ -30,8 +30,8 @@ namespace IKVM.Attributes
 	public sealed class ModifiersAttribute : Attribute
 	{
 
-		Modifiers modifiers;
-		bool isInternal;
+		readonly Modifiers modifiers;
+		readonly bool isInternal;
 
 		/// <summary>
 		/// Initializes a new instance.

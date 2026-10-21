@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Exceptions;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -97,7 +98,7 @@ namespace IKVM.Tools.Importer
                 {
                     wrappers[i] = loader.TryLoadClassByName(interfaces[i]);
                 }
-                catch (RetargetableJavaException)
+                catch (TranslatableJavaException)
                 {
 
                 }
@@ -119,14 +120,14 @@ namespace IKVM.Tools.Importer
             {
                 methods = CheckAndCollect(loader, interfaces);
             }
-            catch (RetargetableJavaException x)
+            catch (TranslatableJavaException e)
             {
-                loader.Diagnostics.UnableToCreateProxy(proxy, x.Message);
+                loader.Diagnostics.UnableToCreateProxy(proxy, e.Message);
                 return;
             }
-            catch (ProxyException x)
+            catch (ProxyException e)
             {
-                loader.Diagnostics.UnableToCreateProxy(proxy, x.Message);
+                loader.Diagnostics.UnableToCreateProxy(proxy, e.Message);
                 return;
             }
 
