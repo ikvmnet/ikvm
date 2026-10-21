@@ -21,8 +21,6 @@
   jeroen@frijters.net
   
 */
-using System;
-
 using IKVM.Attributes;
 
 namespace IKVM.Runtime
@@ -39,7 +37,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="declaringType"></param>
             internal MulticastDelegateCtorJavaMethod(RuntimeJavaType declaringType) :
-                base(declaringType, "<init>", "()V", null, declaringType.Context.PrimitiveJavaTypeFactory.VOID, Array.Empty<RuntimeJavaType>(), Modifiers.Protected, MemberFlags.None)
+                base(declaringType, "<init>", "()V", null, declaringType.Context.PrimitiveJavaTypeFactory.VOID, [], Modifiers.Protected, MemberFlags.None)
             {
 
             }

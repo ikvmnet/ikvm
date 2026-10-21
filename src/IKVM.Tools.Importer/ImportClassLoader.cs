@@ -35,6 +35,9 @@ using System.Xml.Linq;
 using IKVM.Attributes;
 using IKVM.ByteCode;
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Exceptions;
+using IKVM.CoreLib.Linking;
+using IKVM.CoreLib.Runtime;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -332,19 +335,19 @@ namespace IKVM.Tools.Importer
 
                     stats.Attempted++;
 
-                    IKVM.Runtime.ClassFile f;
+                    ClassFile f;
 
                     try
                     {
-                        f = new IKVM.Runtime.ClassFile(Context, Diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(itemRef.GetData()), name, ClassFileParseOptions, null);
+                        f = new ClassFile(Context, IKVM.ByteCode.Decoding.ClassFile.Read(itemRef.GetData()), name, ClassFileParseOptions, []);
                     }
-                    catch (UnsupportedClassVersionException e)
+                    catch (IKVM.ByteCode.UnsupportedClassVersionException e)
                     {
                         Context.StaticCompiler.SuppressWarning(state, Diagnostic.ClassNotFound, name);
                         RecordUnsupportedClassVersion(stats, name, e.Version);
                         return null;
                     }
-                    catch (UnsupportedClassVersionError e)
+                    catch (IKVM.CoreLib.Linking.UnsupportedClassVersionException e)
                     {
                         Context.StaticCompiler.SuppressWarning(state, Diagnostic.ClassNotFound, name);
                         RecordUnsupportedClassVersion(stats, name, e.Version);
@@ -356,7 +359,7 @@ namespace IKVM.Tools.Importer
                         Diagnostics.ClassFormatError(name, e.Message);
                         return null;
                     }
-                    catch (ClassFormatError e)
+                    catch (ClassFormatException e)
                     {
                         Context.StaticCompiler.SuppressWarning(state, Diagnostic.ClassNotFound, name);
                         Diagnostics.ClassFormatError(name, e.Message);
@@ -449,30 +452,32 @@ namespace IKVM.Tools.Importer
 
                         return tw;
                     }
-                    catch (ClassFormatError x)
+                    catch (ClassFormatException e)
                     {
-                        Diagnostics.ClassFormatError(name, x.Message);
+                        Diagnostics.ClassFormatError(name, e.Message);
                     }
-                    catch (IllegalAccessError x)
+                    catch (ClassFormatError e)
                     {
-                        Diagnostics.IllegalAccessError(name, x.Message);
+                        Diagnostics.ClassFormatError(name, e.Message);
                     }
-                    catch (VerifyError x)
+                    catch (IllegalAccessError e)
                     {
-                        Diagnostics.VerificationError(name, x.Message);
+                        Diagnostics.IllegalAccessError(name, e.Message);
                     }
-                    catch (NoClassDefFoundError x)
+                    catch (VerifyError e)
+                    {
+                        Diagnostics.VerificationError(name, e.Message);
+                    }
+                    catch (NoClassDefFoundError e)
                     {
                         if ((state.codegenoptions & CodeGenOptions.DisableDynamicBinding) != 0)
-                        {
-                            Diagnostics.NoClassDefFoundError(name, x.Message);
-                        }
+                            Diagnostics.NoClassDefFoundError(name, e.Message);
 
-                        Diagnostics.ClassNotFound(x.Message);
+                        Diagnostics.ClassNotFound(e.Message);
                     }
-                    catch (RetargetableJavaException x)
+                    catch (TranslatableJavaException e)
                     {
-                        Diagnostics.GenericUnableToCompileError(name, x.GetType().Name, x.Message);
+                        Diagnostics.GenericUnableToCompileError(name, e.GetType().Name, e.Message);
                     }
 
                     Context.StaticCompiler.SuppressWarning(state, Diagnostic.ClassNotFound, name);
@@ -494,7 +499,7 @@ namespace IKVM.Tools.Importer
         /// <param name="version"></param>
         void RecordUnsupportedClassVersion(JarImportStatistics stats, string name, ClassFormatVersion version)
         {
-            Diagnostics.UnsupportedClassVersion(name, UnsupportedClassVersionError.FormatMessage(version));
+            Diagnostics.UnsupportedClassVersion(name, IKVM.CoreLib.Linking.UnsupportedClassVersionException.FormatMessage(version));
 
             stats.UnsupportedVersion++;
             stats.FirstUnsupportedVersionClass ??= name;
@@ -513,7 +518,7 @@ namespace IKVM.Tools.Importer
 
                 if (stats.UnsupportedVersion > 0)
                 {
-                    var targets = string.Join(", ", stats.UnsupportedVersions.Select(i => $"{UnsupportedClassVersionError.GetJavaVersionName(i)} (class file version {i})"));
+                    var targets = string.Join(", ", stats.UnsupportedVersions.Select(i => $"{IKVM.CoreLib.Linking.UnsupportedClassVersionException.GetJavaVersionName(i)} (class file version {i})"));
                     Diagnostics.UnsupportedClassVersionSkipped(stats.UnsupportedVersion.ToString(), jar.Name, targets, stats.FirstUnsupportedVersionClass);
                 }
 
@@ -2411,6 +2416,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
+
         internal void LoadMapXml()
         {
             if (map.Assembly.Classes.Length > 0)
@@ -2759,7 +2765,7 @@ namespace IKVM.Tools.Importer
                 {
                     try
                     {
-                        using var f = new IKVM.Runtime.ClassFile(context, diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(assemblyType.GetData()), null, ClassFileParseOptions.StaticImport, null);
+                        using var f = new ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(assemblyType.GetData()), null, ClassFileParseOptions.StaticImport, []);
 
                         // NOTE the "assembly" type in the unnamed package is a magic type
                         // that acts as the placeholder for assembly attributes
@@ -2776,7 +2782,7 @@ namespace IKVM.Tools.Importer
                     {
 
                     }
-                    catch (ClassFormatError)
+                    catch (ClassFormatException)
                     {
 
                     }
@@ -2790,7 +2796,7 @@ namespace IKVM.Tools.Importer
                 {
                     try
                     {
-                        using var f = new IKVM.Runtime.ClassFile(context, diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(h[className].GetData()), null, ClassFileParseOptions.StaticImport, null);
+                        using var f = new ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(h[className].GetData()), null, ClassFileParseOptions.StaticImport, []);
                         if (f.Name == className)
                         {
                             foreach (var m in f.Methods)
@@ -2804,7 +2810,7 @@ namespace IKVM.Tools.Importer
                             }
                         }
                     }
-                    catch (ClassFormatError)
+                    catch (ClassFormatException)
                     {
 
                     }
@@ -3090,9 +3096,11 @@ namespace IKVM.Tools.Importer
                 {
                     wrapper = TryLoadClassByName(state.mainClass);
                 }
-                catch (RetargetableJavaException)
+                catch (TranslatableJavaException)
                 {
+
                 }
+
                 if (wrapper == null)
                 {
                     throw new FatalCompilerErrorException(DiagnosticEvent.MainClassNotFound());
@@ -3175,7 +3183,7 @@ namespace IKVM.Tools.Importer
                 {
                     classLoaderType = TryLoadClassByName(state.classLoader);
                 }
-                catch (RetargetableJavaException)
+                catch (TranslatableJavaException)
                 {
 
                 }
@@ -3321,7 +3329,7 @@ namespace IKVM.Tools.Importer
                     valid = false;
                     Diagnostics.InvalidPropertyNameInMapFile(getterOrSetter, clazz, property, method.Name);
                 }
-                if (!IKVM.Runtime.ClassFile.IsValidMethodDescriptor(method.Sig))
+                if (!ClassFile.IsValidMethodDescriptor(method.Sig))
                 {
                     valid = false;
                     Diagnostics.InvalidPropertySignatureInMapFile(getterOrSetter, clazz, property, method.Sig);
@@ -3336,7 +3344,7 @@ namespace IKVM.Tools.Importer
 
         static bool IsValidSig(string sig, bool field)
         {
-            return sig != null && (field ? IKVM.Runtime.ClassFile.IsValidFieldDescriptor(sig) : IKVM.Runtime.ClassFile.IsValidMethodDescriptor(sig));
+            return sig != null && (field ? ClassFile.IsValidFieldDescriptor(sig) : ClassFile.IsValidMethodDescriptor(sig));
         }
 
         internal Type GetTypeFromReferencedAssembly(string name)

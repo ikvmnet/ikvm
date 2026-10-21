@@ -2,9 +2,8 @@
 using System.Collections.Concurrent;
 
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Linking;
 using IKVM.CoreLib.Symbols;
-
-
 
 #if IMPORTER
 using IKVM.Tools.Importer;
@@ -22,9 +21,9 @@ namespace IKVM.Runtime
 {
 
     /// <summary>
-    /// Maintains services relevant to an instane of the IKVM runtime.
+    /// Maintains services relevant to an instance of the IKVM runtime.
     /// </summary>
-    class RuntimeContext
+    class RuntimeContext : ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>
     {
 
         readonly RuntimeContextOptions options;
@@ -42,6 +41,7 @@ namespace IKVM.Runtime
         RuntimeManagedByteCodeJavaTypeFactory managedByteCodeJavaTypeFactory;
         RuntimePrimitiveJavaTypeFactory primitiveJavaTypeFactory;
         RuntimeVerifierJavaTypeFactory verifierJavaTypeFactory;
+        Intrinsics intrinsics;
 
 #if IMPORTER == false && EXPORTER == false
         ExceptionHelper exceptionHelper;
@@ -92,14 +92,14 @@ namespace IKVM.Runtime
 
 #else
 
-		/// <summary>
-		/// Initializes a new instance.
-		/// </summary>
-		/// <param name="options"></param>
-		/// <param name="diagnostics"></param>
-		/// <param name="resolver"></param>
-		/// <param name="bootstrap"></param>
-		public RuntimeContext(RuntimeContextOptions options, IDiagnosticHandler diagnostics, ISymbolResolver resolver, bool bootstrap)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="diagnostics"></param>
+        /// <param name="resolver"></param>
+        /// <param name="bootstrap"></param>
+        public RuntimeContext(RuntimeContextOptions options, IDiagnosticHandler diagnostics, ISymbolResolver resolver, bool bootstrap)
         {
             this.options = options ?? throw new ArgumentNullException(nameof(options));
             this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
@@ -143,10 +143,10 @@ namespace IKVM.Runtime
         /// </summary>
         public RuntimeContextOptions Options => options;
 
-		/// <summary>
-		/// Gets the <see cref="ISymbolResolver"/> associated with this instance of the runtime.
-		/// </summary>
-		public ISymbolResolver Resolver => resolver;
+        /// <summary>
+        /// Gets the <see cref="ISymbolResolver"/> associated with this instance of the runtime.
+        /// </summary>
+        public ISymbolResolver Resolver => resolver;
 
         /// <summary>
         /// Gets whether or not the runtime is running in bootstrap mode; that is, we are compiling the Java base assembly itself.
@@ -177,6 +177,11 @@ namespace IKVM.Runtime
         /// Gets the <see cref="RuntimeVerifierJavaTypeFactory"/> associated with this instance of the runtime.
         /// </summary>
         public RuntimeVerifierJavaTypeFactory VerifierJavaTypeFactory => GetOrCreateSingleton(ref verifierJavaTypeFactory, () => new RuntimeVerifierJavaTypeFactory(this));
+
+        /// <summary>
+        /// Gets the <see cref="Intrinsics"/> associated with this instance.
+        /// </summary>
+        public Intrinsics Intrinsics => GetOrCreateSingleton(ref intrinsics, () => new Intrinsics(this));
 
 #if IMPORTER == false
 
@@ -288,6 +293,43 @@ namespace IKVM.Runtime
         public ProxyGenerator ProxyGenerator => GetOrCreateSingleton(ref proxyGenerator, () => new ProxyGenerator(this));
 
 #endif
+
+        #region LinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>
+
+        /// <inheritdoc />
+        RuntimeJavaType ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.CreateUnloadableType(string name) => new RuntimeUnloadableJavaType(this, name);
+
+#if IMPORTER
+
+        /// <inheritdoc />
+        bool ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.IsImporter => true;
+
+#else
+
+        /// <inheritdoc />
+        bool ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.IsImporter => false;
+
+#endif
+
+        /// <inheritdoc />
+        RuntimeJavaType ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.TypeOfJavaLangObject => JavaBase.TypeOfJavaLangObject;
+
+        /// <inheritdoc />
+        RuntimeJavaType ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.TypeOfVerifierNull => VerifierJavaTypeFactory.Null;
+
+#if EXPORTER == false
+
+        /// <inheritdoc />
+        bool ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.AllowNonVirtualCalls => JVM.AllowNonVirtualCalls;
+
+#else
+
+        /// <inheritdoc />
+        bool ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.AllowNonVirtualCalls => false;
+
+#endif
+
+        #endregion
 
     }
 

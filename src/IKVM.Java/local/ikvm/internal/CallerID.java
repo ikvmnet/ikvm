@@ -23,7 +23,6 @@
 */
 package ikvm.internal;
 
-import cli.System.Type;
 import cli.System.Diagnostics.StackFrame;
 import cli.System.Reflection.Assembly;
 
@@ -68,20 +67,17 @@ public abstract class CallerID {
 	}
 
 	@ikvm.lang.Internal
-	public static CallerID create(final cli.System.Reflection.MethodBase method) {
+	public static CallerID create(cli.System.Reflection.MethodBase frameMethod) {
+		// a frame without a declaring type (e.g. a DynamicMethod) does not belong to any class, so it cannot be the caller;
+		// skip it, the same way hidden frames are skipped, and use the next visible frame on the stack instead
+		final cli.System.Reflection.MethodBase method = frameMethod != null && frameMethod.get_DeclaringType() == null ? GetCallerMethod() : frameMethod;
 		return new CallerID() {
 			Class GetClass() {
 				if (method == null) {
 					// this happens if a native thread attaches and calls back into Java
 					return null;
 				}
-				Type type = method.get_DeclaringType();
-				if (type == null) {
-					// TODO we probably should return a class corresponding to <Module>
-					throw new InternalError("No declaring type for " + method.get_Name() + ".");
-				}
-
-				return ikvm.runtime.Util.getClassFromTypeHandle(type.get_TypeHandle());
+				return ikvm.runtime.Util.getClassFromTypeHandle(method.get_DeclaringType().get_TypeHandle());
 			}
 
 			ClassLoader GetClassLoader() {
@@ -131,5 +127,6 @@ public abstract class CallerID {
 	native Class GetClass();
 	native ClassLoader GetClassLoader();
 	static native ClassLoader GetAssemblyClassLoader(Assembly asm);
+	static native cli.System.Reflection.MethodBase GetCallerMethod();
 
 }

@@ -90,7 +90,7 @@ namespace IKVM.Runtime
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
         private RuntimeManagedByteCodeAccessStubJavaField(RuntimeJavaType wrapper, PropertyInfo property, FieldInfo field, RuntimeJavaType propertyType, Modifiers modifiers, MemberFlags flags) :
-            base(wrapper, propertyType, property.Name, propertyType.SigName, modifiers, field, flags)
+            base(wrapper, propertyType, property.Name, propertyType.SignatureName, modifiers, field, flags)
         {
             this.getter = property.GetGetMethod(true);
             this.setter = property.GetSetMethod(true);

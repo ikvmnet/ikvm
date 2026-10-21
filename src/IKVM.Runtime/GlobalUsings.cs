@@ -1,0 +1,25 @@
+﻿global using ClassFile = IKVM.CoreLib.Linking.ClassFile<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using Code = IKVM.CoreLib.Linking.Code<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using Field = IKVM.CoreLib.Linking.Field<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using FieldOrMethod = IKVM.CoreLib.Linking.FieldOrMethod<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using Instruction = IKVM.CoreLib.Linking.Instruction<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using Method = IKVM.CoreLib.Linking.Method<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+
+global using ConstantPoolItem = IKVM.CoreLib.Linking.ConstantPoolItem<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemClass = IKVM.CoreLib.Linking.ConstantPoolItemClass<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemDouble = IKVM.CoreLib.Linking.ConstantPoolItemDouble<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemFieldref = IKVM.CoreLib.Linking.ConstantPoolItemFieldref<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemFloat = IKVM.CoreLib.Linking.ConstantPoolItemFloat<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemFMI = IKVM.CoreLib.Linking.ConstantPoolItemFMI<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemInteger = IKVM.CoreLib.Linking.ConstantPoolItemInteger<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemInterfaceMethodref = IKVM.CoreLib.Linking.ConstantPoolItemInterfaceMethodref<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemInvokeDynamic = IKVM.CoreLib.Linking.ConstantPoolItemInvokeDynamic<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemLiveObject = IKVM.CoreLib.Linking.ConstantPoolItemLiveObject<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemLong = IKVM.CoreLib.Linking.ConstantPoolItemLong<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemMethodHandle = IKVM.CoreLib.Linking.ConstantPoolItemMethodHandle<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemMethodref = IKVM.CoreLib.Linking.ConstantPoolItemMethodref<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemMethodType = IKVM.CoreLib.Linking.ConstantPoolItemMethodType<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemMI = IKVM.CoreLib.Linking.ConstantPoolItemMI<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemNameAndType = IKVM.CoreLib.Linking.ConstantPoolItemNameAndType<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemString = IKVM.CoreLib.Linking.ConstantPoolItemString<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+global using ConstantPoolItemUtf8 = IKVM.CoreLib.Linking.ConstantPoolItemUtf8<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;

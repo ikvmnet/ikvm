@@ -24,11 +24,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-
-using IKVM.Attributes;
-using IKVM.CoreLib.Diagnostics;
 using System.Text;
 
+using IKVM.Attributes;
+using IKVM.CoreLib.Runtime;
+using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Linking;
 
 
 #if IMPORTER
@@ -76,7 +77,7 @@ namespace IKVM.Runtime
 #endif
         MethodBase automagicSerializationCtor;
 
-        RuntimeJavaType LoadTypeWrapper(RuntimeClassLoader classLoader, ProtectionDomain pd, ClassFile.ConstantPoolItemClass clazz)
+        RuntimeJavaType LoadTypeWrapper(RuntimeClassLoader classLoader, ProtectionDomain pd, ConstantPoolItemClass clazz)
         {
             // check for patched constant pool items
             var tw = clazz.GetClassType();
@@ -122,7 +123,7 @@ namespace IKVM.Runtime
 #else
         internal RuntimeByteCodeJavaType(RuntimeJavaType host, ClassFile f, RuntimeClassLoader classLoader, ProtectionDomain pd)
 #endif
-            : base(classLoader.Context, f.IsInternal ? TypeFlags.InternalAccess : host != null ? TypeFlags.Anonymous : TypeFlags.None, f.Modifiers, f.Name)
+            : base(classLoader.Context, f.IsInternal ? TypeFlags.InternalAccess : host != null ? TypeFlags.Anonymous : TypeFlags.None, (Modifiers)f.AccessFlags, f.Name)
         {
             Profiler.Count("RuntimeByteCodeJavaType");
             this.classLoader = classLoader;
@@ -130,7 +131,7 @@ namespace IKVM.Runtime
             if (f.IsInterface)
             {
                 // interfaces can't "override" final methods in object
-                foreach (ClassFile.Method method in f.Methods)
+                foreach (Method method in f.Methods)
                 {
                     RuntimeJavaMethod mw;
                     if (method.IsVirtual
@@ -172,7 +173,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            ClassFile.ConstantPoolItemClass[] interfaces = f.Interfaces;
+            ConstantPoolItemClass[] interfaces = f.Interfaces;
             this.interfaces = new RuntimeJavaType[interfaces.Length];
             for (int i = 0; i < interfaces.Length; i++)
             {
@@ -197,11 +198,11 @@ namespace IKVM.Runtime
             {
                 throw new VerifyError("Delegate must be final");
             }
-            ClassFile.Method invoke = null;
-            ClassFile.Method beginInvoke = null;
-            ClassFile.Method endInvoke = null;
-            ClassFile.Method constructor = null;
-            foreach (ClassFile.Method m in f.Methods)
+            Method invoke = null;
+            Method beginInvoke = null;
+            Method endInvoke = null;
+            Method constructor = null;
+            foreach (Method m in f.Methods)
             {
                 if (m.Name == "Invoke")
                 {
@@ -257,10 +258,10 @@ namespace IKVM.Runtime
                 throw new VerifyError("Delegate constructor must be public");
             }
             if (constructor.Instructions.Length < 3
-                || constructor.Instructions[0].NormalizedOpCode != NormalizedByteCode.__aload
+                || constructor.Instructions[0].NormalizedOpCode != NormalizedOpCode.Aload
                 || constructor.Instructions[0].NormalizedArg1 != 0
-                || constructor.Instructions[1].NormalizedOpCode != NormalizedByteCode.__invokespecial
-                || constructor.Instructions[2].NormalizedOpCode != NormalizedByteCode.__return)
+                || constructor.Instructions[1].NormalizedOpCode != NormalizedOpCode.InvokeSpecial
+                || constructor.Instructions[2].NormalizedOpCode != NormalizedOpCode.Return)
             {
                 throw new VerifyError("Delegate constructor must be empty");
             }
@@ -283,7 +284,7 @@ namespace IKVM.Runtime
             {
                 throw new VerifyError("Delegate inner interface may not extend any interfaces");
             }
-            if (constructor.Signature != "(" + iface.SigName + ")V")
+            if (constructor.Signature != "(" + iface.SignatureName + ")V")
             {
                 throw new VerifyError("Delegate constructor must take a single argument of type inner Method interface");
             }
@@ -460,7 +461,7 @@ namespace IKVM.Runtime
             }
         }
 
-        static void GetParameterNamesFromMP(ClassFile.Method m, string[] parameterNames)
+        static void GetParameterNamesFromMP(Method m, string[] parameterNames)
         {
             var methodParameters = m.MethodParameters;
             if (methodParameters != null)
@@ -475,10 +476,10 @@ namespace IKVM.Runtime
             }
         }
 
-        protected static void GetParameterNamesFromLVT(ClassFile.Method m, string[] parameterNames)
+        protected static void GetParameterNamesFromLVT(Method m, string[] parameterNames)
         {
-            var localVars = m.LocalVariableTableAttribute;
-            if (localVars != null)
+            var localVars = m.LocalVariableTable;
+            if (localVars.Count > 0)
             {
                 for (int i = m.IsStatic ? 0 : 1, pos = 0; i < m.ArgMap.Length; i++)
                 {
@@ -487,11 +488,11 @@ namespace IKVM.Runtime
                     {
                         if (parameterNames[pos] == null)
                         {
-                            for (int j = 0; j < localVars.Length; j++)
+                            for (int j = 0; j < localVars.Count; j++)
                             {
-                                if (localVars[j].index == i)
+                                if (localVars[j].Slot == i)
                                 {
-                                    parameterNames[pos] = localVars[j].name;
+                                    parameterNames[pos] = m.ClassFile.GetConstantPoolUtf8String(localVars[j].Name);
                                     break;
                                 }
                             }
@@ -641,7 +642,7 @@ namespace IKVM.Runtime
 
         protected abstract void AddMapXmlFields(ref RuntimeJavaField[] fields);
 
-        protected abstract bool EmitMapXmlMethodPrologueAndOrBody(CodeEmitter ilgen, ClassFile f, ClassFile.Method m);
+        protected abstract bool EmitMapXmlMethodPrologueAndOrBody(CodeEmitter ilgen, ClassFile f, Method m);
 
         protected abstract void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, RuntimeJavaField[] fields, RuntimeJavaMethod[] methods);
 
@@ -655,7 +656,7 @@ namespace IKVM.Runtime
 
 #endif // IMPORTER
 
-        private bool IsPInvokeMethod(ClassFile.Method m)
+        private bool IsPInvokeMethod(Method m)
         {
 #if IMPORTER
             Dictionary<string, IKVM.Tools.Importer.MapXml.Class> mapxml = classLoader.GetMapXmlClasses();
