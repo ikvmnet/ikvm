@@ -121,7 +121,7 @@
         </AssignTargetPathsDependsOn>
     </PropertyGroup>
 
-    <Target Name="ResolveClangAdditionalRuntimeNativeAssets" DependsOnTargets="GetClangProjectReferenceItems" BeforeTargets="ResolveBuildDependencyFileExtensions">
+    <Target Name="ResolveClangAdditionalRuntimeNativeAssets" DependsOnTargets="GetClangProjectReferenceItems" BeforeTargets="GenerateBuildDependencyFileExtensions">
         <ItemGroup>
             <AdditionalRuntimeNativeAssets Include="@(_ClangProjectReferenceExecutableItems->'runtimes\%(TargetIdentifier)\native\%(Filename)%(Extension)')" Condition=" '%(_ClangProjectReferenceExecutableItems.TargetIdentifier)' != '' ">
                 <LibraryName>%(_ClangProjectReferenceExecutableItems.TargetName)</LibraryName>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Xml.Linq;
 
 using Buildalyzer;
@@ -371,6 +372,61 @@ namespace IKVM.NET.Sdk.Tests
             // current rid matches target, execute and check output
             if (GetCurrentRid() == rid)
                 (await Cli.Wrap(Path.Combine(binDir, "publish", string.Format(exe, "ProjectExe"))).WithArguments("Hello").ExecuteBufferedAsync()).StandardOutput.Trim().Should().Be("Hello");
+        }
+
+        [DataTestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void CanBuildCentralPackageManagementProject(bool centralPackageVersions)
+        {
+            var manager = new AnalyzerManager();
+            var analyzer = manager.GetProject(Path.Combine(@"Project", "Cpm", "ProjectCpm.msbuildproj"));
+            analyzer.AddBuildLogger(new TargetLogger(TestContext));
+            analyzer.AddBinaryLogger(Path.Combine(WorkRoot, $"cpm-{centralPackageVersions}-msbuild.binlog"));
+            analyzer.SetEnvironmentVariable("NUGET_PACKAGES", "");
+            analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
+            analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
+            analyzer.SetGlobalProperty("IkvmCacheDir", IkvmCachePath + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("IkvmExportCacheDir", IkvmExportCachePath + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("PackageVersion", Properties["PackageVersion"]);
+            analyzer.SetGlobalProperty("RestorePackagesPath", NuGetPackageRoot + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("IkvmCentralPackageVersions", centralPackageVersions ? "true" : "false");
+            analyzer.SetGlobalProperty("Configuration", "Release");
+
+            var options = new EnvironmentOptions();
+            options.WorkingDirectory = TestRoot;
+            options.DesignTime = false;
+            options.Restore = true;
+            options.TargetsToBuild.Clear();
+            options.TargetsToBuild.Add("Clean");
+            options.TargetsToBuild.Add("Build");
+            options.Arguments.Add("/v:diag");
+
+            var result = analyzer.Build(options);
+            TestContext.WriteLine(Path.Combine(WorkRoot, $"cpm-{centralPackageVersions}-msbuild.binlog"));
+            TestContext.AddResultFile(Path.Combine(WorkRoot, $"cpm-{centralPackageVersions}-msbuild.binlog"));
+            result.OverallSuccess.Should().Be(true);
+
+            File.Exists(Path.Combine("Project", "Cpm", "bin", "Release", "net10.0", "ProjectCpm.dll")).Should().BeTrue();
+
+            // implicit references are auto referenced unless the user supplied a central version for them
+            using var assets = JsonDocument.Parse(File.ReadAllText(Path.Combine("Project", "Cpm", "obj", "project.assets.json")));
+            var dependencies = assets.RootElement.GetProperty("project").GetProperty("frameworks").GetProperty("net10.0").GetProperty("dependencies");
+            foreach (var name in new[] { "IKVM", "IKVM.MSBuild" })
+            {
+                var dependency = dependencies.GetProperty(name);
+                dependency.GetProperty("version").GetString().Should().Be($"[{Properties["PackageVersion"]}, )");
+
+                if (centralPackageVersions)
+                {
+                    dependency.TryGetProperty("autoReferenced", out _).Should().BeFalse();
+                    dependency.GetProperty("versionCentrallyManaged").GetBoolean().Should().BeTrue();
+                }
+                else
+                {
+                    dependency.GetProperty("autoReferenced").GetBoolean().Should().BeTrue();
+                }
+            }
         }
 
         /// <summary>

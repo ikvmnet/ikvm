@@ -15,6 +15,20 @@ file with contents like the following, using the latest version.
 </Project>
 ```
 
+The SDK implicitly references the `IKVM` and `IKVM.MSBuild` packages, at the same version as the SDK. Set
+`DisableImplicitIkvmPackageReference` to `true` to manage these references yourself.
+
+When using [Central Package Management](https://learn.microsoft.com/nuget/consume-packages/central-package-management),
+nothing needs to be added to `Directory.Packages.props`. To choose a different version than the one the SDK selects, add
+a `PackageVersion` item for `IKVM` and `IKVM.MSBuild`, and the SDK will use the central version instead.
+
+```
+<ItemGroup>
+    <PackageVersion Include="IKVM" Version="8.15.0" />
+    <PackageVersion Include="IKVM.MSBuild" Version="8.15.0" />
+</ItemGroup>
+```
+
 ## Limitations
 
 The project will compile fine in Visual Studio, with some caveats. Since we don't yet have a Visual Studio extension,

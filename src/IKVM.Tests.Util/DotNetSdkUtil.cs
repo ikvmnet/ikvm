@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 
@@ -58,63 +57,28 @@ namespace IKVM.Tests.Util
         /// <param name="targetFrameworkIdentifier"></param>
         /// <param name="targetFrameworkVersion"></param>
         /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="ArgumentException"></exception>
         public static IList<string> GetPathToReferenceAssemblies(string tfm, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
             if (targetFrameworkIdentifier == ".NETFramework")
             {
-                var l = new List<string>();
                 var dir = Path.Combine(Path.GetDirectoryName(typeof(DotNetSdkUtil).Assembly.Location), "netfxref", tfm);
                 if (Directory.Exists(dir))
-                    l.Add(dir);
+                    return [dir];
 
-                return l;
+                return [];
             }
 
             if (targetFrameworkIdentifier == ".NET")
             {
-                return GetCorePathToReferenceAssemblies(tfm, targetFrameworkVersion);
+                var dir = Path.Combine(Path.GetDirectoryName(typeof(DotNetSdkUtil).Assembly.Location), "netref", tfm);
+                if (Directory.Exists(dir))
+                    return [dir];
+
+                return [];
             }
 
             throw new ArgumentException(nameof(targetFrameworkIdentifier));
-        }
-
-        /// <summary>
-        /// Discovers the reference assembly paths for .NET Core TFM and framework version.
-        /// </summary>
-        /// <param name="tfm"></param>
-        /// <param name="targetFrameworkVersion"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        static IList<string> GetCorePathToReferenceAssemblies(string tfm, string targetFrameworkVersion)
-        {
-            // parse requested version
-            if (Version.TryParse(targetFrameworkVersion, out var targetVer) == false)
-                throw new InvalidOperationException(targetFrameworkVersion);
-
-            // back up to pack directory and get list of ref packs
-            var sdkBase = DotNetSdkResolver.ResolvePath(null) ?? throw new InvalidOperationException();
-            var packDir = Path.Combine(sdkBase, "..", "..", "packs", "Microsoft.NETCore.App.Ref");
-            var sdkVers = Directory.EnumerateDirectories(packDir).Select(Path.GetFileName);
-
-            // identify maximum matching version
-            var thisVer = new Version(0, 0, 0);
-            foreach (var ver in sdkVers)
-                if (Version.TryParse(ver, out var v))
-                    if (v.Major == targetVer.Major && v.Minor == targetVer.Minor && v > thisVer)
-                        thisVer = v;
-
-            // no higher version found
-            if (thisVer.Major == 0)
-                return null;
-
-            // check for TFM refs directory
-            var refsDir = Path.Combine(packDir, thisVer.ToString(), "ref", tfm);
-            if (Directory.Exists(refsDir) == false)
-                throw new InvalidOperationException();
-
-            // find all ref assemblies
-            return [Path.GetFullPath(refsDir)];
         }
 
     }

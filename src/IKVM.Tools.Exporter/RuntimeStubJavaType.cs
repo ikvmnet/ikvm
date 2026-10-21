@@ -36,8 +36,8 @@ namespace IKVM.Runtime
     sealed class RuntimeStubJavaType : RuntimeJavaType
     {
 
-        private readonly bool remapped;
-        private readonly RuntimeJavaType baseWrapper;
+        readonly bool remapped;
+        readonly RuntimeJavaType baseWrapper;
 
         /// <summary>
         /// Initializes a new instance.

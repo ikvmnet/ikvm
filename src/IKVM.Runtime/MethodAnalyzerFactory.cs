@@ -23,13 +23,9 @@
 */
 using System;
 
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
-
-
 namespace IKVM.Runtime
 {
+
     /// <summary>
     /// Provides instances of <see cref="MethodAnalyzer"/>.
     /// </summary>
@@ -76,7 +72,7 @@ namespace IKVM.Runtime
         /// <param name="method"></param>
         /// <param name="classLoader"></param>
         /// <returns></returns>
-        public MethodAnalyzer Create(RuntimeJavaType host, RuntimeJavaType wrapper, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method method, RuntimeClassLoader classLoader)
+        public MethodAnalyzer Create(RuntimeJavaType host, RuntimeJavaType wrapper, RuntimeJavaMethod mw, ClassFile classFile, Method method, RuntimeClassLoader classLoader)
         {
             return new MethodAnalyzer(_context, host, wrapper, mw, classFile, method, classLoader);
         }

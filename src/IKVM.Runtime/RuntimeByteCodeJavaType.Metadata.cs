@@ -21,9 +21,11 @@
   jeroen@frijters.net
   
 */
+
 using IKVM.ByteCode.Buffers;
 using IKVM.ByteCode.Decoding;
 using IKVM.ByteCode.Encoding;
+using IKVM.CoreLib.Runtime;
 
 namespace IKVM.Runtime
 {

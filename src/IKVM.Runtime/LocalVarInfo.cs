@@ -1,4 +1,4 @@
-﻿/*
+/*
   Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,7 +26,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
-using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
+using IKVM.ByteCode;
+using IKVM.CoreLib.Linking;
+using IKVM.CoreLib.Runtime;
 
 namespace IKVM.Runtime
 {
@@ -47,7 +49,7 @@ namespace IKVM.Runtime
         /// <param name="exceptions"></param>
         /// <param name="mw"></param>
         /// <param name="classLoader"></param>
-        internal LocalVarInfo(CodeInfo ma, ClassFile classFile, ClassFile.Method method, UntangledExceptionTable exceptions, RuntimeJavaMethod mw, RuntimeClassLoader classLoader)
+        internal LocalVarInfo(CodeInfo ma, ClassFile classFile, Method method, UntangledExceptionTable exceptions, RuntimeJavaMethod mw, RuntimeClassLoader classLoader)
         {
             var localStoreReaders = FindLocalVariables(ma, mw, classFile, method);
 
@@ -92,7 +94,7 @@ namespace IKVM.Runtime
                         var v1 = locals[i];
                         var v2 = locals[j];
 
-                        if (v1.name != null && v1.name == v2.name && v1.start_pc == v2.start_pc && v1.end_pc == v2.end_pc)
+                        if (v1.name != null && v1.name == v2.name && v1.start_pc == v2.start_pc && v1.end_pc == v2.end_pc && v1.local == v2.local) // FIX: Kotlin’s constructor parameters for nested/anonymous classes often share the same LVT name, prevent merging distinct slots (e.g., two "$receiver" params in kotlin)
                         {
                             // we can only merge if the resulting type is valid (this protects against incorrect
                             // LVT data, but is also needed for constructors, where the uninitialized this is a different
@@ -151,7 +153,7 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    if (instructions[i].NormalizedOpCode == NormalizedByteCode.__invokespecial || instructions[i].NormalizedOpCode == NormalizedByteCode.__dynamic_invokespecial)
+                    if (instructions[i].NormalizedOpCode == NormalizedOpCode.InvokeSpecial || instructions[i].NormalizedOpCode == NormalizedOpCode.DynamicInvokeSpecial)
                     {
                         invokespecialLocalVars[i] = new LocalVar[method.MaxLocals];
                         for (int j = 0; j < invokespecialLocalVars[i].Length; j++)
@@ -175,10 +177,10 @@ namespace IKVM.Runtime
             allLocalVars = locals.ToArray();
         }
 
-        static void FindLvtEntry(LocalVar lv, ClassFile.Method method, int instructionIndex)
+        static void FindLvtEntry(LocalVar lv, Method method, int instructionIndex)
         {
-            var lvt = method.LocalVariableTableAttribute;
-            if (lvt != null)
+            var lvt = method.LocalVariableTable;
+            if (lvt.Count > 0)
             {
                 var pc = method.Instructions[instructionIndex].PC;
                 var nextPC = method.Instructions[instructionIndex + 1].PC;
@@ -187,11 +189,11 @@ namespace IKVM.Runtime
                 foreach (var e in lvt)
                 {
                     // TODO validate the contents of the LVT entry
-                    if (e.index == lv.local && (e.start_pc <= pc || (e.start_pc == nextPC && isStore)) && e.start_pc + e.length > pc)
+                    if (e.Slot == lv.local && (e.StartPc <= pc || (e.StartPc == nextPC && isStore)) && e.StartPc + e.Length > pc)
                     {
-                        lv.name = e.name;
-                        lv.start_pc = e.start_pc;
-                        lv.end_pc = e.start_pc + e.length;
+                        lv.name = method.ClassFile.GetConstantPoolUtf8String(e.Name);
+                        lv.start_pc = e.StartPc;
+                        lv.end_pc = e.StartPc + e.Length;
                         break;
                     }
                 }
@@ -214,26 +216,26 @@ namespace IKVM.Runtime
             return allLocalVars;
         }
 
-        static bool IsLoadLocal(NormalizedByteCode bc)
+        static bool IsLoadLocal(NormalizedOpCode bc)
         {
             return bc is
-                NormalizedByteCode.__aload or
-                NormalizedByteCode.__iload or
-                NormalizedByteCode.__lload or
-                NormalizedByteCode.__fload or
-                NormalizedByteCode.__dload or
-                NormalizedByteCode.__iinc or
-                NormalizedByteCode.__ret;
+                NormalizedOpCode.Aload or
+                NormalizedOpCode.Iload or
+                NormalizedOpCode.Lload or
+                NormalizedOpCode.Fload or
+                NormalizedOpCode.Dload or
+                NormalizedOpCode.Iinc or
+                NormalizedOpCode.Ret;
         }
 
-        static bool IsStoreLocal(NormalizedByteCode bc)
+        static bool IsStoreLocal(NormalizedOpCode bc)
         {
             return bc is
-                NormalizedByteCode.__astore or
-                NormalizedByteCode.__istore or
-                NormalizedByteCode.__lstore or
-                NormalizedByteCode.__fstore or
-                NormalizedByteCode.__dstore;
+                NormalizedOpCode.Astore or
+                NormalizedOpCode.Istore or
+                NormalizedOpCode.Lstore or
+                NormalizedOpCode.Fstore or
+                NormalizedOpCode.Dstore;
         }
 
         struct FindLocalVarState
@@ -339,7 +341,7 @@ namespace IKVM.Runtime
 
         }
 
-        static Dictionary<int, string>[] FindLocalVariables(CodeInfo codeInfo, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method method)
+        static Dictionary<int, string>[] FindLocalVariables(CodeInfo codeInfo, RuntimeJavaMethod mw, ClassFile classFile, Method method)
         {
             var state = new FindLocalVarState[method.Instructions.Length];
             state[0].changed = true;
@@ -360,7 +362,7 @@ namespace IKVM.Runtime
             return FindLocalVariablesImpl(mw.DeclaringType.Context, codeInfo, classFile, method, state);
         }
 
-        static Dictionary<int, string>[] FindLocalVariablesImpl(RuntimeContext context, CodeInfo codeInfo, ClassFile classFile, ClassFile.Method method, FindLocalVarState[] state)
+        static Dictionary<int, string>[] FindLocalVariablesImpl(RuntimeContext context, CodeInfo codeInfo, ClassFile classFile, Method method, FindLocalVarState[] state)
         {
             var instructions = method.Instructions;
             var exceptions = method.ExceptionTable;
@@ -381,10 +383,10 @@ namespace IKVM.Runtime
                         var curr = state[i].Copy();
 
                         for (int j = 0; j < exceptions.Length; j++)
-                            if (exceptions[j].startIndex <= i && i < exceptions[j].endIndex)
-                                state[exceptions[j].handlerIndex].Merge(curr);
+                            if (exceptions[j].StartIndex <= i && i < exceptions[j].EndIndex)
+                                state[exceptions[j].HandlerIndex].Merge(curr);
 
-                        if (IsLoadLocal(instructions[i].NormalizedOpCode) && (instructions[i].NormalizedOpCode != NormalizedByteCode.__aload || !RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(i + 1, 0))))
+                        if (IsLoadLocal(instructions[i].NormalizedOpCode) && (instructions[i].NormalizedOpCode != NormalizedOpCode.Aload || !RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(i + 1, 0))))
                         {
                             localStoreReaders[i] ??= new Dictionary<int, string>();
 
@@ -392,18 +394,18 @@ namespace IKVM.Runtime
                                 localStoreReaders[i][curr.sites[instructions[i].NormalizedArg1][j]] = "";
                         }
 
-                        if (IsStoreLocal(instructions[i].NormalizedOpCode) && (instructions[i].NormalizedOpCode != NormalizedByteCode.__astore || !RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(i, 0))))
+                        if (IsStoreLocal(instructions[i].NormalizedOpCode) && (instructions[i].NormalizedOpCode != NormalizedOpCode.Astore || !RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(i, 0))))
                         {
                             curr.Store(i, instructions[i].NormalizedArg1);
 
                             // if this is a store at the end of an exception block,
                             // we need to propagate the new state to the exception handler
                             for (int j = 0; j < exceptions.Length; j++)
-                                if (exceptions[j].endIndex == i + 1)
-                                    state[exceptions[j].handlerIndex].Merge(curr);
+                                if (exceptions[j].EndIndex == i + 1)
+                                    state[exceptions[j].HandlerIndex].Merge(curr);
                         }
 
-                        if (instructions[i].NormalizedOpCode == NormalizedByteCode.__invokespecial)
+                        if (instructions[i].NormalizedOpCode == NormalizedOpCode.InvokeSpecial)
                         {
                             var cpi = classFile.GetMethodref(instructions[i].Arg1);
                             if (ReferenceEquals(cpi.Name, StringConstants.INIT))
@@ -416,7 +418,7 @@ namespace IKVM.Runtime
                                             curr.Store(i, j);
                             }
                         }
-                        else if (instructions[i].NormalizedOpCode == NormalizedByteCode.__goto_finally)
+                        else if (instructions[i].NormalizedOpCode == NormalizedOpCode.GotoFinally)
                         {
                             int handler = instructions[i].HandlerIndex;
 
@@ -434,7 +436,7 @@ namespace IKVM.Runtime
                             // Merge back to the target of our __goto_finally
                             for (int j = 0; j < handlerState.Length; j++)
                             {
-                                if (instructions[j].NormalizedOpCode == NormalizedByteCode.__athrow
+                                if (instructions[j].NormalizedOpCode == NormalizedOpCode.Athrow
                                     && codeInfo.HasState(j)
                                     && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(j, 0))
                                     && ((RuntimeVerifierJavaType)codeInfo.GetRawStackTypeWrapper(j, 0)).Index == handler)
@@ -444,9 +446,9 @@ namespace IKVM.Runtime
                             }
                         }
 
-                        switch (ByteCodeMetaData.GetFlowControl(instructions[i].NormalizedOpCode))
+                        switch (OpCodeMetaData.GetFlowKind(instructions[i].NormalizedOpCode))
                         {
-                            case ByteCodeFlowControl.Switch:
+                            case OpCodeFlowControl.Switch:
                                 {
                                     for (int j = 0; j < instructions[i].SwitchEntryCount; j++)
                                         state[instructions[i].GetSwitchTargetIndex(j)].Merge(curr);
@@ -454,17 +456,17 @@ namespace IKVM.Runtime
                                     state[instructions[i].DefaultTarget].Merge(curr);
                                     break;
                                 }
-                            case ByteCodeFlowControl.Branch:
+                            case OpCodeFlowControl.Branch:
                                 state[instructions[i].TargetIndex].Merge(curr);
                                 break;
-                            case ByteCodeFlowControl.CondBranch:
+                            case OpCodeFlowControl.ConditionalBranch:
                                 state[instructions[i].TargetIndex].Merge(curr);
                                 state[i + 1].Merge(curr);
                                 break;
-                            case ByteCodeFlowControl.Return:
-                            case ByteCodeFlowControl.Throw:
+                            case OpCodeFlowControl.Return:
+                            case OpCodeFlowControl.Throw:
                                 break;
-                            case ByteCodeFlowControl.Next:
+                            case OpCodeFlowControl.Next:
                                 state[i + 1].Merge(curr);
                                 break;
                             default:
@@ -477,7 +479,7 @@ namespace IKVM.Runtime
             return localStoreReaders;
         }
 
-        static void VisitLocalLoads(RuntimeContext context, CodeInfo codeInfo, ClassFile.Method method, List<LocalVar> locals, Dictionary<long, LocalVar> localByStoreSite, Dictionary<int, string> storeSites, int instructionIndex, bool debug)
+        static void VisitLocalLoads(RuntimeContext context, CodeInfo codeInfo, Method method, List<LocalVar> locals, Dictionary<long, LocalVar> localByStoreSite, Dictionary<int, string> storeSites, int instructionIndex, bool debug)
         {
             Debug.Assert(IsLoadLocal(method.Instructions[instructionIndex].NormalizedOpCode));
 
@@ -495,11 +497,11 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    if (method.Instructions[store].NormalizedOpCode == NormalizedByteCode.__invokespecial)
+                    if (method.Instructions[store].NormalizedOpCode == NormalizedOpCode.InvokeSpecial)
                     {
                         type = InstructionState.FindCommonBaseType(context, type, codeInfo.GetLocalTypeWrapper(store + 1, localIndex));
                     }
-                    else if (method.Instructions[store].NormalizedOpCode == NormalizedByteCode.__static_error)
+                    else if (method.Instructions[store].NormalizedOpCode == NormalizedOpCode.StaticError)
                     {
                         // it's an __invokespecial that turned into a __static_error
                         // (since a __static_error doesn't continue, we don't need to set type)

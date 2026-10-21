@@ -71,7 +71,7 @@ namespace IKVM.Runtime
 
             internal object GetUnspecifiedValue()
             {
-                return GetFieldWrapper("__unspecified", this.SigName).GetValue(null);
+                return GetFieldWrapper("__unspecified", this.SignatureName).GetValue(null);
             }
 
 #endif
@@ -93,7 +93,7 @@ namespace IKVM.Runtime
                 /// <param name="name"></param>
                 /// <param name="ordinal"></param>
                 internal EnumJavaField(RuntimeJavaType tw, string name, int ordinal) :
-                    base(tw, tw, name, tw.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final | Modifiers.Enum, null, MemberFlags.None)
+                    base(tw, tw, name, tw.SignatureName, Modifiers.Public | Modifiers.Static | Modifiers.Final | Modifiers.Enum, null, MemberFlags.None)
                 {
 #if !IMPORTER && !EXPORTER
                     this.ordinal = ordinal;
@@ -142,7 +142,7 @@ namespace IKVM.Runtime
                 /// </summary>
                 /// <param name="declaringType"></param>
                 internal EnumValuesJavaMethod(RuntimeJavaType declaringType) :
-                    base(declaringType, "values", "()[" + declaringType.SigName, null, declaringType.MakeArrayType(1), Array.Empty<RuntimeJavaType>(), Modifiers.Public | Modifiers.Static, MemberFlags.None)
+                    base(declaringType, "values", "()[" + declaringType.SignatureName, null, declaringType.MakeArrayType(1), Array.Empty<RuntimeJavaType>(), Modifiers.Public | Modifiers.Static, MemberFlags.None)
                 {
 
                 }

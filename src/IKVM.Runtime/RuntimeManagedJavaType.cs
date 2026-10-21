@@ -28,6 +28,8 @@ using System.Diagnostics;
 using IKVM.Attributes;
 
 using System.Text;
+using IKVM.CoreLib.Runtime;
+
 
 
 #if IMPORTER || EXPORTER
@@ -152,7 +154,7 @@ namespace IKVM.Runtime
 
                     if (RuntimePrimitiveJavaType.IsPrimitiveType(context, t))
                     {
-                        sb.Append(context.ClassLoaderFactory.GetJavaTypeFromType(t).SigName);
+                        sb.Append(context.ClassLoaderFactory.GetJavaTypeFromType(t).SignatureName);
                     }
                     else
                     {
@@ -373,7 +375,7 @@ namespace IKVM.Runtime
                             name = "_" + name;
 
                         var val = EnumHelper.GetPrimitiveValue(Context, underlyingType, fields[i].GetRawConstantValue());
-                        fieldsList.Add(new RuntimeConstantJavaField(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], val, MemberFlags.None));
+                        fieldsList.Add(new RuntimeConstantJavaField(this, fieldType, name, fieldType.SignatureName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], val, MemberFlags.None));
                     }
                 }
                 fieldsList.Add(new EnumValueJavaField(this, fieldType));
@@ -387,9 +389,9 @@ namespace IKVM.Runtime
                 for (int i = 0; i < fields.Length; i++)
                 {
                     // TODO for remapped types, instance fields need to be converted to static getter/setter methods
-                    if (fields[i].FieldType.IsPointer)
+                    if (IsUnsupportedType(fields[i].FieldType))
                     {
-                        // skip, pointer fields are not supported
+                        // skip, pointer and ByRef-like fields are not supported
                     }
                     else
                     {
@@ -585,18 +587,24 @@ namespace IKVM.Runtime
             if (mb.IsAbstract)
             {
                 var mi = (MethodInfo)mb;
-                if (mi.ReturnType.IsByRef || IsPointerType(mi.ReturnType) || mb.IsGenericMethodDefinition)
+                if (mi.ReturnType.IsByRef || IsUnsupportedType(mi.ReturnType) || mb.IsGenericMethodDefinition)
                     return true;
 
                 foreach (var p in mi.GetParameters())
-                    if (p.ParameterType.IsByRef || IsPointerType(p.ParameterType))
+                    if (p.ParameterType.IsByRef || IsUnsupportedType(p.ParameterType))
                         return true;
             }
 
             return false;
         }
 
-        static bool IsPointerType(Type type)
+        /// <summary>
+        /// Returns <c>true</c> if the given type cannot be represented in Java: pointers, function pointers and
+        /// ByRef-like types (ref structs), or byrefs/arrays of these.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        static bool IsUnsupportedType(Type type)
         {
             while (type.HasElementType)
             {
@@ -607,13 +615,43 @@ namespace IKVM.Runtime
             }
 
 #if IMPORTER || EXPORTER
-            return type.IsFunctionPointer;
-#else
-#if NET8_0_OR_GREATER
-            return type.IsFunctionPointer;
-#else
-            return false;
+            if (type.IsFunctionPointer)
+                return true;
+#elif NET8_0_OR_GREATER
+            if (type.IsFunctionPointer)
+                return true;
 #endif
+
+            return IsByRefLikeType(type);
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given type is a ByRef-like type (ref struct). Such types cannot be boxed or
+        /// used as array elements, so they cannot be represented in Java.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        static bool IsByRefLikeType(Type type)
+        {
+#if IMPORTER || EXPORTER
+            if (type.__IsMissing || type.IsValueType == false)
+                return false;
+#elif NETCOREAPP
+            return type.IsByRefLike;
+#else
+            if (type.IsValueType == false)
+                return false;
+#endif
+
+#if IMPORTER || EXPORTER || !NETCOREAPP
+            if (type.IsGenericType && type.IsGenericTypeDefinition == false)
+                type = type.GetGenericTypeDefinition();
+
+            foreach (var cad in type.GetCustomAttributesData())
+                if (cad.AttributeType.FullName == "System.Runtime.CompilerServices.IsByRefLikeAttribute")
+                    return true;
+
+            return false;
 #endif
         }
 
@@ -635,7 +673,7 @@ namespace IKVM.Runtime
             for (int i = 0; i < parameters.Length; i++)
             {
                 var type = parameters[i].ParameterType;
-                if (IsPointerType(type))
+                if (IsUnsupportedType(type))
                 {
                     name = null;
                     sig = null;
@@ -661,21 +699,21 @@ namespace IKVM.Runtime
 
                 var tw = Context.ClassLoaderFactory.GetJavaTypeFromType(type);
                 args[i] = tw;
-                sb.Append(tw.SigName);
+                sb.Append(tw.SignatureName);
             }
             sb.Append(')');
             if (mb is ConstructorInfo)
             {
                 ret = Context.PrimitiveJavaTypeFactory.VOID;
                 name = mb.IsStatic ? "<clinit>" : "<init>";
-                sb.Append(ret.SigName);
+                sb.Append(ret.SignatureName);
                 sig = sb.ToString();
                 return true;
             }
             else
             {
                 var type = ((MethodInfo)mb).ReturnType;
-                if (IsPointerType(type) || type.IsByRef)
+                if (IsUnsupportedType(type) || type.IsByRef)
                 {
                     name = null;
                     sig = null;
@@ -683,7 +721,7 @@ namespace IKVM.Runtime
                     return false;
                 }
                 ret = Context.ClassLoaderFactory.GetJavaTypeFromType(type);
-                sb.Append(ret.SigName);
+                sb.Append(ret.SignatureName);
                 name = mb.Name;
                 sig = sb.ToString();
                 return true;
@@ -729,12 +767,12 @@ namespace IKVM.Runtime
                 {
                     foreach (var p in invoke.GetParameters())
                     {
-                        // we don't support delegates with pointer parameters
-                        if (IsPointerType(p.ParameterType))
+                        // we don't support delegates with pointer or ByRef-like parameters
+                        if (IsUnsupportedType(p.ParameterType))
                             return false;
                     }
 
-                    return !IsPointerType(invoke.ReturnType);
+                    return !IsUnsupportedType(invoke.ReturnType);
                 }
             }
 
@@ -786,9 +824,9 @@ namespace IKVM.Runtime
         {
             var type = Context.ClassLoaderFactory.GetJavaTypeFromType(fieldType);
             if (field.IsLiteral)
-                return new RuntimeConstantJavaField(this, type, name, type.SigName, modifiers, field, null, MemberFlags.None);
+                return new RuntimeConstantJavaField(this, type, name, type.SignatureName, modifiers, field, null, MemberFlags.None);
             else
-                return RuntimeJavaField.Create(this, type, field, name, type.SigName, new ExModifiers(modifiers, false));
+                return RuntimeJavaField.Create(this, type, field, name, type.SignatureName, new ExModifiers(modifiers, false));
         }
 
         /// <summary>
