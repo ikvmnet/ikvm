@@ -2381,6 +2381,20 @@ namespace IKVM.Reflection.Emit
         );
 
         /// <summary>
+        /// Specifies that the subsequent array address operation performs no type check at run time, and that it
+        /// returns a managed pointer whose mutability is restricted.
+        /// </summary>
+        public static readonly OpCode Readonly = new(OpCodeValues.Readonly_,
+            ((int)OperandType.InlineNone) |
+            ((int)FlowControl.Meta << OpCode.FlowControlShift) |
+            ((int)OpCodeType.Prefix << OpCode.OpCodeTypeShift) |
+            ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
+            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
+            (2 << OpCode.SizeShift) |
+            (0 << OpCode.StackChangeShift)
+        );
+
+        /// <summary>
         /// Returns <see langword="true"/> or <see langword="false"/> if the supplied opcode takes a single byte
         /// argument.
         /// </summary>
