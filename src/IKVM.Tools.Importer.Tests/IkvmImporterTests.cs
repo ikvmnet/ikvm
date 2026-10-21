@@ -200,7 +200,7 @@ namespace IKVM.Tools.Importer.Tests
         static byte[] BuildClass(ushort major, string name)
         {
             var builder = new ClassFileBuilder(new ClassFormatVersion(major, 0), AccessFlag.Public | AccessFlag.Super, name, "java/lang/Object");
-            var buffer = new BlobBuilder();
+            var buffer = new IKVM.ByteCode.Buffers.BlobBuilder();
             builder.Serialize(buffer);
             return buffer.ToArray();
         }
