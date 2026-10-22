@@ -111,8 +111,6 @@ namespace IKVM.Tools.Exporter.Tests
     }
 
 }
-<<<<<<< HEAD
-=======
 
 namespace IKVM.Tools.Exporter.Tests.Fixtures
 {
@@ -143,4 +141,3 @@ namespace IKVM.Tools.Exporter.Tests.Fixtures
     }
 
 }
->>>>>>> origin/main
