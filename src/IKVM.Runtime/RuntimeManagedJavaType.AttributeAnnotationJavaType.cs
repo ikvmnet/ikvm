@@ -93,11 +93,39 @@ namespace IKVM.Runtime
                     || type.IsEnum;
             }
 
-            internal static void GetConstructors(RuntimeContext context, Type type, out ConstructorInfo defCtor, out ConstructorInfo singleOneArgCtor)
+            /// <summary>
+            /// Returns <c>true</c> if the given constructor parameters can be exposed as required annotation elements. Each
+            /// parameter must be of a supported type and must have a unique name, which becomes the element name.
+            /// </summary>
+            /// <param name="context"></param>
+            /// <param name="parameters"></param>
+            /// <returns></returns>
+            static bool IsSupportedMultiArgConstructor(RuntimeContext context, ParameterInfo[] parameters)
+            {
+                var names = new HashSet<string>();
+                foreach (var p in parameters)
+                    if (string.IsNullOrEmpty(p.Name) || names.Add(p.Name) == false || IsSupportedType(context, p.ParameterType) == false)
+                        return false;
+
+                return true;
+            }
+
+            /// <summary>
+            /// Determines which constructors of the attribute type are exposed through the annotation.
+            /// </summary>
+            /// <param name="context"></param>
+            /// <param name="type"></param>
+            /// <param name="defCtor">The default constructor, if any.</param>
+            /// <param name="singleOneArgCtor">The single supported one-argument constructor, exposed as the "value" element.</param>
+            /// <param name="multiArgCtor">If there is neither a default constructor nor a single one-argument constructor, the single supported constructor with multiple arguments, whose parameters are exposed as required elements named after them.</param>
+            internal static void GetConstructors(RuntimeContext context, Type type, out ConstructorInfo defCtor, out ConstructorInfo singleOneArgCtor, out ConstructorInfo multiArgCtor)
             {
                 defCtor = null;
+                multiArgCtor = null;
                 int oneArgCtorCount = 0;
                 ConstructorInfo oneArgCtor = null;
+                int multiArgCtorCount = 0;
+                ConstructorInfo candidateMultiArgCtor = null;
                 ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
                 // HACK we have a special rule to make some additional custom attributes from mscorlib usable:
                 // Attributes that have two constructors, one an enum and another one taking a byte, short or int,
@@ -169,8 +197,18 @@ namespace IKVM.Runtime
                             oneArgCtorCount = 2;
                         }
                     }
+                    else if (IsSupportedMultiArgConstructor(context, args))
+                    {
+                        candidateMultiArgCtor = ci;
+                        multiArgCtorCount++;
+                    }
                 }
                 singleOneArgCtor = oneArgCtorCount == 1 ? oneArgCtor : null;
+
+                // attributes that can only be constructed with multiple arguments (for instance AssemblyMetadataAttribute)
+                // expose the arguments of their constructor as required elements, provided there is no ambiguity
+                if (defCtor == null && singleOneArgCtor == null && multiArgCtorCount == 1)
+                    multiArgCtor = candidateMultiArgCtor;
             }
 
             sealed class AttributeAnnotationJavaMethod : DynamicOnlyJavaMethod
@@ -280,10 +318,14 @@ namespace IKVM.Runtime
             protected override void LazyPublishMembers()
             {
                 var methods = new List<RuntimeJavaMethod>();
-                GetConstructors(Context, attributeType, out var defCtor, out var singleOneArgCtor);
+                GetConstructors(Context, attributeType, out var defCtor, out var singleOneArgCtor, out var multiArgCtor);
 
                 if (singleOneArgCtor != null)
                     methods.Add(new AttributeAnnotationJavaMethod(this, "value", singleOneArgCtor.GetParameters()[0].ParameterType, defCtor != null));
+
+                if (multiArgCtor != null)
+                    foreach (var p in multiArgCtor.GetParameters())
+                        methods.Add(new AttributeAnnotationJavaMethod(this, p.Name, p.ParameterType, false));
 
                 foreach (var pi in attributeType.GetProperties(BindingFlags.Instance | BindingFlags.Public))
                 {
@@ -494,8 +536,12 @@ namespace IKVM.Runtime
                     object[] arr = (object[])annotation;
                     ConstructorInfo defCtor;
                     ConstructorInfo singleOneArgCtor;
+                    ConstructorInfo multiArgCtor;
                     object ctorArg = null;
-                    GetConstructors(loader.Context, type, out defCtor, out singleOneArgCtor);
+                    GetConstructors(loader.Context, type, out defCtor, out singleOneArgCtor, out multiArgCtor);
+                    ParameterInfo[] multiArgParameters = multiArgCtor?.GetParameters();
+                    object[] multiArgs = multiArgParameters != null ? new object[multiArgParameters.Length] : null;
+                    bool[] multiArgsSet = multiArgParameters != null ? new bool[multiArgParameters.Length] : null;
                     List<PropertyInfo> properties = new List<PropertyInfo>();
                     List<object> propertyValues = new List<object>();
                     List<FieldInfo> fields = new List<FieldInfo>();
@@ -503,9 +549,15 @@ namespace IKVM.Runtime
                     for (int i = 2; i < arr.Length; i += 2)
                     {
                         string name = (string)arr[i];
+                        int multiArgIndex = multiArgParameters != null ? Array.FindIndex(multiArgParameters, p => p.Name == name) : -1;
                         if (name == "value" && singleOneArgCtor != null)
                         {
                             ctorArg = ConvertValue(loader, singleOneArgCtor.GetParameters()[0].ParameterType, arr[i + 1]);
+                        }
+                        else if (multiArgIndex >= 0)
+                        {
+                            multiArgs[multiArgIndex] = ConvertValue(loader, multiArgParameters[multiArgIndex].ParameterType, arr[i + 1]);
+                            multiArgsSet[multiArgIndex] = true;
                         }
                         else
                         {
@@ -526,6 +578,21 @@ namespace IKVM.Runtime
                             }
                         }
                     }
+                    if (multiArgCtor != null)
+                    {
+                        // javac requires all elements to be specified, but supply defaults for anything missing from the class file
+                        for (int i = 0; i < multiArgs.Length; i++)
+                            if (multiArgsSet[i] == false)
+                                multiArgs[i] = GetDefaultValue(loader.Context, multiArgParameters[i].ParameterType);
+
+                        return new CustomAttributeBuilder(multiArgCtor,
+                            multiArgs,
+                            properties.ToArray(),
+                            propertyValues.ToArray(),
+                            fields.ToArray(),
+                            fieldValues.ToArray());
+                    }
+
                     if (ctorArg == null && defCtor == null)
                     {
                         // TODO required argument is missing
@@ -536,6 +603,30 @@ namespace IKVM.Runtime
                         propertyValues.ToArray(),
                         fields.ToArray(),
                         fieldValues.ToArray());
+                }
+
+                static object GetDefaultValue(RuntimeContext context, Type type)
+                {
+                    if (type == context.Types.Boolean)
+                        return false;
+                    else if (type == context.Types.Byte)
+                        return (byte)0;
+                    else if (type == context.Types.Char)
+                        return (char)0;
+                    else if (type == context.Types.Int16)
+                        return (short)0;
+                    else if (type == context.Types.Int32)
+                        return 0;
+                    else if (type == context.Types.Single)
+                        return 0F;
+                    else if (type == context.Types.Int64)
+                        return 0L;
+                    else if (type == context.Types.Double)
+                        return 0D;
+                    else if (type.IsEnum)
+                        return EnumHelper.GetPrimitiveValue(context, EnumHelper.GetUnderlyingType(type), 0);
+                    else
+                        return null;
                 }
 
                 internal override void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation)
