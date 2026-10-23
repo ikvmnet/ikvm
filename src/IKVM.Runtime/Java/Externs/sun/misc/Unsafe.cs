@@ -1580,7 +1580,17 @@ namespace IKVM.Java.Externs.sun.misc
 
                 var tw = RuntimeJavaType.FromClass(hostClass);
                 var cl = tw.ClassLoader;
-                var cf = new ClassFile(JVM.Context, ReadClass(data), "<Unknown>", cl.ClassFileParseOptions, cpPatches ?? []);
+                var decoder = ReadClass(data);
+
+                // HotSpot parses anonymous classes without a name, so the error does not name the class
+                if (IKVM.CoreLib.Linking.UnsupportedClassVersionException.IsSupported(decoder.Version) == false)
+                {
+                    var version = decoder.Version;
+                    decoder.Dispose();
+                    throw new IKVM.CoreLib.Linking.UnsupportedClassVersionException(version);
+                }
+
+                var cf = new ClassFile(JVM.Context, decoder, "<Unknown>", cl.ClassFileParseOptions, cpPatches ?? []);
 
                 // if this happens, the OpenJDK is probably trying to load an OpenJDK class file as a resource,
                 // make sure the build process includes the original class file as a resource in that case
@@ -1612,6 +1622,10 @@ namespace IKVM.Java.Externs.sun.misc
             catch (InvalidClassMagicException)
             {
                 throw new global::java.lang.ClassFormatError("Incompatible magic value");
+            }
+            catch (UnsupportedClassVersionException e)
+            {
+                throw new global::java.lang.UnsupportedClassVersionError(IKVM.CoreLib.Linking.UnsupportedClassVersionException.FormatJavaMessage(e.Version, null));
             }
             catch (ByteCodeException e)
             {
