@@ -759,8 +759,20 @@ jobs:
         }
       working-directory: ${{ env.WORKPATH }}
     - name: Archive Test Results
+      id: archive
       if: always() && startsWith(env.RET, 'TestResults--')
       run: tar czvf ${{ env.TMPDIR }}/TestResults.tar.gz TestResults
+      working-directory: ${{ env.WORKPATH }}
+    # tar has been exiting 1 on win-x64 after all tests pass, without printing why
+    - name: Diagnose Archive Failure
+      if: always() && runner.os == 'Windows' && steps.archive.outcome == 'failure'
+      shell: pwsh
+      run: |
+        Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like "*$env:WORKPATH*" } | Format-Table -AutoSize ProcessId,Name,CommandLine | Out-String -Width 4096
+        Get-ChildItem -Recurse -File TestResults | Where-Object { $_.Name -match '[^\x20-\x7E]' } | ForEach-Object { '{0} [{1}]' -f $_.FullName, (($_.Name.ToCharArray() | ForEach-Object { '{0:X4}' -f [int]$_ }) -join ' ') }
+        tar czvf "$env:TMPDIR/TestResults-diag.tar.gz" TestResults 2>&1 | Where-Object { "$_" -notmatch '^a ' }
+        "tar exit code: $LASTEXITCODE"
+        exit 0
       working-directory: ${{ env.WORKPATH }}
     - name: Upload Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
