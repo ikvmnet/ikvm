@@ -745,10 +745,11 @@ namespace IKVM.Runtime
                 // optional "value"                  |    X     |   X
                 // -----------------------------------------------------------------
                 // 
-                // TODO currently we don't support "complex only" attributes.
+                // "complex only" attributes are supported when they have exactly one constructor whose parameters are
+                // all of supported types, in which case each parameter becomes a required element named after it.
                 //
-                AttributeAnnotationJavaType.GetConstructors(context, type, out var defCtor, out var singleOneArgCtor);
-                return defCtor != null || singleOneArgCtor != null;
+                AttributeAnnotationJavaType.GetConstructors(context, type, out var defCtor, out var singleOneArgCtor, out var multiArgCtor);
+                return defCtor != null || singleOneArgCtor != null || multiArgCtor != null;
             }
 
             return false;

@@ -32,8 +32,9 @@
             <JavaAssemblyAttribute Remove="System.Runtime.CompilerServices.InternalsVisibleTo" />
             <JavaAssemblyAttribute Include="@(_JavaAssemblyAttribute->'System.Runtime.CompilerServices.InternalsVisibleToAttribute')" Condition=" '%(Identity)' == 'System.Runtime.CompilerServices.InternalsVisibleTo' " />
 
-            <!-- #55 not emitted by stub generator -->
-            <JavaAssemblyAttribute Remove="System.Reflection.AssemblyMetadataAttribute" />
+            <!-- AssemblyMetadataAttribute only has a (key, value) constructor, which the annotation exposes as named elements; the SDK names it without the Attribute suffix -->
+            <_JavaAssemblyMetadataAttribute Include="@(JavaAssemblyAttribute)" Condition=" '%(Identity)' == 'System.Reflection.AssemblyMetadata' Or '%(Identity)' == 'System.Reflection.AssemblyMetadataAttribute' " />
+            <JavaAssemblyAttribute Remove="System.Reflection.AssemblyMetadata;System.Reflection.AssemblyMetadataAttribute" />
 
             <!-- Required by Roslyn -->
             <JavaAssemblyAttribute Include="System.Runtime.CompilerServices.ExtensionAttribute" />
@@ -43,6 +44,7 @@
             <__JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;)')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' != '' And '%(JavaAssemblyAttribute._Parameter2)' == '' And '%(JavaAssemblyAttribute._Parameter3)' == '' " />
             <__JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;, &quot;%(_Parameter2)&quot;)')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' != '' And '%(JavaAssemblyAttribute._Parameter2)' != '' And '%(JavaAssemblyAttribute._Parameter3)' == '' " />
             <__JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;, &quot;%(_Parameter2)&quot;, &quot;%(_Parameter3)&quot;)')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' != '' And '%(JavaAssemblyAttribute._Parameter2)' != '' And '%(JavaAssemblyAttribute._Parameter3)' != '' " />
+            <__JavaAssemblyInfoLine Include="@(_JavaAssemblyMetadataAttribute->'@cli.System.Reflection.AssemblyMetadataAttribute.Annotation(key = &quot;%(_Parameter1)&quot;, value = &quot;%(_Parameter2)&quot;)')" />
         </ItemGroup>
         <SortAssemblyAttributeLines Lines="@(__JavaAssemblyInfoLine)">
             <Output TaskParameter="Lines" ItemName="_JavaAssemblyInfoLine" />

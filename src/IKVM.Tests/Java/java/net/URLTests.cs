@@ -81,6 +81,12 @@ namespace IKVM.Tests.Java.java.net
 #if NETCOREAPP
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
+#if NET7_0_OR_GREATER
+                var mod = File.GetUnixFileMode(exe);
+                var prm = mod | UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute;
+                if (mod != prm)
+                    File.SetUnixFileMode(exe, prm);
+#else
                 var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(exe);
                 var prm = psx.FileAccessPermissions;
                 prm |= Mono.Unix.FileAccessPermissions.UserExecute;
@@ -88,6 +94,7 @@ namespace IKVM.Tests.Java.java.net
                 prm |= Mono.Unix.FileAccessPermissions.OtherExecute;
                 if (prm != psx.FileAccessPermissions)
                     psx.FileAccessPermissions = prm;
+#endif
             }
 #endif
 

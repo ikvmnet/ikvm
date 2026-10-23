@@ -19,7 +19,7 @@
     <ItemGroup>
         <PackageReference Include="Castle.Core" Version="5.1.1" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-        <PackageReference Include="Mono.Unix" Version="7.1.0-final.1.21458.1" />
+        <PackageReference Include="Mono.Unix" Version="7.1.0-final.1.21458.1" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))" />
         <PackageReference Include="System.IO.Pipelines" Version="8.0.0" />
     </ItemGroup>
 

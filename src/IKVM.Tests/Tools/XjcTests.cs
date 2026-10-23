@@ -21,18 +21,21 @@ namespace IKVM.Tests.Tools
         {
             var s = new StringBuilder();
             var c = Path.Combine(java.lang.System.getProperty("java.home"), "bin", "xjc");
-#if NETCOREAPP
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
+#if NET7_0_OR_GREATER
+                var mod = File.GetUnixFileMode(c);
+                var prm = mod | UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute;
+                if (mod != prm)
+                    File.SetUnixFileMode(c, prm);
+#else
                 var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(c);
-                var prm = psx.FileAccessPermissions;
-                prm |= Mono.Unix.FileAccessPermissions.UserExecute;
-                prm |= Mono.Unix.FileAccessPermissions.GroupExecute;
-                prm |= Mono.Unix.FileAccessPermissions.OtherExecute;
-                if (prm != psx.FileAccessPermissions)
+                var mod = psx.FileAccessPermissions;
+                var prm = mod | Mono.Unix.FileAccessPermissions.UserExecute | Mono.Unix.FileAccessPermissions.GroupExecute | Mono.Unix.FileAccessPermissions.OtherExecute;
+                if (mod != prm)
                     psx.FileAccessPermissions = prm;
-            }
 #endif
+            }
 
             var r = await Cli.Wrap(c).WithArguments("-help").WithStandardOutputPipe(PipeTarget.ToDelegate(i => s.Append(i))).WithValidation(CommandResultValidation.None).ExecuteAsync();
             r.ExitCode.Should().Be(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? -1 : 255);

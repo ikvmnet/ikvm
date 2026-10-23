@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -8,6 +9,8 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
+using IKVM.ByteCode;
+using IKVM.ByteCode.Decoding;
 using IKVM.CoreLib.Diagnostics;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -25,6 +28,66 @@ namespace IKVM.Tools.Exporter.Tests
 
         [TestMethod]
         public async Task CanStubCoreLibrary()
+        {
+            var options = CreateCoreLibraryExportOptions();
+            var ret = await ExportTool.ExecuteAsync(options, new NullDiagnosticHandler(), CancellationToken.None);
+            ret.Should().Be(0);
+            File.Exists(options.Output).Should().BeTrue();
+        }
+
+        [TestMethod]
+        public async Task ShouldEmitAnnotationForAssemblyMetadataAttribute()
+        {
+            var options = CreateCoreLibraryExportOptions();
+            var ret = await ExportTool.ExecuteAsync(options, new NullDiagnosticHandler(), CancellationToken.None);
+            ret.Should().Be(0);
+
+            using var jar = ZipFile.OpenRead(options.Output);
+
+            // AssemblyMetadataAttribute only has a (string key, string value) constructor: both become required elements
+            var annotation = ReadMethods(jar, "cli/System/Reflection/AssemblyMetadataAttribute$Annotation.class");
+            annotation.Should().HaveCount(2);
+            annotation.Should().ContainKey("key").WhoseValue.Should().Be(("()Ljava/lang/String;", false));
+            annotation.Should().ContainKey("value").WhoseValue.Should().Be(("()Ljava/lang/String;", false));
+
+            // AllowMultiple = true, so it is repeatable through the container annotation
+            var multiple = ReadMethods(jar, "cli/System/Reflection/AssemblyMetadataAttribute$Annotation$__Multiple.class");
+            multiple.Should().ContainKey("value").WhoseValue.Should().Be(("()[Lcli/System/Reflection/AssemblyMetadataAttribute$Annotation;", false));
+        }
+
+        /// <summary>
+        /// Reads the methods of the specified class in the jar, returning their descriptor and whether they have a default value.
+        /// </summary>
+        /// <param name="jar"></param>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        static Dictionary<string, (string Descriptor, bool HasDefault)> ReadMethods(ZipArchive jar, string path)
+        {
+            var entry = jar.GetEntry(path);
+            entry.Should().NotBeNull("{0} should be emitted", path);
+
+            using var buffer = new MemoryStream();
+            using (var stream = entry.Open())
+                stream.CopyTo(buffer);
+
+            buffer.Position = 0;
+            using var clazz = ClassFile.Read(buffer);
+
+            var methods = new Dictionary<string, (string, bool)>();
+            foreach (var method in clazz.Methods)
+            {
+                var hasDefault = false;
+                foreach (var attribute in method.Attributes)
+                    if (clazz.Constants.Get(attribute.Name).Value == "AnnotationDefault")
+                        hasDefault = true;
+
+                methods.Add(clazz.Constants.Get(method.Name).Value, (clazz.Constants.Get(method.Descriptor).Value, hasDefault));
+            }
+
+            return methods;
+        }
+
+        static ExportOptions CreateCoreLibraryExportOptions()
         {
             var options = new ExportOptions()
             {
@@ -46,9 +109,7 @@ namespace IKVM.Tools.Exporter.Tests
             options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
 #endif
 
-            var ret = await ExportTool.ExecuteAsync(options, new NullDiagnosticHandler(), CancellationToken.None);
-            ret.Should().Be(0);
-            File.Exists(options.Output).Should().BeTrue();
+            return options;
         }
 
         [TestMethod]
