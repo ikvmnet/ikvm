@@ -760,7 +760,7 @@ jobs:
       working-directory: ${{ env.WORKPATH }}
     - name: Archive Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
-      run: tar czvf ${{ env.TMPDIR }}/TestResults.tar.gz TestResults
+      run: tar --format=pax -czvf ${{ env.TMPDIR }}/TestResults.tar.gz TestResults
       working-directory: ${{ env.WORKPATH }}
     - name: Upload Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
