@@ -38,7 +38,7 @@ namespace IKVM.Tests.Java.java.util.jar
             var unpacker = Pack200.newUnpacker();
             unpacker.unpack(packFilePath, jostream);
             jostream.close();
-            Files.size(testFilePath.toPath()).Should().BeGreaterOrEqualTo(100);
+            Files.size(testFilePath.toPath()).Should().BeGreaterThanOrEqualTo(100);
         }
 
     }

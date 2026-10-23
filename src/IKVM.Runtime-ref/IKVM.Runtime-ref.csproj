@@ -6,10 +6,18 @@
         <DefineConstants>$(DefineConstants);EMITTERS;FIRST_PASS</DefineConstants>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+        <PolyUseEmbeddedAttribute>true</PolyUseEmbeddedAttribute>
     </PropertyGroup>
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Java" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Polyfill" Version="9.3.4">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
