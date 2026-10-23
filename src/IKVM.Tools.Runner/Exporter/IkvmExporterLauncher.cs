@@ -165,9 +165,18 @@ namespace IKVM.Tools.Runner.Exporter
 
                         try
                         {
+#if NET7_0_OR_GREATER
+                            var mod = File.GetUnixFileMode(exe);
+                            var prm = mod | UnixFileMode.UserExecute;
+                            if (mod != prm)
+                                File.SetUnixFileMode(exe, prm);
+#else
                             var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(exe);
-                            if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.UserExecute) == false)
-                                psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.UserExecute;
+                            var mod = psx.FileAccessPermissions;
+                            var prm = mod | Mono.Unix.FileAccessPermissions.UserExecute;
+                            if (mod != prm)
+                                psx.FileAccessPermissions = prm;
+#endif
                         }
                         catch (Exception e)
                         {
