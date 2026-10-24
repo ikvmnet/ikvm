@@ -563,9 +563,12 @@ jobs:
         $ErrorActionPreference = 'Continue'
         $installed = $false
         for ($try = 1; $try -le 5; $try++) {
-            choco install vcredist-all -y --no-progress --ignore-checksums
-            if ($LASTEXITCODE -in 0, 1641, 3010) { $installed = $true; break }
-            Write-Host "attempt $try failed with $LASTEXITCODE, retrying"
+            $out = choco install vcredist-all -y --no-progress --ignore-checksums 2>&1
+            $code = $LASTEXITCODE
+            $out | Write-Host
+            # when the feed cannot resolve a dependency choco reports "installed 0/0 packages" and still exits 0
+            if (($code -in 0, 1641, 3010) -and -not ($out -match 'installed 0/0 packages')) { $installed = $true; break }
+            Write-Host "attempt $try failed with $code, retrying"
             Start-Sleep -Seconds (15 * $try)
         }
         if (-not $installed) { throw 'could not install the Visual C++ runtimes' }
