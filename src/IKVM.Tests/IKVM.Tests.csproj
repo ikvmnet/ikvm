@@ -34,7 +34,7 @@
         <PackageReference Include="FluentAssertions" Version="6.12.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
         <PackageReference Include="System.Net.Http" Version="4.3.4" />
-        <PackageReference Include="Mono.Posix" Version="7.1.0-final.1.21458.1" />
+        <PackageReference Include="Mono.Unix" Version="7.1.0-final.1.21458.1" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))" />
     </ItemGroup>
 
     <ItemGroup>
@@ -50,6 +50,8 @@
 
     <ItemGroup>
         <DotNetClangProjectReference Include="..\libikvm-tests\libikvm-tests.clangproj" />
+        <DotNetClangProjectReference Include="..\libikvm-tests-dep\libikvm-tests-dep.clangproj" />
+        <DotNetClangProjectReference Include="..\libikvm-tests-dependent\libikvm-tests-dependent.clangproj" />
     </ItemGroup>
 
     <Choose>

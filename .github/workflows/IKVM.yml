@@ -137,11 +137,17 @@ jobs:
         sudo apt-get update && \
         sudo apt-get install -y clang-20 llvm-20 lld-20 && \
         echo "PATH=/usr/lib/llvm-20/bin:$PATH" >> $GITHUB_ENV
+    # hashFiles is evaluated again when the cache is saved at the end of the job, where walking the built workspace
+    # can exceed its 120 second limit, so hash the tracked project files once up front instead
+    - name: Compute NuGet Cache Key
+      id: nuget-key
+      run: |
+        echo "hash=$(git ls-files -z '*.csproj' '*.ikvmproj' '*.msbuildproj' '*global.json' '*nuget.config' | xargs -0 sha256sum | sha256sum | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
     - name: Cache NuGet Packages
       uses: actions/cache@v6
       with:
         path: ${{ github.workspace }}/.nuget/packages
-        key: nuget--${{ runner.os }}--${{ hashFiles('**/*.csproj', '**/*.ikvmproj', '**/*.msbuildproj', '**/global.json', '**/nuget.config') }}
+        key: nuget--${{ runner.os }}--${{ steps.nuget-key.outputs.hash }}
         restore-keys: |
           nuget--${{ runner.os }}--
     - name: Cache cargo
