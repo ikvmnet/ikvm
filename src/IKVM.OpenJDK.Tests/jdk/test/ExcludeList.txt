@@ -1514,7 +1514,7 @@ javax/accessibility/6986385/bug6986385.java                                     
 javax/accessibility/8069268/bug8069268.java                                                                             generic-all
 javax/accessibility/AccessibleName/GetAccessibleNameTest.java                                                           macosx-all
 javax/accessibility/JList/AccessibleJListChildNPETest.java                                                              generic-all
-javax/accessibility/SlowPanelIteration/SlowPanelIteration.java                                                          macosx-all
+javax/accessibility/SlowPanelIteration/SlowPanelIteration.java                                                          macosx-all,windows-all
 javax/crypto/SecretKeyFactory/FailOverTest.sh                                                                           generic-all
 javax/imageio/AppletResourceTest.java                                                                                   macosx-all
 javax/imageio/metadata/BooleanAttributes.java                                                                           macosx-all
@@ -3672,7 +3672,7 @@ java/awt/image/VolatileImage/BitmaskVolatileImage.java                          
 java/awt/Insets/HeadlessInsets.java                                                                                     macosx-all
 java/awt/keyboard/AltPlusNumberKeyCombinationsTest/AltPlusNumberKeyCombinationsTest.java                                macosx-all,windows-all
 java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeForModalDialogTest/ConsumeForModalDialogTest.html  generic-all
-java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeNextMnemonicKeyTypedTest.html                      macosx-all
+java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeNextMnemonicKeyTypedTest.html                      macosx-all,windows-all
 java/awt/KeyboardFocusmanager/TypeAhead/EnqueueWithDialogTest/EnqueueWithDialogTest.java                                generic-all
 java/awt/List/FocusEmptyListTest/FocusEmptyListTest.html                                                                macosx-all
 java/awt/List/KeyEventsTest/KeyEventsTest.html                                                                          generic-all
@@ -3687,7 +3687,7 @@ java/awt/Mixing/AWT_Mixing/JColorChooserOverlapping.java                        
 java/awt/Mixing/AWT_Mixing/JComboBoxOverlapping.java                                                                    generic-all
 java/awt/Mixing/AWT_Mixing/JEditorPaneInGlassPaneOverlapping.java                                                       generic-all
 java/awt/Mixing/AWT_Mixing/JEditorPaneOverlapping.java                                                                  generic-all
-java/awt/Mixing/AWT_Mixing/JGlassPaneInternalFrameOverlapping.java                                                      linux-all,macosx-all
+java/awt/Mixing/AWT_Mixing/JGlassPaneInternalFrameOverlapping.java                                                      generic-all
 java/awt/Mixing/AWT_Mixing/JGlassPaneMoveOverlapping.java                                                               generic-all
 java/awt/Mixing/AWT_Mixing/JInternalFrameMoveOverlapping.java                                                           generic-all
 java/awt/Mixing/AWT_Mixing/JInternalFrameOverlapping.java                                                               macosx-all,windows-all
@@ -4267,7 +4267,7 @@ java/awt/FontClass/CreateFont/bigfont.java                                      
 java/awt/Frame/DisposeStressTest/DisposeStressTest.java                                                                 generic-all
 java/awt/Frame/NonEDT_GUI_DeadlockTest/NonEDT_GUI_Deadlock.java                                                         macosx-all
 java/awt/GridBagLayout/GridBagLayoutIpadXYTest/GridBagLayoutIpadXYTest.java                                             generic-all
-java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeNextMnemonicKeyTypedTest.java                      macosx-all
+java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeNextMnemonicKeyTypedTest.java                      macosx-all,windows-all
 java/awt/KeyboardFocusmanager/TypeAhead/ButtonActionKeyTest/ButtonActionKeyTest.java                                    generic-all
 java/awt/KeyboardFocusmanager/TypeAhead/MenuItemActivatedTest/MenuItemActivatedTest.java                                generic-all
 java/awt/KeyboardFocusmanager/TypeAhead/SubMenuShowTest/SubMenuShowTest.java                                            generic-all
