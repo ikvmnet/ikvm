@@ -127,7 +127,7 @@ namespace IKVM.JTReg.TestAdapter.Core
             if (iter is null)
                 throw new ArgumentNullException(nameof(iter));
 
-            return (IEnumerable<dynamic>)RemainingToListOfTestResultMethod.Invoke(null, new[] { iter });
+            return (IEnumerable<dynamic>)RemainingToListOfTestResultMethod.Invoke(null, [iter]);
         }
 
         /// <summary>

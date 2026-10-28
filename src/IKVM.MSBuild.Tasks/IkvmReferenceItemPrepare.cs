@@ -19,6 +19,8 @@
     using Microsoft.Build.Framework;
     using Microsoft.Build.Globbing;
 
+    using Polyfills;
+
     /// <summary>
     /// For each <see cref="IkvmReferenceItem"/> passed in, assigns default metadata if required.
     /// </summary>
@@ -582,12 +584,7 @@
             if (value is null)
                 throw new ArgumentNullException(nameof(value));
 
-            var hsh = ComputeHash(Encoding.UTF8.GetBytes(value));
-            var bld = new StringBuilder(hsh.Length * 2);
-            foreach (var b in hsh)
-                bld.Append(b.ToString("x2"));
-
-            return bld.ToString();
+            return Convert.ToHexStringLower(ComputeHash(Encoding.UTF8.GetBytes(value)));
         }
 
         /// <summary>
@@ -795,7 +792,7 @@
         /// <param name="cancellationToken"></param>
         internal async Task AssignBuildInfoAsync(IkvmReferenceItem item, CancellationToken cancellationToken)
         {
-            item.IkvmIdentity = await CalculateIkvmIdentityAsync(item, new HashSet<IkvmReferenceItem>(), cancellationToken);
+            item.IkvmIdentity = await CalculateIkvmIdentityAsync(item, [], cancellationToken);
             item.CachePath = Path.Combine(CacheDir, item.IkvmIdentity, item.AssemblyName + ".dll");
             item.CacheSymbolsPath = Path.Combine(CacheDir, item.IkvmIdentity, item.AssemblyName + ".pdb");
             item.StagePath = Path.Combine(StageDir, item.IkvmIdentity, item.AssemblyName + ".dll");

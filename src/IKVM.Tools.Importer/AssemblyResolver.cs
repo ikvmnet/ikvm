@@ -98,27 +98,28 @@ namespace IKVM.Tools.Importer
         internal Assembly LoadFile(string path)
         {
             string ex = null;
+
             try
             {
-                using (RawModule module = universe.OpenRawModule(path))
+                using (var module = universe.OpenRawModule(path))
                 {
                     if (coreLibVersion != null)
                     {
                         // to avoid problems (i.e. weird exceptions), we don't allow assemblies to load that reference a newer version of mscorlib
-                        foreach (AssemblyName asmref in module.GetReferencedAssemblies())
+                        foreach (var asmref in module.GetReferencedAssemblies())
                         {
                             if (asmref.Name == universe.CoreLibName && asmref.Version > coreLibVersion)
                             {
-                                Console.Error.WriteLine("Error: unable to load assembly '{0}' as it depends on a higher version of mscorlib than the one currently loaded", path);
+                                Console.Error.WriteLine("Error: unable to load assembly '{0}' as it depends on a higher version of the core library than the one currently loaded", path);
                                 Environment.Exit(1);
                             }
                         }
                     }
-                    Assembly asm = universe.LoadAssembly(module);
+
+                    var asm = universe.LoadAssembly(module);
                     if (asm.Location != module.Location && CanonicalizePath(asm.Location) != CanonicalizePath(module.Location))
-                    {
                         EmitWarning(WarningId.LocationIgnored, "assembly \"{0}\" is ignored as previously loaded assembly \"{1}\" has the same identity \"{2}\"", path, asm.Location, asm.FullName);
-                    }
+
                     return asm;
                 }
             }
@@ -134,6 +135,7 @@ namespace IKVM.Tools.Importer
             {
                 ex = x.Message;
             }
+
             Console.Error.WriteLine("Error: unable to load assembly '{0}'" + Environment.NewLine + "    ({1})", path, ex);
             Environment.Exit(1);
             return null;
