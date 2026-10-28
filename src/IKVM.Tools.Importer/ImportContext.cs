@@ -1119,6 +1119,10 @@ namespace IKVM.Tools.Importer
                         options.GetClassesJar().Add(name.Replace('.', '/') + ".class", data, fileInfo);
                         return;
                     }
+                    catch (IKVM.CoreLib.Linking.UnsupportedClassVersionException e)
+                    {
+                        diagnostics.ClassFormatError(file, IKVM.CoreLib.Linking.UnsupportedClassVersionException.FormatMessage(e.Version));
+                    }
                     catch (ClassFormatException e)
                     {
                         diagnostics.ClassFormatError(file, e.Message);

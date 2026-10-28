@@ -367,11 +367,11 @@ namespace IKVM.CoreLib.Linking
         /// <param name="reader"></param>
         /// <param name="isstub"></param>
         /// <returns></returns>
-        /// <exception cref="UnsupportedClassVersionError"></exception>
-        /// <exception cref="ClassFormatError"></exception>
+        /// <exception cref="UnsupportedClassVersionException"></exception>
+        /// <exception cref="ClassFormatException"></exception>
         static string GetClassName(ByteCode.Decoding.ClassFile reader, out bool isstub)
         {
-            if (reader.Version < new ClassFormatVersion(45, 3) || reader.Version > 52)
+            if (UnsupportedClassVersionException.IsSupported(reader.Version) == false)
                 throw new UnsupportedClassVersionException(reader.Version);
 
             // this is a terrible way to go about encoding this information
@@ -416,8 +416,8 @@ namespace IKVM.CoreLib.Linking
 
             try
             {
-                if (decoder.Version < new ClassFormatVersion(45, 3) || decoder.Version > 52)
-                    throw new UnsupportedClassVersionException(decoder.Version);
+                if (UnsupportedClassVersionException.IsSupported(decoder.Version) == false)
+                    throw new UnsupportedClassVersionException(decoder.Version, inputClassName);
 
                 // load the constants
                 _constants = new ConstantPool<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>(this);
@@ -852,6 +852,11 @@ namespace IKVM.CoreLib.Linking
         /// Gets the major version of the class.
         /// </summary>
         public int MajorVersion => _decoder.Version.Major;
+
+        /// <summary>
+        /// Gets the minor version of the class.
+        /// </summary>
+        public int MinorVersion => _decoder.Version.Minor;
 
         /// <summary>
         /// Initiates linkage of this class file to the specified java type instance.

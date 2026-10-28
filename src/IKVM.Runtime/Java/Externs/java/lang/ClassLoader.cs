@@ -59,7 +59,7 @@ namespace IKVM.Java.Externs.java.lang
 #else
             var buf = new byte[len];
             Array.Copy(b, off, buf, 0, len);
-            return DefineClass(self, name, ReadClass(buf), pd, null);
+            return DefineClass(self, name, ReadClass(buf, name), pd, null);
 #endif
         }
 
@@ -82,7 +82,7 @@ namespace IKVM.Java.Externs.java.lang
 #else
             var buf = new byte[len];
             Array.Copy(b, off, buf, 0, len);
-            return DefineClass(self, name, ReadClass(buf), pd, source);
+            return DefineClass(self, name, ReadClass(buf, name), pd, source);
 #endif
         }
 
@@ -104,7 +104,7 @@ namespace IKVM.Java.Externs.java.lang
 #else
             var buf = new byte[bb.remaining()];
             bb.get(buf);
-            return DefineClass(self, name, ReadClass(buf), pd, source);
+            return DefineClass(self, name, ReadClass(buf, name), pd, source);
 #endif
         }
 
@@ -114,8 +114,9 @@ namespace IKVM.Java.Externs.java.lang
         /// Attempts to read the class, handling exceptions.
         /// </summary>
         /// <param name="buffer"></param>
+        /// <param name="name"></param>
         /// <returns></returns>
-        static IKVM.ByteCode.Decoding.ClassFile ReadClass(byte[] buffer)
+        static IKVM.ByteCode.Decoding.ClassFile ReadClass(byte[] buffer, string name)
         {
             try
             {
@@ -124,6 +125,10 @@ namespace IKVM.Java.Externs.java.lang
             catch (InvalidClassMagicException)
             {
                 throw new global::java.lang.ClassFormatError("Incompatible magic value");
+            }
+            catch (UnsupportedClassVersionException e)
+            {
+                throw new global::java.lang.UnsupportedClassVersionError(IKVM.CoreLib.Linking.UnsupportedClassVersionException.FormatJavaMessage(e.Version, name));
             }
             catch (ByteCodeException e)
             {
