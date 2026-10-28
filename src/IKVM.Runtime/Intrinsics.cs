@@ -204,7 +204,9 @@ namespace IKVM.Runtime
             else if (eic.MatchRange(0, 3) && eic.Match(1, NormalizedOpCode.Ldc) && eic.GetConstantType(1) == ConstantType.Class && (eic.Match(2, NormalizedOpCode.IfAcmpeq) || eic.Match(2, NormalizedOpCode.IfAcmpne)))
             {
                 var tw = eic.GetClassLiteral(1);
-                if (tw.IsGhost || tw.IsGhostArray || tw.IsUnloadable || (tw.IsRemapped && tw.IsFinal && tw is RuntimeManagedJavaType))
+                // an object whose class is a non-final remapped type can be an instance of the shadowed type (new Object() is a
+                // System.Object) or of the Java base type (new Throwable()), so no single type token identifies it
+                if (tw.IsGhost || tw.IsGhostArray || tw.IsUnloadable || (tw.IsRemapped && tw.IsFinal == false) || (tw.IsRemapped && tw.IsFinal && tw is RuntimeManagedJavaType))
                     return false;
 
                 eic.Emitter.Emit(OpCodes.Callvirt, eic.Method.DeclaringType.Context.CompilerFactory.GetTypeMethod);
