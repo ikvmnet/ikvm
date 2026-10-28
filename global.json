@@ -1,11 +1,11 @@
 {
     "sdk": {
-        "version": "10.0.0",
+        "version": "10.0.100",
         "rollForward": "latestFeature"
     },
     "msbuild-sdks": {
-        "MSTest.Sdk": "3.8.2",
-        "Microsoft.Build.NoTargets": "3.7.56",
+        "MSTest.Sdk": "3.11.1",
+        "Microsoft.Build.NoTargets": "3.7.134",
         "IKVM.Clang.Sdk": "2.0.4"
     }
 }

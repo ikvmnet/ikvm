@@ -483,6 +483,38 @@ namespace IKVM.Runtime
         }
 
         /// <summary>
+        /// Returns true if an array whose static type is <paramref name="tw"/> is guaranteed to have exactly that
+        /// type at runtime. Arrays are covariant, so a reference statically typed as Object[] may refer to a String[],
+        /// in which case a 'ldelema' of the static element type fails its exact type check.
+        /// </summary>
+        /// <param name="tw"></param>
+        /// <returns></returns>
+        static bool IsExactArrayTypeForUnsafeOperation(RuntimeJavaType tw)
+        {
+            var et = tw.ElementTypeWrapper;
+            while (et.IsArray)
+                et = et.ElementTypeWrapper;
+
+            return et.IsPrimitive || et.IsNonPrimitiveValueType || (et.IsFinal && !et.IsInterface && !et.IsUnloadable);
+        }
+
+        /// <summary>
+        /// Emits a branch to <paramref name="label"/> if the runtime type of the array in <paramref name="target"/> is not exactly <paramref name="tw"/>.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <param name="tw"></param>
+        /// <param name="target"></param>
+        /// <param name="label"></param>
+        static void EmitBranchIfNotExactArrayType(EmitIntrinsicContext eic, RuntimeJavaType tw, CodeEmitterLocal target, CodeEmitterLabel label)
+        {
+            eic.Emitter.Emit(OpCodes.Ldloc, target);
+            eic.Emitter.Emit(OpCodes.Callvirt, tw.Context.CompilerFactory.GetTypeMethod);
+            eic.Emitter.Emit(OpCodes.Ldtoken, tw.TypeAsLocalOrStackType);
+            eic.Emitter.Emit(OpCodes.Call, tw.Context.CompilerFactory.GetTypeFromHandleMethod);
+            eic.Emitter.EmitBne_Un(label);
+        }
+
+        /// <summary>
         /// Attempts to replace an invocation of Unsafe.putObject with an intrinsic implementation.
         /// </summary>
         /// <param name="eic"></param>
@@ -627,6 +659,9 @@ namespace IKVM.Runtime
                 eic.Emitter.Emit(OpCodes.Ldloc, offset);
                 EmitArrayIndexScale(eic, tw);
                 eic.Emitter.Emit(OpCodes.Div);
+
+                // the readonly prefix suppresses the exact type check, the actual array may be of a subtype
+                eic.Emitter.Emit(OpCodes.Readonly);
                 eic.Emitter.Emit(OpCodes.Ldelema, tw.TypeAsLocalOrStackType.GetElementType());
                 eic.Emitter.Emit(OpCodes.Volatile);
                 eic.Emitter.Emit(OpCodes.Ldind_Ref);
@@ -661,22 +696,36 @@ namespace IKVM.Runtime
                 eic.GetStackTypeWrapper(0, 1).IsAssignableTo(tw.ElementTypeWrapper))
             {
                 var type = tw.TypeAsLocalOrStackType.GetElementType();
+                var exact = IsExactArrayTypeForUnsafeOperation(tw);
                 var update = eic.Emitter.AllocTempLocal(type);
                 var expect = eic.Emitter.AllocTempLocal(type);
-                var offset = eic.Emitter.AllocTempLocal(tw.Context.Types.Int32);
+                var offset = eic.Emitter.AllocTempLocal(tw.Context.Types.Int64);
                 var target = eic.Emitter.AllocTempLocal(tw.TypeAsLocalOrStackType);
+                var receiver = exact ? null : eic.Emitter.AllocTempLocal(eic.Method.DeclaringType.TypeAsLocalOrStackType);
+                var slow = exact ? null : eic.Emitter.DefineLabel();
+                var done = exact ? null : eic.Emitter.DefineLabel();
 
                 // consume existing call site
                 eic.Emitter.Emit(OpCodes.Stloc, update);
                 eic.Emitter.Emit(OpCodes.Stloc, expect);
-                eic.Emitter.Emit(OpCodes.Conv_Ovf_I4);
                 eic.Emitter.Emit(OpCodes.Stloc, offset);
                 eic.Emitter.Emit(OpCodes.Stloc, target);
+
+                // the actual array may be of a subtype of the static type, in which case we cannot obtain a reference
+                // to the element as the static element type, so fall back to the regular method
+                if (exact == false)
+                {
+                    eic.Emitter.Emit(OpCodes.Stloc, receiver);
+                    EmitBranchIfNotExactArrayType(eic, tw, target, slow);
+                    eic.Emitter.Emit(OpCodes.Ldloc, receiver);
+                }
+
                 EmitConsumeUnsafe(eic);
 
                 // emit new call site
                 eic.Emitter.Emit(OpCodes.Ldloc, target);
                 eic.Emitter.Emit(OpCodes.Ldloc, offset);
+                eic.Emitter.Emit(OpCodes.Conv_Ovf_I4);
                 EmitArrayIndexScale(eic, tw);
                 eic.Emitter.Emit(OpCodes.Div);
                 eic.Emitter.Emit(OpCodes.Ldelema, type);
@@ -686,11 +735,25 @@ namespace IKVM.Runtime
                 eic.Emitter.Emit(OpCodes.Ldloc, expect);
                 eic.Emitter.Emit(OpCodes.Ceq);
 
+                if (exact == false)
+                {
+                    eic.Emitter.EmitBr(done);
+                    eic.Emitter.MarkLabel(slow);
+                    eic.Emitter.Emit(OpCodes.Ldloc, receiver);
+                    eic.Emitter.Emit(OpCodes.Ldloc, target);
+                    eic.Emitter.Emit(OpCodes.Ldloc, offset);
+                    eic.Emitter.Emit(OpCodes.Ldloc, expect);
+                    eic.Emitter.Emit(OpCodes.Ldloc, update);
+                    eic.Method.EmitCallvirt(eic.Emitter);
+                    eic.Emitter.MarkLabel(done);
+                    eic.Emitter.ReleaseTempLocal(receiver);
+                }
+
                 eic.Emitter.ReleaseTempLocal(target);
                 eic.Emitter.ReleaseTempLocal(offset);
                 eic.Emitter.ReleaseTempLocal(expect);
                 eic.Emitter.ReleaseTempLocal(update);
-                eic.NonLeaf = false;
+                eic.NonLeaf = exact == false;
                 return true;
             }
 
@@ -813,30 +876,57 @@ namespace IKVM.Runtime
             if (IsSupportedArrayTypeForUnsafeOperation(tw) && eic.GetStackTypeWrapper(0, 0).IsAssignableTo(tw.ElementTypeWrapper))
             {
                 var type = tw.TypeAsLocalOrStackType.GetElementType();
+                var exact = IsExactArrayTypeForUnsafeOperation(tw);
                 var newValue = eic.Emitter.AllocTempLocal(type);
-                var offset = eic.Emitter.AllocTempLocal(tw.Context.Types.Int32);
+                var offset = eic.Emitter.AllocTempLocal(tw.Context.Types.Int64);
                 var target = eic.Emitter.AllocTempLocal(tw.TypeAsLocalOrStackType);
+                var receiver = exact ? null : eic.Emitter.AllocTempLocal(eic.Method.DeclaringType.TypeAsLocalOrStackType);
+                var slow = exact ? null : eic.Emitter.DefineLabel();
+                var done = exact ? null : eic.Emitter.DefineLabel();
 
                 // consume existing call site
                 eic.Emitter.Emit(OpCodes.Stloc, newValue);
-                eic.Emitter.Emit(OpCodes.Conv_Ovf_I4);
                 eic.Emitter.Emit(OpCodes.Stloc, offset);
                 eic.Emitter.Emit(OpCodes.Stloc, target);
+
+                // the actual array may be of a subtype of the static type, in which case we cannot obtain a reference
+                // to the element as the static element type, so fall back to the regular method
+                if (exact == false)
+                {
+                    eic.Emitter.Emit(OpCodes.Stloc, receiver);
+                    EmitBranchIfNotExactArrayType(eic, tw, target, slow);
+                    eic.Emitter.Emit(OpCodes.Ldloc, receiver);
+                }
+
                 EmitConsumeUnsafe(eic);
 
                 // emit new call
                 eic.Emitter.Emit(OpCodes.Ldloc, target);
                 eic.Emitter.Emit(OpCodes.Ldloc, offset);
+                eic.Emitter.Emit(OpCodes.Conv_Ovf_I4);
                 EmitArrayIndexScale(eic, tw);
                 eic.Emitter.Emit(OpCodes.Div);
                 eic.Emitter.Emit(OpCodes.Ldelema, type);
                 eic.Emitter.Emit(OpCodes.Ldloc, newValue);
                 eic.Emitter.Emit(OpCodes.Call, MakeExchange(tw.Context, type));
 
+                if (exact == false)
+                {
+                    eic.Emitter.EmitBr(done);
+                    eic.Emitter.MarkLabel(slow);
+                    eic.Emitter.Emit(OpCodes.Ldloc, receiver);
+                    eic.Emitter.Emit(OpCodes.Ldloc, target);
+                    eic.Emitter.Emit(OpCodes.Ldloc, offset);
+                    eic.Emitter.Emit(OpCodes.Ldloc, newValue);
+                    eic.Method.EmitCallvirt(eic.Emitter);
+                    eic.Emitter.MarkLabel(done);
+                    eic.Emitter.ReleaseTempLocal(receiver);
+                }
+
                 eic.Emitter.ReleaseTempLocal(target);
                 eic.Emitter.ReleaseTempLocal(offset);
                 eic.Emitter.ReleaseTempLocal(newValue);
-                eic.NonLeaf = false;
+                eic.NonLeaf = exact == false;
                 return true;
             }
 

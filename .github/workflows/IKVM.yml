@@ -563,9 +563,12 @@ jobs:
         $ErrorActionPreference = 'Continue'
         $installed = $false
         for ($try = 1; $try -le 5; $try++) {
-            choco install vcredist-all -y --no-progress --ignore-checksums
-            if ($LASTEXITCODE -in 0, 1641, 3010) { $installed = $true; break }
-            Write-Host "attempt $try failed with $LASTEXITCODE, retrying"
+            $out = choco install vcredist-all -y --no-progress --ignore-checksums 2>&1
+            $code = $LASTEXITCODE
+            $out | Write-Host
+            # when the feed cannot resolve a dependency choco reports "installed 0/0 packages" and still exits 0
+            if (($code -in 0, 1641, 3010) -and -not ($out -match 'installed 0/0 packages')) { $installed = $true; break }
+            Write-Host "attempt $try failed with $code, retrying"
             Start-Sleep -Seconds (15 * $try)
         }
         if (-not $installed) { throw 'could not install the Visual C++ runtimes' }
@@ -758,9 +761,24 @@ jobs:
             dotnet test @argl $tests[0].FullName
         }
       working-directory: ${{ env.WORKPATH }}
+    # System32 bsdtar on Windows crashes with an access violation on this tree, so use Git Bash's GNU tar
+    # the archive is written through a redirect, since GNU tar would read the drive letter in a Windows path as a remote host
     - name: Archive Test Results
+      id: archive
       if: always() && startsWith(env.RET, 'TestResults--')
-      run: tar czvf ${{ env.TMPDIR }}/TestResults.tar.gz TestResults
+      shell: bash
+      run: tar czvf - TestResults > "$TMPDIR/TestResults.tar.gz"
+      working-directory: ${{ env.WORKPATH }}
+    # tar has been exiting 1 on win-x64 after all tests pass, without printing why
+    - name: Diagnose Archive Failure
+      if: always() && runner.os == 'Windows' && steps.archive.outcome == 'failure'
+      shell: pwsh
+      run: |
+        Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like "*$env:WORKPATH*" } | Format-Table -AutoSize ProcessId,Name,CommandLine | Out-String -Width 4096
+        Get-ChildItem -Recurse -File TestResults | Where-Object { $_.Name -match '[^\x20-\x7E]' } | ForEach-Object { '{0} [{1}]' -f $_.FullName, (($_.Name.ToCharArray() | ForEach-Object { '{0:X4}' -f [int]$_ }) -join ' ') }
+        tar czvf "$env:TMPDIR/TestResults-diag.tar.gz" TestResults 2>&1 | Where-Object { "$_" -notmatch '^a ' }
+        "tar exit code: $LASTEXITCODE"
+        exit 0
       working-directory: ${{ env.WORKPATH }}
     - name: Upload Test Results
       if: always() && startsWith(env.RET, 'TestResults--')

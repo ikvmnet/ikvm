@@ -23,7 +23,7 @@ namespace IKVM.Tools.Tests.Runner.Exporter
 
         public TestContext TestContext { get; set; }
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow("net472", "net472", "net472", ".NETFramework", "4.7.2")]
         [DataRow("net472", "net472", "net481", ".NETFramework", "4.8.1")]
         [DataRow("net472", "net6.0", "net6.0", ".NET", "6.0")]

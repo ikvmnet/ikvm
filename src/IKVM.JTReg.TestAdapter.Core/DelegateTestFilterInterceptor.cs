@@ -27,7 +27,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="context"></param>
+        /// <param name="func"></param>
         public DelegateTestFilterInterceptor(Func<dynamic, bool> func)
         {
             this.func = func ?? throw new ArgumentNullException(nameof(func));
