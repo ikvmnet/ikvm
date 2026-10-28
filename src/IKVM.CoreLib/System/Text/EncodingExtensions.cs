@@ -67,21 +67,6 @@ namespace System.Text
             return encoding.GetBytes(chars.AsSpan(), bytes);
         }
 
-        public static unsafe int GetChars(this Encoding encoding, ReadOnlySpan<byte> bytes, Span<char> chars)
-        {
-            fixed (byte* bytesPtr = bytes)
-            fixed (char* charsPtr = chars)
-                return encoding.GetChars(bytesPtr, bytes.Length, charsPtr, chars.Length);
-        }
-
-        public static unsafe int GetCharCount(this Encoding encoding, ReadOnlySpan<byte> bytes)
-        {
-            fixed (byte* bytesPtr = bytes)
-            {
-                return encoding.GetCharCount(bytesPtr, bytes.Length);
-            }
-        }
-
         public static unsafe int GetByteCount(this Encoder encoder, ReadOnlySpan<char> chars, bool flush)
         {
             fixed (char* charsPtr = chars)

@@ -119,7 +119,7 @@ namespace IKVM.Tests.Java.java.io
             var s = new global::java.io.FileInputStream(f);
             var b = new byte[new global::java.io.File(f).length()];
             s.read(b);
-            b.Length.Should().BeGreaterOrEqualTo(32);
+            b.Length.Should().BeGreaterThanOrEqualTo(32);
         }
 
         [TestMethod]

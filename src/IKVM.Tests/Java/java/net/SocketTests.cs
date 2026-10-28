@@ -29,26 +29,21 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [TestMethod]
-        [ExpectedException(typeof(BindException))]
         public void BindingToSamePortShouldThrowBindException()
         {
             using var s1 = new ServerSocket();
             s1.bind(new InetSocketAddress(0));
             using var s2 = new Socket();
             s2.setReuseAddress(false);
-            s2.bind(new InetSocketAddress(s1.getLocalPort()));
-            s2.close();
-            s1.close();
+            Assert.ThrowsExactly<BindException>(() => s2.bind(new InetSocketAddress(s1.getLocalPort())));
         }
 
         [TestMethod]
-        [ExpectedException(typeof(SocketTimeoutException))]
         public void AcceptShouldTimeOut()
         {
             using var server = new ServerSocket(0);
             server.setSoTimeout(5000);
-            server.accept();
-            throw new System.Exception("accept should not have returned");
+            Assert.ThrowsExactly<SocketTimeoutException>(server.accept);
         }
 
         [TestMethod]
@@ -72,14 +67,13 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ConnectException))]
         public void ConnectWithNoListeningServerShouldThrowConnectException()
         {
             using var server = new ServerSocket(0);
             int port = server.getLocalPort();
             server.close();
             using var client = new Socket();
-            client.connect(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), port), 8888);
+            Assert.ThrowsExactly<ConnectException>(() => client.connect(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), port), 8888));
         }
 
         [TestMethod]

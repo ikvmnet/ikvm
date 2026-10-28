@@ -20,7 +20,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <returns></returns>
         public static dynamic Create(string defaultParamTag, object testSuite, Func<dynamic, bool> filterFunc)
         {
-            return DefaultProxyGenerator.CreateClassProxy(JTRegTypes.RegressionParameters.Type, new[] { defaultParamTag, testSuite }, new RegressionParametersInterceptor(filterFunc));
+            return DefaultProxyGenerator.CreateClassProxy(JTRegTypes.RegressionParameters.Type, [defaultParamTag, testSuite], new RegressionParametersInterceptor(filterFunc));
         }
 
         readonly Func<dynamic, bool> filterFunc;
