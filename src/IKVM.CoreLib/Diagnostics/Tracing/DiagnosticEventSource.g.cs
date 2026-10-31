@@ -90,6 +90,15 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         public void GenericJniInfo(string arg0) => WriteEvent(9, arg0);
 
         /// <summary>
+        /// The 'UnsupportedClassVersion' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Info: Skipping class "{arg0}". ({arg1})
+        /// </remarks>
+        [Event(10, Message = "Skipping class \"{0}\". ({1})", Level = EventLevel.Informational)]
+        public void UnsupportedClassVersion(string arg0, string arg1) => WriteEvent(10, arg0, arg1);
+
+        /// <summary>
         /// The 'ClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
@@ -480,6 +489,27 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// </remarks>
         [Event(145, Message = "{0}", Level = EventLevel.Warning)]
         public void GenericJniWarning(string arg0) => WriteEvent(145, arg0);
+
+        /// <summary>
+        /// The 'UnsupportedClassVersionSkipped' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Warning: {arg0} class(es) in "{arg1}" target {arg2} and were skipped; IKVM supports class files up to version 52.0 (Java 8). (first skipped class: "{arg3}")
+        /// </remarks>
+        [Event(146, Message = "{0} class(es) in \"{1}\" target {2} and were skipped; IKVM supports class files up " +
+    "to version 52.0 (Java 8). (first skipped class: \"{3}\")", Level = EventLevel.Warning)]
+        public void UnsupportedClassVersionSkipped(string arg0, string arg1, string arg2, string arg3) => WriteEvent(146, arg0, arg1, arg2, arg3);
+
+        /// <summary>
+        /// The 'NoClassesCompiled' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Warning: No classes were compiled from "{arg0}": all {arg1} class(es) failed to compile, so the output assembly contains no types from it. See the preceding warnings for the reasons.
+        /// </remarks>
+        [Event(147, Message = "No classes were compiled from \"{0}\": all {1} class(es) failed to compile, so the " +
+    "output assembly contains no types from it. See the preceding warnings for the re" +
+    "asons.", Level = EventLevel.Warning)]
+        public void NoClassesCompiled(string arg0, string arg1) => WriteEvent(147, arg0, arg1);
 
         /// <summary>
         /// The 'UnableToCreateProxy' diagnostic.

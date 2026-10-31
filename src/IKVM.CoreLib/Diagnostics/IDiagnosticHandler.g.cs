@@ -79,6 +79,14 @@ namespace IKVM.CoreLib.Diagnostics
         void GenericJniInfo(string arg0);
 
         /// <summary>
+        /// The 'UnsupportedClassVersion' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Info: Skipping class "{arg0}". ({arg1})
+        /// </remarks>
+        void UnsupportedClassVersion(string arg0, string arg1);
+
+        /// <summary>
         /// The 'ClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
@@ -421,6 +429,22 @@ namespace IKVM.CoreLib.Diagnostics
 /// Warning: {arg0}
         /// </remarks>
         void GenericJniWarning(string arg0);
+
+        /// <summary>
+        /// The 'UnsupportedClassVersionSkipped' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Warning: {arg0} class(es) in "{arg1}" target {arg2} and were skipped; IKVM supports class files up to version 52.0 (Java 8). (first skipped class: "{arg3}")
+        /// </remarks>
+        void UnsupportedClassVersionSkipped(string arg0, string arg1, string arg2, string arg3);
+
+        /// <summary>
+        /// The 'NoClassesCompiled' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Warning: No classes were compiled from "{arg0}": all {arg1} class(es) failed to compile, so the output assembly contains no types from it. See the preceding warnings for the reasons.
+        /// </remarks>
+        void NoClassesCompiled(string arg0, string arg1);
 
         /// <summary>
         /// The 'UnableToCreateProxy' diagnostic.

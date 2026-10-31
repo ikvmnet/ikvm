@@ -31,6 +31,8 @@ namespace IKVM.CoreLib.Diagnostics
                     return GenericRuntimeInfo;
                 case 9:
                     return GenericJniInfo;
+                case 10:
+                    return UnsupportedClassVersion;
                 case 100:
                     return ClassNotFound;
                 case 101:
@@ -117,6 +119,10 @@ namespace IKVM.CoreLib.Diagnostics
                     return GenericRuntimeWarning;
                 case 145:
                     return GenericJniWarning;
+                case 146:
+                    return UnsupportedClassVersionSkipped;
+                case 147:
+                    return NoClassesCompiled;
                 case 4001:
                     return UnableToCreateProxy;
                 case 4002:
@@ -369,6 +375,14 @@ namespace IKVM.CoreLib.Diagnostics
 /// Info: {arg0}
         /// </remarks>
         public static readonly Diagnostic GenericJniInfo = new Diagnostic(9, nameof(GenericJniInfo), "{0}", DiagnosticLevel.Info);
+
+        /// <summary>
+        /// The 'UnsupportedClassVersion' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Info: Skipping class "{arg0}". ({arg1})
+        /// </remarks>
+        public static readonly Diagnostic UnsupportedClassVersion = new Diagnostic(10, nameof(UnsupportedClassVersion), "Skipping class \"{0}\". ({1})", DiagnosticLevel.Info);
 
         /// <summary>
         /// The 'ClassNotFound' diagnostic.
@@ -718,6 +732,25 @@ namespace IKVM.CoreLib.Diagnostics
 /// Warning: {arg0}
         /// </remarks>
         public static readonly Diagnostic GenericJniWarning = new Diagnostic(145, nameof(GenericJniWarning), "{0}", DiagnosticLevel.Warning);
+
+        /// <summary>
+        /// The 'UnsupportedClassVersionSkipped' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Warning: {arg0} class(es) in "{arg1}" target {arg2} and were skipped; IKVM supports class files up to version 52.0 (Java 8). (first skipped class: "{arg3}")
+        /// </remarks>
+        public static readonly Diagnostic UnsupportedClassVersionSkipped = new Diagnostic(146, nameof(UnsupportedClassVersionSkipped), "{0} class(es) in \"{1}\" target {2} and were skipped; IKVM supports class files up " +
+    "to version 52.0 (Java 8). (first skipped class: \"{3}\")", DiagnosticLevel.Warning);
+
+        /// <summary>
+        /// The 'NoClassesCompiled' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Warning: No classes were compiled from "{arg0}": all {arg1} class(es) failed to compile, so the output assembly contains no types from it. See the preceding warnings for the reasons.
+        /// </remarks>
+        public static readonly Diagnostic NoClassesCompiled = new Diagnostic(147, nameof(NoClassesCompiled), "No classes were compiled from \"{0}\": all {1} class(es) failed to compile, so the " +
+    "output assembly contains no types from it. See the preceding warnings for the re" +
+    "asons.", DiagnosticLevel.Warning);
 
         /// <summary>
         /// The 'UnableToCreateProxy' diagnostic.

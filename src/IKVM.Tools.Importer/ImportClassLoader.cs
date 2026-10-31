@@ -85,6 +85,40 @@ namespace IKVM.Tools.Importer
         readonly List<string> jarList = new List<string>();
         List<RuntimeJavaType> javaTypes;
         FakeTypes fakeTypes;
+        readonly Dictionary<Jar, JarImportStatistics> jarStatistics = new Dictionary<Jar, JarImportStatistics>();
+
+        /// <summary>
+        /// Tracks the outcome of compiling the classes of a single input jar.
+        /// </summary>
+        sealed class JarImportStatistics
+        {
+
+            /// <summary>
+            /// Number of classes that were attempted.
+            /// </summary>
+            public int Attempted;
+
+            /// <summary>
+            /// Number of classes that were successfully defined.
+            /// </summary>
+            public int Compiled;
+
+            /// <summary>
+            /// Number of classes skipped because of their class file version.
+            /// </summary>
+            public int UnsupportedVersion;
+
+            /// <summary>
+            /// Name of the first class skipped because of its class file version.
+            /// </summary>
+            public string FirstUnsupportedVersionClass;
+
+            /// <summary>
+            /// Distinct unsupported class file versions encountered, ordered.
+            /// </summary>
+            public readonly SortedSet<ClassFormatVersion> UnsupportedVersions = new SortedSet<ClassFormatVersion>();
+
+        }
 
         /// <summary>
         /// Initializes a new instance.
@@ -296,16 +330,27 @@ namespace IKVM.Tools.Importer
                 {
                     classes.Remove(name);
 
+                    if (jarStatistics.TryGetValue(itemRef.Jar, out var stats) == false)
+                        jarStatistics.Add(itemRef.Jar, stats = new JarImportStatistics());
+
+                    stats.Attempted++;
+
                     ClassFile f;
 
                     try
                     {
                         f = new ClassFile(Context, IKVM.ByteCode.Decoding.ClassFile.Read(itemRef.GetData()), name, ClassFileParseOptions, []);
                     }
+                    catch (IKVM.ByteCode.UnsupportedClassVersionException e)
+                    {
+                        Context.StaticCompiler.SuppressWarning(state, Diagnostic.ClassNotFound, name);
+                        RecordUnsupportedClassVersion(stats, name, e.Version);
+                        return null;
+                    }
                     catch (IKVM.CoreLib.Linking.UnsupportedClassVersionException e)
                     {
                         Context.StaticCompiler.SuppressWarning(state, Diagnostic.ClassNotFound, name);
-                        Diagnostics.ClassFormatError(name, e.Message);
+                        RecordUnsupportedClassVersion(stats, name, e.Version);
                         return null;
                     }
                     catch (ByteCodeException e)
@@ -386,6 +431,7 @@ namespace IKVM.Tools.Importer
                     try
                     {
                         var tw = DefineClass(f, null);
+                        stats.Compiled++;
 
                         // we successfully created the type, so we don't need to include the class as a resource
                         if (state.nojarstubs)
@@ -441,6 +487,43 @@ namespace IKVM.Tools.Importer
                 {
                     return null;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Records that the given class was skipped because its class file version is not supported. Only a summary is
+        /// reported as a warning for each input, by <see cref="ReportImportStatistics"/>.
+        /// </summary>
+        /// <param name="stats"></param>
+        /// <param name="name"></param>
+        /// <param name="version"></param>
+        void RecordUnsupportedClassVersion(JarImportStatistics stats, string name, ClassFormatVersion version)
+        {
+            Diagnostics.UnsupportedClassVersion(name, IKVM.CoreLib.Linking.UnsupportedClassVersionException.FormatMessage(version));
+
+            stats.UnsupportedVersion++;
+            stats.FirstUnsupportedVersionClass ??= name;
+            stats.UnsupportedVersions.Add(version);
+        }
+
+        /// <summary>
+        /// Reports a summary of the classes that could not be compiled for each input.
+        /// </summary>
+        void ReportImportStatistics()
+        {
+            foreach (var kvp in jarStatistics)
+            {
+                var jar = kvp.Key;
+                var stats = kvp.Value;
+
+                if (stats.UnsupportedVersion > 0)
+                {
+                    var targets = string.Join(", ", stats.UnsupportedVersions.Select(i => $"{IKVM.CoreLib.Linking.UnsupportedClassVersionException.GetJavaVersionName(i)} (class file version {i})"));
+                    Diagnostics.UnsupportedClassVersionSkipped(stats.UnsupportedVersion.ToString(), jar.Name, targets, stats.FirstUnsupportedVersionClass);
+                }
+
+                if (stats.Attempted > 0 && stats.Compiled == 0)
+                    Diagnostics.NoClassesCompiled(jar.Name, stats.Attempted.ToString());
             }
         }
 
@@ -2560,6 +2643,10 @@ namespace IKVM.Tools.Importer
                 loader.CompilePass1();
             }
 
+            // classes can be loaded by peers during the first pass, so wait until every loader is done before summarizing
+            foreach (var loader in loaders)
+                loader.ReportImportStatistics();
+
             foreach (var loader in loaders)
             {
                 loader.CompilePass2();
@@ -2644,7 +2731,8 @@ namespace IKVM.Tools.Importer
                     string name = item.Name;
                     if (name.EndsWith(".class", StringComparison.Ordinal)
                         && name.Length > 6
-                        && name.IndexOf('.') == name.Length - 6)
+                        && name.IndexOf('.') == name.Length - 6
+                        && IsIgnoredClassEntry(name) == false)
                     {
                         string className = name.Substring(0, name.Length - 6).Replace('/', '.');
                         if (h.ContainsKey(className))
@@ -2893,6 +2981,17 @@ namespace IKVM.Tools.Importer
             }
 
             return 0;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given jar entry ends with ".class" but is never loaded as a class by a Java 8 runtime:
+        /// module descriptors and the versioned entries of a multi-release jar. These are left in the jar as resources.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        static bool IsIgnoredClassEntry(string name)
+        {
+            return name == "module-info.class" || name.StartsWith("META-INF/versions/", StringComparison.Ordinal);
         }
 
         static bool IsBaseAssembly(RuntimeContext context, Assembly asm)
