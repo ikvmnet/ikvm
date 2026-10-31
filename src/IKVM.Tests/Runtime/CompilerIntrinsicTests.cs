@@ -31,6 +31,10 @@ namespace IKVM.Tests.Runtime
                     if (mode == 1) throw new IllegalStateException("ise");
                 }
 
+                static Object newObject() {
+                    return new Object();
+                }
+
                 static String getClassEqualsClassLiteral(Object v, int mode) {
                     StringBuilder sb = new StringBuilder();
                     try {
@@ -135,7 +139,10 @@ namespace IKVM.Tests.Runtime
         public void GetClassEqualsClassLiteralInNestedFinallyWithCatch(int mode)
         {
             var prefix = mode == 0 ? "ab" : "bc";
-            Invoke("getClassEqualsClassLiteral", new object(), mode).Should().Be(prefix + "on");
+            // Java's new Object() creates an instance of java.lang.Object, which shadows System.Object
+            Invoke("getClassEqualsClassLiteral", Invoke("newObject"), mode).Should().Be(prefix + "on");
+            // a raw System.Object is a cli.System.Object, not a java.lang.Object
+            Invoke("getClassEqualsClassLiteral", new object(), mode).Should().Be(prefix + "n");
             Invoke("getClassEqualsClassLiteral", "s", mode).Should().Be(prefix);
             Invoke("getClassEqualsClassLiteral", new java.util.ArrayList(), mode).Should().Be(prefix + "n");
         }
