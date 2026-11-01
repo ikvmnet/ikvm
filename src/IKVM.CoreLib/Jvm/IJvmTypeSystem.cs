@@ -179,6 +179,10 @@ namespace IKVM.CoreLib.Jvm
         /// <summary>
         /// Initiates a link of the field with the specified mode.
         /// </summary>
+        /// <remarks>
+        /// These link methods may not belong on the type system. Unlike the other members, they change the state of a
+        /// member rather than describe it, and only constant pool linking calls them.
+        /// </remarks>
         /// <param name="field"></param>
         /// <param name="mode"></param>
         void LinkField(TField field, LoadMode mode);
@@ -186,6 +190,10 @@ namespace IKVM.CoreLib.Jvm
         /// <summary>
         /// Initiates a link of the method with the specified mode.
         /// </summary>
+        /// <remarks>
+        /// These link methods may not belong on the type system. Unlike the other members, they change the state of a
+        /// member rather than describe it, and only constant pool linking calls them.
+        /// </remarks>
         /// <param name="method"></param>
         /// <param name="mode"></param>
         void LinkMethod(TMethod method, LoadMode mode);
