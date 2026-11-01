@@ -2222,6 +2222,7 @@ javax/swing/text/AbstractDocument/8030118/Test8030118.java                      
 javax/swing/text/CSSBorder/6796710/bug6796710.java                                                                      generic-all
 javax/swing/text/DefaultCaret/6938583/bug6938583.java                                                                   generic-all
 javax/swing/text/DefaultCaret/7083457/bug7083457.java                                                                   generic-all
+javax/swing/text/DefaultCaret/bug4197894.java                                                                           linux-all
 javax/swing/text/DefaultCaret/bug4203175.java                                                                           generic-all
 javax/swing/text/DefaultEditorKit/4278839/bug4278839.java                                                               generic-all
 javax/swing/text/DefaultHighlighter/6771184/bug6771184.java                                                             generic-all
@@ -3858,7 +3859,7 @@ java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFAppModal3Test.java       
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFDocModal1Test.java                                               generic-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFDocModal2Test.java                                               generic-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFDocModal3Test.java                                               generic-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFModeless1Test.java                                               macosx-all,windows-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFModeless1Test.java                                               generic-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFModeless2Test.java                                               generic-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFNonModal1Test.java                                               generic-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFNonModal2Test.java                                               generic-all
