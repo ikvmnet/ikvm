@@ -23,7 +23,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Maintains services relevant to an instance of the IKVM runtime.
     /// </summary>
-    class RuntimeContext : ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>
+    class RuntimeContext
     {
 
         readonly RuntimeContextOptions options;
@@ -293,43 +293,6 @@ namespace IKVM.Runtime
         public ProxyGenerator ProxyGenerator => GetOrCreateSingleton(ref proxyGenerator, () => new ProxyGenerator(this));
 
 #endif
-
-        #region LinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>
-
-        /// <inheritdoc />
-        RuntimeJavaType ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.CreateUnloadableType(string name) => new RuntimeUnloadableJavaType(this, name);
-
-#if IMPORTER
-
-        /// <inheritdoc />
-        bool ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.IsImporter => true;
-
-#else
-
-        /// <inheritdoc />
-        bool ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.IsImporter => false;
-
-#endif
-
-        /// <inheritdoc />
-        RuntimeJavaType ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.TypeOfJavaLangObject => JavaBase.TypeOfJavaLangObject;
-
-        /// <inheritdoc />
-        RuntimeJavaType ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.TypeOfVerifierNull => VerifierJavaTypeFactory.Null;
-
-#if EXPORTER == false
-
-        /// <inheritdoc />
-        bool ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.AllowNonVirtualCalls => JVM.AllowNonVirtualCalls;
-
-#else
-
-        /// <inheritdoc />
-        bool ILinkingContext<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.AllowNonVirtualCalls => false;
-
-#endif
-
-        #endregion
 
     }
 

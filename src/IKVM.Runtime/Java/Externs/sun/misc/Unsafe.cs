@@ -1590,7 +1590,7 @@ namespace IKVM.Java.Externs.sun.misc
                     throw new IKVM.CoreLib.Linking.UnsupportedClassVersionException(version);
                 }
 
-                var cf = new ClassFile(JVM.Context, decoder, "<Unknown>", cl.ClassFileParseOptions, cpPatches ?? []);
+                var cf = new ClassFile(new RuntimeJvmTypeSystem(JVM.Context), decoder, "<Unknown>", cl.ClassFileParseOptions, cpPatches ?? []);
 
                 // if this happens, the OpenJDK is probably trying to load an OpenJDK class file as a resource,
                 // make sure the build process includes the original class file as a resource in that case

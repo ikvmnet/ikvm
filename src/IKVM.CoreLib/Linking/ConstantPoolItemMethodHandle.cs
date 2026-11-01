@@ -25,6 +25,7 @@
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
 using IKVM.CoreLib.Runtime;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
@@ -32,22 +33,23 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a methodhandle constant.
     /// </summary>
-    internal sealed class ConstantPoolItemMethodHandle<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> : ConstantPoolItem<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    internal sealed class ConstantPoolItemMethodHandle<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         readonly MethodHandleConstantData _data;
-        ConstantPoolItemFMI<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>? _cpi;
+        ConstantPoolItemFMI<TType, TMember, TField, TMethod, TTypeSystem>? _cpi;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        internal ConstantPoolItemMethodHandle(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, MethodHandleConstantData data) :
+        internal ConstantPoolItemMethodHandle(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, MethodHandleConstantData data) :
             base(classFile)
         {
             this._data = data;
@@ -65,18 +67,18 @@ namespace IKVM.CoreLib.Linking
                 case MethodHandleKind.GetStatic:
                 case MethodHandleKind.PutField:
                 case MethodHandleKind.PutStatic:
-                    _cpi = ClassFile.GetConstantPoolItem(_data.Reference) as ConstantPoolItemFieldref<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>;
+                    _cpi = ClassFile.GetConstantPoolItem(_data.Reference) as ConstantPoolItemFieldref<TType, TMember, TField, TMethod, TTypeSystem>;
                     break;
                 case MethodHandleKind.InvokeSpecial:
                 case MethodHandleKind.InvokeVirtual:
                 case MethodHandleKind.InvokeStatic:
                 case MethodHandleKind.NewInvokeSpecial:
-                    _cpi = ClassFile.GetConstantPoolItem(_data.Reference) as ConstantPoolItemMethodref<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>;
+                    _cpi = ClassFile.GetConstantPoolItem(_data.Reference) as ConstantPoolItemMethodref<TType, TMember, TField, TMethod, TTypeSystem>;
                     if (_cpi == null && ClassFile.MajorVersion >= 52 && (_data.Kind is MethodHandleKind.InvokeStatic or MethodHandleKind.InvokeSpecial))
                         goto case MethodHandleKind.InvokeInterface;
                     break;
                 case MethodHandleKind.InvokeInterface:
-                    _cpi = ClassFile.GetConstantPoolItem(_data.Reference) as ConstantPoolItemInterfaceMethodref<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>;
+                    _cpi = ClassFile.GetConstantPoolItem(_data.Reference) as ConstantPoolItemInterfaceMethodref<TType, TMember, TField, TMethod, TTypeSystem>;
                     break;
             }
 
@@ -94,7 +96,7 @@ namespace IKVM.CoreLib.Linking
         }
 
         /// <inheritdoc />
-        public override void Link(TLinkingType thisType, LoadMode mode)
+        public override void Link(TType thisType, LoadMode mode)
         {
             _cpi.Link(thisType, mode);
         }
@@ -105,13 +107,13 @@ namespace IKVM.CoreLib.Linking
 
         public string? Signature => _cpi.Signature;
 
-        public ConstantPoolItemFMI<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> MemberConstantPoolItem => _cpi;
+        public ConstantPoolItemFMI<TType, TMember, TField, TMethod, TTypeSystem> MemberConstantPoolItem => _cpi;
 
         public MethodHandleKind Kind => _data.Kind;
 
-        public TLinkingMember? Member => _cpi.GetMember();
+        public TMember? Member => _cpi.GetMember();
 
-        public TLinkingType GetClassType()
+        public TType GetClassType()
         {
             return _cpi.GetClassType();
         }

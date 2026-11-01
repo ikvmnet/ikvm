@@ -24,6 +24,7 @@
 
 using IKVM.ByteCode.Decoding;
 using IKVM.CoreLib.Runtime;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
@@ -31,11 +32,12 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a methodref constant.
     /// </summary>
-    internal sealed class ConstantPoolItemMethodref<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> : ConstantPoolItemMI<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    internal sealed class ConstantPoolItemMethodref<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItemMI<TType, TMember, TField, TMethod, TTypeSystem>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         /// <summary>
@@ -43,31 +45,35 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        public ConstantPoolItemMethodref(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, MethodrefConstantData data) :
+        public ConstantPoolItemMethodref(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, MethodrefConstantData data) :
             base(classFile, data.Class, data.NameAndType)
         {
 
         }
 
         /// <inheritdoc />
-        public override void Link(TLinkingType thisJavaType, LoadMode mode)
+        public override void Link(TType thisJavaType, LoadMode mode)
         {
             base.Link(thisJavaType, mode);
 
+            ref readonly var ts = ref ClassFile.TypeSystem;
+
             var javaType = GetClassType();
-            if (javaType != null && javaType.IsUnloadable == false)
+            if (javaType != null && ts.IsUnloadable(javaType) == false)
             {
-                _method = javaType.GetMethod(Name, Signature, !ReferenceEquals(Name, StringConstants.INIT));
-                _method?.Link(mode);
+                _method = ts.GetMethod(javaType, Name, Signature, !ReferenceEquals(Name, StringConstants.INIT));
+                if (_method != null)
+                    ts.LinkMethod(_method, mode);
 
                 if (Name != StringConstants.INIT &&
-                    thisJavaType.IsInterface == false &&
-                    (ClassFile.Context.AllowNonVirtualCalls == false || (thisJavaType.AccessFlags & ClassFileAccessFlags.Super) == ClassFileAccessFlags.Super) &&
+                    ts.IsInterface(thisJavaType) == false &&
+                    (ts.AllowNonVirtualCalls == false || (ts.GetAccessFlags(thisJavaType) & ClassFileAccessFlags.Super) == ClassFileAccessFlags.Super) &&
                     thisJavaType != javaType &&
-                    thisJavaType.IsSubTypeOf(javaType))
+                    ts.IsSubTypeOf(thisJavaType, javaType))
                 {
-                    _invokespecialMethod = thisJavaType.BaseType.GetMethod(Name, Signature, true);
-                    _invokespecialMethod?.Link(mode);
+                    _invokespecialMethod = ts.GetMethod(ts.GetBaseType(thisJavaType)!, Name, Signature, true);
+                    if (_invokespecialMethod != null)
+                        ts.LinkMethod(_invokespecialMethod, mode);
                 }
             }
         }

@@ -38,7 +38,7 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.Runtime
 {
 
-    abstract class RuntimeJavaMember : ILinkingMember<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>
+    abstract class RuntimeJavaMember
     {
 
         /// <summary>

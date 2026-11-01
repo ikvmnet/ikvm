@@ -25,15 +25,17 @@ using System;
 
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
 
-    internal sealed class Field<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> : FieldOrMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    internal sealed class Field<TType, TMember, TField, TMethod, TTypeSystem> : FieldOrMethod<TType, TMember, TField, TMethod, TTypeSystem>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         object constantValue;
@@ -45,7 +47,7 @@ namespace IKVM.CoreLib.Linking
         /// <param name="classFile"></param>
         /// <param name="field"></param>
         /// <exception cref="ClassFormatException"></exception>
-        internal Field(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, ByteCode.Decoding.Field field) :
+        internal Field(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, ByteCode.Decoding.Field field) :
             base(classFile, field.AccessFlags, field.Name, field.Descriptor)
         {
             if ((IsPrivate && IsPublic) || (IsPrivate && IsProtected) || (IsPublic && IsProtected) || (IsFinal && IsVolatile) || (classFile.IsInterface && (!IsPublic || !IsStatic || !IsFinal || IsTransient)))
@@ -112,7 +114,7 @@ namespace IKVM.CoreLib.Linking
                             goto default;
 
                         var _runtimeVisibleAnnotation = (RuntimeVisibleAnnotationsAttribute)attribute;
-                        annotations = ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>.ReadAnnotations(_runtimeVisibleAnnotation.Annotations, classFile);
+                        annotations = ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.ReadAnnotations(_runtimeVisibleAnnotation.Annotations, classFile);
                         break;
                     case AttributeName.RuntimeInvisibleAnnotations:
                         if (classFile.MajorVersion < 49)
@@ -120,13 +122,13 @@ namespace IKVM.CoreLib.Linking
 
                         var _runtimeInvisibleAnnotations = (RuntimeInvisibleAnnotationsAttribute)attribute;
 
-                        foreach (object[] annot in ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>.ReadAnnotations(_runtimeInvisibleAnnotations.Annotations, classFile))
+                        foreach (object[] annot in ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.ReadAnnotations(_runtimeInvisibleAnnotations.Annotations, classFile))
                         {
                             if (annot[1].Equals("Likvm/lang/Property;"))
                             {
                                 DecodePropertyAnnotation(classFile, annot);
                             }
-                            else if (ClassFile.Context.IsImporter && annot[1].Equals("Likvm/lang/Internal;"))
+                            else if (ClassFile.TypeSystem.IsImporter && annot[1].Equals("Likvm/lang/Internal;"))
                             {
                                 accessFlags &= ~ClassFileAccessFlags.AccessMask;
                                 flags |= ClassFileFlags.MASK_INTERNAL;
@@ -149,11 +151,11 @@ namespace IKVM.CoreLib.Linking
 
         }
 
-        private void DecodePropertyAnnotation(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, object[] annot)
+        private void DecodePropertyAnnotation(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, object[] annot)
         {
             if (propertyGetterSetter != null)
             {
-                classFile.Context.Diagnostics.GenericClassLoadingError($"Ignoring duplicate ikvm.lang.Property annotation on {classFile.Name}.{this.Name}");
+                classFile.TypeSystem.Diagnostics.GenericClassLoadingError($"Ignoring duplicate ikvm.lang.Property annotation on {classFile.Name}.{this.Name}");
                 return;
             }
 
@@ -185,14 +187,14 @@ namespace IKVM.CoreLib.Linking
             if (propertyGetterSetter == null || propertyGetterSetter[0] == null)
             {
                 propertyGetterSetter = null;
-                classFile.Context.Diagnostics.GenericClassLoadingError($"Ignoring malformed ikvm.lang.Property annotation on {classFile.Name}.{Name}");
+                classFile.TypeSystem.Diagnostics.GenericClassLoadingError($"Ignoring malformed ikvm.lang.Property annotation on {classFile.Name}.{Name}");
                 return;
             }
         }
 
-        protected override void ValidateSig(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, string descriptor)
+        protected override void ValidateSig(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, string descriptor)
         {
-            if (!ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>.IsValidFieldDescriptor(descriptor))
+            if (!ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.IsValidFieldDescriptor(descriptor))
                 throw new ClassFormatException("{0} (Field \"{1}\" has invalid signature \"{2}\")", classFile.Name, this.Name, descriptor);
         }
 

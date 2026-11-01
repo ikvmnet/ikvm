@@ -24,6 +24,7 @@
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
 using IKVM.CoreLib.Runtime;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
@@ -31,25 +32,26 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a methodtype constant.
     /// </summary>
-    internal sealed class ConstantPoolItemMethodType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> : ConstantPoolItem<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    internal sealed class ConstantPoolItemMethodType<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         readonly Utf8ConstantHandle _signature;
 
         string? _descriptor;
-        TLinkingType[]? _argTypeWrappers;
-        TLinkingType? _retTypeWrapper;
+        TType[]? _argTypeWrappers;
+        TType? _retTypeWrapper;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        public ConstantPoolItemMethodType(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, MethodTypeConstantData data) :
+        public ConstantPoolItemMethodType(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, MethodTypeConstantData data) :
             base(classFile)
         {
             _signature = data.Descriptor;
@@ -62,21 +64,21 @@ namespace IKVM.CoreLib.Linking
         public override void Resolve()
         {
             var descriptor = ClassFile.GetConstantPoolUtf8String(_signature);
-            if (descriptor == null || !ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>.IsValidMethodDescriptor(descriptor))
+            if (descriptor == null || !ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.IsValidMethodDescriptor(descriptor))
                 throw new ClassFormatException("Invalid MethodType signature");
 
             _descriptor = string.Intern(descriptor.Replace('/', '.'));
         }
 
         /// <inheritdoc />
-        public override void Link(TLinkingType thisType, LoadMode mode)
+        public override void Link(TType thisType, LoadMode mode)
         {
             lock (this)
                 if (_argTypeWrappers != null)
                     return;
 
-            var args = thisType.GetArgTypeListFromSignature(_descriptor, mode);
-            var ret = thisType.GetReturnTypeFromSignature(_descriptor, mode);
+            var args = ClassFile.TypeSystem.GetArgTypeListFromSignature(thisType, _descriptor, mode);
+            var ret = ClassFile.TypeSystem.GetReturnTypeFromSignature(thisType, _descriptor, mode);
 
             lock (this)
             {
@@ -90,9 +92,9 @@ namespace IKVM.CoreLib.Linking
 
         public string Signature => _descriptor;
 
-        public TLinkingType[] GetArgTypes() => _argTypeWrappers;
+        public TType[] GetArgTypes() => _argTypeWrappers;
 
-        public TLinkingType GetRetType() => _retTypeWrapper;
+        public TType GetRetType() => _retTypeWrapper;
 
     }
 

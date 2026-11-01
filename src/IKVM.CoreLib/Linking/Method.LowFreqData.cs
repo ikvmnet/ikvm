@@ -25,7 +25,7 @@
 namespace IKVM.CoreLib.Linking
 {
 
-    internal sealed partial class Method<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
+    internal sealed partial class Method<TType, TMember, TField, TMethod, TTypeSystem>
     {
 
         sealed class LowFreqData

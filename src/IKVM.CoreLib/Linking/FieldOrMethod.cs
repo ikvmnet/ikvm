@@ -26,18 +26,20 @@ using System;
 
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
 
-    internal abstract class FieldOrMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> : IEquatable<FieldOrMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    internal abstract class FieldOrMethod<TType, TMember, TField, TMethod, TTypeSystem> : IEquatable<FieldOrMethod<TType, TMember, TField, TMethod, TTypeSystem>>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
-        readonly ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> _classFile;
+        readonly ClassFile<TType, TMember, TField, TMethod, TTypeSystem> _classFile;
 
         protected ClassFileFlags flags;
         protected ClassFileAccessFlags accessFlags;
@@ -55,10 +57,10 @@ namespace IKVM.CoreLib.Linking
         /// <param name="accessFlags"></param>
         /// <param name="name"></param>
         /// <param name="descriptor"></param>
-        internal FieldOrMethod(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, AccessFlag accessFlags, Utf8ConstantHandle name, Utf8ConstantHandle descriptor)
+        internal FieldOrMethod(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, AccessFlag accessFlags, Utf8ConstantHandle name, Utf8ConstantHandle descriptor)
         {
             this._classFile = classFile ?? throw new ArgumentNullException(nameof(classFile));
-            this.accessFlags = ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>.ReadAccessFlags(accessFlags);
+            this.accessFlags = ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.ReadAccessFlags(accessFlags);
             this.name = string.Intern(classFile.GetConstantPoolUtf8String(name));
             this.descriptor = classFile.GetConstantPoolUtf8String(descriptor);
 
@@ -67,11 +69,11 @@ namespace IKVM.CoreLib.Linking
         }
 
         /// <summary>
-        /// Gets the declaring <see cref="ClassFile{TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod}"/>.
+        /// Gets the declaring <see cref="ClassFile{TType, TMember, TField, TMethod, TTypeSystem}"/>.
         /// </summary>
-        public ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> ClassFile => _classFile;
+        public ClassFile<TType, TMember, TField, TMethod, TTypeSystem> ClassFile => _classFile;
 
-        protected abstract void ValidateSig(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, string descriptor);
+        protected abstract void ValidateSig(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, string descriptor);
 
         internal string Name => name;
 
@@ -115,7 +117,7 @@ namespace IKVM.CoreLib.Linking
 
         public sealed override int GetHashCode() => name.GetHashCode() ^ descriptor.GetHashCode();
 
-        public bool Equals(FieldOrMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>? other) => other != null && ReferenceEquals(name, other.name) && ReferenceEquals(descriptor, other.descriptor);
+        public bool Equals(FieldOrMethod<TType, TMember, TField, TMethod, TTypeSystem>? other) => other != null && ReferenceEquals(name, other.name) && ReferenceEquals(descriptor, other.descriptor);
 
     }
 

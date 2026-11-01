@@ -10,9 +10,9 @@ using IKVM.Runtime;
 using IKVM.CoreLib.Linking;
 using IKVM.CoreLib.Runtime;
 
-using ClassFile = IKVM.CoreLib.Linking.ClassFile<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
-using Instruction = IKVM.CoreLib.Linking.Instruction<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
-using Method = IKVM.CoreLib.Linking.Method<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+using ClassFile = IKVM.CoreLib.Linking.ClassFile<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod, IKVM.Runtime.RuntimeJvmTypeSystem>;
+using Instruction = IKVM.CoreLib.Linking.Instruction<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod, IKVM.Runtime.RuntimeJvmTypeSystem>;
+using Method = IKVM.CoreLib.Linking.Method<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod, IKVM.Runtime.RuntimeJvmTypeSystem>;
 
 namespace IKVM.Tests.Runtime
 {
@@ -117,7 +117,7 @@ namespace IKVM.Tests.Runtime
         {
             var javaClass = new ByteArrayClassLoader().Define(name, bytes);
             var type = RuntimeJavaType.FromClass(javaClass);
-            var classFile = new ClassFile(JVM.Context, IKVM.ByteCode.Decoding.ClassFile.Read(bytes), name, type.ClassLoader.ClassFileParseOptions, []);
+            var classFile = new ClassFile(new RuntimeJvmTypeSystem(JVM.Context), IKVM.ByteCode.Decoding.ClassFile.Read(bytes), name, type.ClassLoader.ClassFileParseOptions, []);
             classFile.Link(type, LoadMode.Link);
             return new LoadedClass(javaClass, type, classFile);
         }

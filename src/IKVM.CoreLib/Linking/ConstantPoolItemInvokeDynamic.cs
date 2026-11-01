@@ -24,6 +24,7 @@
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
 using IKVM.CoreLib.Runtime;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
@@ -31,11 +32,12 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a invokedynamic constant.
     /// </summary>
-    internal sealed class ConstantPoolItemInvokeDynamic<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> : ConstantPoolItem<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    internal sealed class ConstantPoolItemInvokeDynamic<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         readonly ushort _bootstrapMethodAttributeIndex;
@@ -43,15 +45,15 @@ namespace IKVM.CoreLib.Linking
 
         string? _name;
         string? _descriptor;
-        TLinkingType[]? _argTypes;
-        TLinkingType? _returnType;
+        TType[]? _argTypes;
+        TType? _returnType;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        public ConstantPoolItemInvokeDynamic(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, InvokeDynamicConstantData data) :
+        public ConstantPoolItemInvokeDynamic(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, InvokeDynamicConstantData data) :
             base(classFile)
         {
             _bootstrapMethodAttributeIndex = data.BootstrapMethodAttributeIndex;
@@ -61,7 +63,7 @@ namespace IKVM.CoreLib.Linking
         /// <inheritdoc />
         public override void Resolve()
         {
-            var nameAndType = (ConstantPoolItemNameAndType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>)ClassFile.GetConstantPoolItem(_nameAndTypeHandle);
+            var nameAndType = (ConstantPoolItemNameAndType<TType, TMember, TField, TMethod, TTypeSystem>)ClassFile.GetConstantPoolItem(_nameAndTypeHandle);
             if (nameAndType == null)
                 throw new ClassFormatException("Bad index in constant pool");
 
@@ -70,14 +72,14 @@ namespace IKVM.CoreLib.Linking
         }
 
         /// <inheritdoc />
-        public override void Link(TLinkingType thisType, LoadMode mode)
+        public override void Link(TType thisType, LoadMode mode)
         {
             lock (this)
                 if (_argTypes != null)
                     return;
 
-            var args = thisType.GetArgTypeListFromSignature(_descriptor, mode);
-            var ret = thisType.GetReturnTypeFromSignature(_descriptor, mode);
+            var args = ClassFile.TypeSystem.GetArgTypeListFromSignature(thisType, _descriptor, mode);
+            var ret = ClassFile.TypeSystem.GetReturnTypeFromSignature(thisType, _descriptor, mode);
 
             lock (this)
             {
@@ -89,12 +91,12 @@ namespace IKVM.CoreLib.Linking
             }
         }
 
-        public TLinkingType[] GetArgTypes()
+        public TType[] GetArgTypes()
         {
             return _argTypes;
         }
 
-        public TLinkingType GetRetType()
+        public TType GetRetType()
         {
             return _returnType;
         }

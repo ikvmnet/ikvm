@@ -42,7 +42,7 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    abstract class RuntimeJavaField : RuntimeJavaMember, ILinkingField<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>
+    abstract class RuntimeJavaField : RuntimeJavaMember
     {
 
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
@@ -716,15 +716,6 @@ namespace IKVM.Runtime
 #endif
 
 #endif
-
-        #region ILinkingField<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>
-
-        void ILinkingField<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.Link(LoadMode mode)
-        {
-            Link(mode);
-        }
-
-        #endregion
 
     }
 

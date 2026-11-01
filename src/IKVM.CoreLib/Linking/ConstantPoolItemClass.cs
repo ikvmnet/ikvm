@@ -25,6 +25,7 @@ using System;
 
 using IKVM.ByteCode.Decoding;
 using IKVM.CoreLib.Runtime;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
@@ -32,20 +33,21 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a class constant.
     /// </summary>
-    internal sealed class ConstantPoolItemClass<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> :
-        ConstantPoolItem<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>,
-        IEquatable<ConstantPoolItemClass<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    internal sealed class ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem> :
+        ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>,
+        IEquatable<ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         static readonly char[] InvalidJava15Characters = ['.', ';', '[', ']'];
 
         readonly ClassConstantData _data;
         string? _name;
-        TLinkingType? _javaType;
+        TType? _javaType;
 
         /// <summary>
         /// Initializes a new instance.
@@ -53,7 +55,7 @@ namespace IKVM.CoreLib.Linking
         /// <param name="context"></param>
         /// <param name="data"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ConstantPoolItemClass(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> context, ClassConstantData data) :
+        public ConstantPoolItemClass(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> context, ClassConstantData data) :
             base(context)
         {
             _data = data;
@@ -65,7 +67,7 @@ namespace IKVM.CoreLib.Linking
         /// <param name="classFile"></param>
         /// <param name="name"></param>
         /// <param name="javaType"></param>
-        public ConstantPoolItemClass(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, string name, TLinkingType? javaType) :
+        public ConstantPoolItemClass(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, string name, TType? javaType) :
             base(classFile)
         {
             _name = name;
@@ -85,7 +87,7 @@ namespace IKVM.CoreLib.Linking
                 // We don't enforce the strict class name rules in the static compiler, since HotSpot doesn't enforce *any* rules on
                 // class names for the system (and boot) class loader. We still need to enforce the 1.5 restrictions, because we
                 // rely on those invariants.
-                if (ClassFile.Context.IsImporter == false && ClassFile.MajorVersion < 49 && (ClassFile.Options & ClassFileParseOptions.RelaxedClassNameValidation) == 0)
+                if (ClassFile.TypeSystem.IsImporter == false && ClassFile.MajorVersion < 49 && (ClassFile.Options & ClassFileParseOptions.RelaxedClassNameValidation) == 0)
                 {
                     var prev = _name[0];
                     if (char.IsLetter(prev) || prev == '$' || prev == '_' || prev == '[' || prev == '/')
@@ -94,7 +96,7 @@ namespace IKVM.CoreLib.Linking
                         int end = _name.Length;
                         if (prev == '[')
                         {
-                            if (!ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>.IsValidFieldDescriptor(_name))
+                            if (!ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.IsValidFieldDescriptor(_name))
                                 throw new ClassFormatException("Invalid class name \"{0}\"", _name);
 
                             while (_name[skip] == '[')
@@ -124,7 +126,7 @@ namespace IKVM.CoreLib.Linking
                     int end = _name.Length;
                     if (_name[0] == '[')
                     {
-                        if (!ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>.IsValidFieldDescriptor(_name))
+                        if (!ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.IsValidFieldDescriptor(_name))
                             throw new ClassFormatException("Invalid class name \"{0}\"", _name);
 
                         // the semicolon is only allowed at the end and IsValidFieldSig enforces this,
@@ -150,24 +152,25 @@ namespace IKVM.CoreLib.Linking
         /// <inheritdoc />
         public override void MarkLinkRequired()
         {
-            _javaType ??= ClassFile.Context.TypeOfVerifierNull;
+            _javaType ??= ClassFile.TypeSystem.TypeOfVerifierNull;
         }
 
-        internal void LinkSelf(TLinkingType thisType)
+        internal void LinkSelf(TType thisType)
         {
             _javaType = thisType;
         }
 
         /// <inheritdoc />
-        public override void Link(TLinkingType thisType, LoadMode mode)
+        public override void Link(TType thisType, LoadMode mode)
         {
-            if (ReferenceEquals(_javaType, ClassFile.Context.TypeOfVerifierNull))
+            if (ReferenceEquals(_javaType, ClassFile.TypeSystem.TypeOfVerifierNull))
             {
-                var tw = thisType.LoadType(_name, mode | LoadMode.WarnClassNotFound);
+                ref readonly var ts = ref ClassFile.TypeSystem;
+                var tw = ts.LoadType(thisType, _name, mode | LoadMode.WarnClassNotFound);
 
-                if (ClassFile.Context.IsImporter == false && tw.IsUnloadable == false)
-                    if (thisType.CheckPackageAccess(tw) == false)
-                        tw = ClassFile.Context.CreateUnloadableType(_name);
+                if (ts.IsImporter == false && ts.IsUnloadable(tw) == false)
+                    if (ts.CheckPackageAccess(thisType, tw) == false)
+                        tw = ts.CreateUnloadableType(_name);
 
                 _javaType = tw;
             }
@@ -182,7 +185,7 @@ namespace IKVM.CoreLib.Linking
         /// Gets the resulved runtime type of the class constant.
         /// </summary>
         /// <returns></returns>
-        public TLinkingType? GetClassType()
+        public TType? GetClassType()
         {
             return _javaType;
         }
@@ -195,7 +198,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public bool Equals(ConstantPoolItemClass<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>? other)
+        public bool Equals(ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>? other)
         {
             return other != null && ReferenceEquals(_name, other._name);
         }

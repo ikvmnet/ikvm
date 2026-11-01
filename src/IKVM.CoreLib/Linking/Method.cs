@@ -24,18 +24,20 @@
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
 using IKVM.CoreLib.Runtime;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
 
-    internal sealed partial class Method<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> : FieldOrMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    internal sealed partial class Method<TType, TMember, TField, TMethod, TTypeSystem> : FieldOrMethod<TType, TMember, TField, TMethod, TTypeSystem>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
-        Code<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> code;
+        Code<TType, TMember, TField, TMethod, TTypeSystem> code;
         string[] exceptions;
         LowFreqData? low;
         MethodParametersEntry[] parameters;
@@ -48,7 +50,7 @@ namespace IKVM.CoreLib.Linking
         /// <param name="attribute"></param>
         /// <returns></returns>
         /// <exception cref="ClassFormatException"></exception>
-        static CodeAttribute ReadCodeAttribute(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, IKVM.ByteCode.Decoding.Attribute attribute)
+        static CodeAttribute ReadCodeAttribute(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, IKVM.ByteCode.Decoding.Attribute attribute)
         {
             if (classFile.MajorVersion > 45 || classFile.MinorVersion > 2)
                 return (CodeAttribute)attribute;
@@ -74,7 +76,7 @@ namespace IKVM.CoreLib.Linking
         /// <param name="options"></param>
         /// <param name="reader"></param>
         /// <exception cref="ClassFormatException"></exception>
-        internal Method(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, IKVM.ByteCode.Decoding.Method reader) :
+        internal Method(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, IKVM.ByteCode.Decoding.Method reader) :
             base(classFile, reader.AccessFlags, reader.Name, reader.Descriptor)
         {
             // vmspec 4.6 says that all flags, except ACC_STRICT are ignored on <clinit>
@@ -141,14 +143,14 @@ namespace IKVM.CoreLib.Linking
                             goto default;
 
                         var runtimeVisibleAnnotationsAttribute = (RuntimeVisibleAnnotationsAttribute)attribute;
-                        annotations = ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>.ReadAnnotations(runtimeVisibleAnnotationsAttribute.Annotations, classFile);
+                        annotations = ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.ReadAnnotations(runtimeVisibleAnnotationsAttribute.Annotations, classFile);
                         if ((classFile.Options & ClassFileParseOptions.TrustedAnnotations) != 0)
                         {
                             foreach (object[] annot in annotations)
                             {
                                 switch ((string)annot[1])
                                 {
-                                    case "Lsun/reflect/CallerSensitive;" when ClassFile.Context.IsImporter:
+                                    case "Lsun/reflect/CallerSensitive;" when ClassFile.TypeSystem.IsImporter:
                                         flags |= ClassFileFlags.CALLERSENSITIVE;
                                         break;
                                     case "Ljava/lang/invoke/LambdaForm$Compiled;":
@@ -176,7 +178,7 @@ namespace IKVM.CoreLib.Linking
                             var parameter = runtimeVisibleParameterAnnotationsAttribute.ParameterAnnotations[j];
                             low.parameterAnnotations[j] = new object[parameter.Annotations.Count];
                             for (int k = 0; k < parameter.Annotations.Count; k++)
-                                low.parameterAnnotations[j][k] = ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>.ReadAnnotation(parameter.Annotations[k], classFile);
+                                low.parameterAnnotations[j][k] = ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.ReadAnnotation(parameter.Annotations[k], classFile);
                         }
 
                         break;
@@ -186,22 +188,22 @@ namespace IKVM.CoreLib.Linking
 
                         var annotationDefaultAttribute = (AnnotationDefaultAttribute)attribute;
                         low ??= new LowFreqData();
-                        low.annotationDefault = ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>.ReadAnnotationElementValue(annotationDefaultAttribute.DefaultValue, classFile);
+                        low.annotationDefault = ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.ReadAnnotationElementValue(annotationDefaultAttribute.DefaultValue, classFile);
 
                         break;
-                    case AttributeName.RuntimeInvisibleAnnotations when ClassFile.Context.IsImporter:
+                    case AttributeName.RuntimeInvisibleAnnotations when ClassFile.TypeSystem.IsImporter:
                         if (classFile.MajorVersion < 49)
                             goto default;
 
                         var runtimeInvisibleAnnotationsAttribute = (RuntimeInvisibleAnnotationsAttribute)attribute;
 
-                        foreach (object[] annot in ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>.ReadAnnotations(runtimeInvisibleAnnotationsAttribute.Annotations, classFile))
+                        foreach (object[] annot in ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.ReadAnnotations(runtimeInvisibleAnnotationsAttribute.Annotations, classFile))
                         {
                             if (annot[1].Equals("Likvm/lang/Internal;"))
                             {
                                 if (classFile.IsInterface)
                                 {
-                                    classFile.Context.Diagnostics.InterfaceMethodCantBeInternal(classFile.Name, Name, Signature);
+                                    classFile.TypeSystem.Diagnostics.InterfaceMethodCantBeInternal(classFile.Name, Name, Signature);
                                 }
                                 else
                                 {
@@ -226,7 +228,7 @@ namespace IKVM.CoreLib.Linking
                             {
                                 if (classFile.IsInterface || IsConstructor || IsClassInitializer || IsPrivate || IsStatic == false)
                                 {
-                                    classFile.Context.Diagnostics.ModuleInitializerMethodRequirements(classFile.Name, Name, Signature);
+                                    classFile.TypeSystem.Diagnostics.ModuleInitializerMethodRequirements(classFile.Name, Name, Signature);
                                 }
                                 else
                                 {
@@ -297,9 +299,9 @@ namespace IKVM.CoreLib.Linking
             return l;
         }
 
-        protected override void ValidateSig(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, string descriptor)
+        protected override void ValidateSig(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, string descriptor)
         {
-            if (!ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>.IsValidMethodDescriptor(descriptor))
+            if (!ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.IsValidMethodDescriptor(descriptor))
                 throw new ClassFormatException("{0} (Method \"{1}\" has invalid signature \"{2}\")", classFile.Name, this.Name, descriptor);
         }
 
@@ -337,7 +339,7 @@ namespace IKVM.CoreLib.Linking
 
         internal int MaxLocals => code._maxLocals;
 
-        internal Instruction<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>[] Instructions
+        internal Instruction<TType, TMember, TField, TMethod, TTypeSystem>[] Instructions
         {
             get => code._instructions;
             set => code._instructions = value;

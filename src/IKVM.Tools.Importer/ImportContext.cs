@@ -957,7 +957,7 @@ namespace IKVM.Tools.Importer
             {
                 try
                 {
-                    cf = new ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(buf), "<unknown>", ClassFileParseOptions.StaticImport, []);
+                    cf = new ClassFile(new RuntimeJvmTypeSystem(context), IKVM.ByteCode.Decoding.ClassFile.Read(buf), "<unknown>", ClassFileParseOptions.StaticImport, []);
                 }
                 catch (ClassFormatException)
                 {
@@ -1003,7 +1003,7 @@ namespace IKVM.Tools.Importer
             {
                 try
                 {
-                    var name = ClassFile.GetClassName(context, data, 0, data.Length, out var stub);
+                    var name = ClassFile.GetClassName(new RuntimeJvmTypeSystem(context), data, 0, data.Length, out var stub);
                     if (options.IsExcludedClass(name) || (stub && EmitStubWarning(context, compiler, options, diagnostics, data)))
                     {
                         // we use stubs to add references, but otherwise ignore them
@@ -1108,7 +1108,7 @@ namespace IKVM.Tools.Importer
                     byte[] data = ReadAllBytes(fileInfo);
                     try
                     {
-                        var name = ClassFile.GetClassName(context, data, 0, data.Length, out var stub);
+                        var name = ClassFile.GetClassName(new RuntimeJvmTypeSystem(context), data, 0, data.Length, out var stub);
                         if (options.IsExcludedClass(name))
                             return;
 
@@ -1220,7 +1220,7 @@ namespace IKVM.Tools.Importer
             try
             {
                 using var file = File.OpenRead(filename);
-                var cf = new ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(file), null, ClassFileParseOptions.StaticImport, []);
+                var cf = new ClassFile(new RuntimeJvmTypeSystem(context), IKVM.ByteCode.Decoding.ClassFile.Read(file), null, ClassFileParseOptions.StaticImport, []);
                 ArrayAppend(ref annotations, cf.Annotations);
             }
             catch (Exception x)

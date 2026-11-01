@@ -13,7 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace IKVM.CoreLib.Tests.Linking
 {
 
-    using ClassFile = ClassFile<TestJavaType, TestJavaMember, TestJavaField, TestJavaMethod>;
+    using ClassFile = ClassFile<TestJavaType, TestJavaMember, TestJavaField, TestJavaMethod, TestJvmTypeSystem>;
 
     [TestClass]
     public class ClassFileTests
@@ -49,7 +49,7 @@ namespace IKVM.CoreLib.Tests.Linking
         [TestMethod]
         public void CanLoadClassFile()
         {
-            new ClassFile(new TestLinkingContext(false), IKVM.ByteCode.Decoding.ClassFile.Read(Path.Combine("Linking", "classes", "classfiletests", "ClassFileTests0.class")), "classfiletests.ClassFileTests0", ClassFileParseOptions.None, []);
+            new ClassFile(new TestJvmTypeSystem(false), IKVM.ByteCode.Decoding.ClassFile.Read(Path.Combine("Linking", "classes", "classfiletests", "ClassFileTests0.class")), "classfiletests.ClassFileTests0", ClassFileParseOptions.None, []);
         }
 
         [TestMethod]
@@ -58,11 +58,11 @@ namespace IKVM.CoreLib.Tests.Linking
             // instructions are parsed into a pooled array, so put junk into the pooled arrays first
             for (int size = 16; size <= 1024; size *= 2)
             {
-                var junk = ArrayPool<Instruction<TestJavaType, TestJavaMember, TestJavaField, TestJavaMethod>>.Shared.Rent(size);
+                var junk = ArrayPool<Instruction<TestJavaType, TestJavaMember, TestJavaField, TestJavaMethod, TestJvmTypeSystem>>.Shared.Rent(size);
                 for (int i = 0; i < junk.Length; i++)
                     junk[i].PatchOpCode(NormalizedOpCode.Iinc, 123, 456);
 
-                ArrayPool<Instruction<TestJavaType, TestJavaMember, TestJavaField, TestJavaMethod>>.Shared.Return(junk);
+                ArrayPool<Instruction<TestJavaType, TestJavaMember, TestJavaField, TestJavaMethod, TestJvmTypeSystem>>.Shared.Return(junk);
             }
 
             var builder = new ClassFileBuilder(49, AccessFlag.Public, "InstructionPoolTest", "java/lang/Object");
@@ -74,7 +74,7 @@ namespace IKVM.CoreLib.Tests.Linking
             var buffer = new BlobBuilder();
             builder.Serialize(buffer);
 
-            using var classFile = new ClassFile(new TestLinkingContext(false), IKVM.ByteCode.Decoding.ClassFile.Read(buffer.ToArray()), "InstructionPoolTest", ClassFileParseOptions.None, []);
+            using var classFile = new ClassFile(new TestJvmTypeSystem(false), IKVM.ByteCode.Decoding.ClassFile.Read(buffer.ToArray()), "InstructionPoolTest", ClassFileParseOptions.None, []);
             var instructions = classFile.Methods[0].Instructions;
 
             // three instructions and the terminating nop, none of which have operands
