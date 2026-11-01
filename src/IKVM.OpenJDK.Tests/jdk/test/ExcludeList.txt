@@ -3858,7 +3858,7 @@ java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFAppModal3Test.java       
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFDocModal1Test.java                                               generic-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFDocModal2Test.java                                               generic-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFDocModal3Test.java                                               generic-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFModeless1Test.java                                               macosx-all,windows-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFModeless1Test.java                                               generic-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFModeless2Test.java                                               generic-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFNonModal1Test.java                                               generic-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFNonModal2Test.java                                               generic-all
