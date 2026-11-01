@@ -32,12 +32,12 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a methodref or interfaceref constant.
     /// </summary>
-    internal class ConstantPoolItemMI<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItemFMI<TType, TMember, TField, TMethod, TTypeSystem>
+    internal class ConstantPoolItemMI<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItemFMI<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         TType[]? _argTypeWrappers;
@@ -51,7 +51,7 @@ namespace IKVM.CoreLib.Linking
         /// <param name="classFile"></param>
         /// <param name="clazz"></param>
         /// <param name="nameAndTypeIndex"></param>
-        public ConstantPoolItemMI(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndTypeIndex) :
+        public ConstantPoolItemMI(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndTypeIndex) :
             base(classFile, clazz, nameAndTypeIndex)
         {
 
@@ -60,10 +60,10 @@ namespace IKVM.CoreLib.Linking
         /// <inheritdoc />
         protected override void Validate(string name, string descriptor, int majorVersion)
         {
-            if (!ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.IsValidMethodDescriptor(descriptor))
+            if (!ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.IsValidMethodDescriptor(descriptor))
                 throw new ClassFormatException("Method {0} has invalid signature {1}", name, descriptor);
 
-            if (!ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.IsValidMethodName(name, new ClassFormatVersion((ushort)majorVersion, 0)))
+            if (!ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.IsValidMethodName(name, new ClassFormatVersion((ushort)majorVersion, 0)))
             {
                 if (!ReferenceEquals(name, StringConstants.INIT))
                     throw new ClassFormatException("Invalid method name \"{0}\"", name);

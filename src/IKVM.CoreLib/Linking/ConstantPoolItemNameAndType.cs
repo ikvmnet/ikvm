@@ -32,12 +32,12 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a nameandtype constant.
     /// </summary>
-    sealed class ConstantPoolItemNameAndType<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>
+    sealed class ConstantPoolItemNameAndType<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         internal Utf8ConstantHandle _nameHandle;
@@ -48,7 +48,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        public ConstantPoolItemNameAndType(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, NameAndTypeConstantData data) :
+        public ConstantPoolItemNameAndType(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, NameAndTypeConstantData data) :
             base(classFile)
         {
             _nameHandle = data.Name;

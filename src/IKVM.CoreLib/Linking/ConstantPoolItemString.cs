@@ -32,12 +32,12 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a string constant.
     /// </summary>
-    sealed class ConstantPoolItemString<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>
+    sealed class ConstantPoolItemString<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         readonly Utf8ConstantHandle _handle;
@@ -48,7 +48,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        public ConstantPoolItemString(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, StringConstantData data) :
+        public ConstantPoolItemString(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, StringConstantData data) :
             base(classFile)
         {
             _handle = data.Value;

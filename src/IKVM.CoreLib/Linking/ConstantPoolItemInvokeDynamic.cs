@@ -32,12 +32,12 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a invokedynamic constant.
     /// </summary>
-    internal sealed class ConstantPoolItemInvokeDynamic<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>
+    internal sealed class ConstantPoolItemInvokeDynamic<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         readonly ushort _bootstrapMethodAttributeIndex;
@@ -53,7 +53,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        public ConstantPoolItemInvokeDynamic(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, InvokeDynamicConstantData data) :
+        public ConstantPoolItemInvokeDynamic(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, InvokeDynamicConstantData data) :
             base(classFile)
         {
             _bootstrapMethodAttributeIndex = data.BootstrapMethodAttributeIndex;
@@ -63,7 +63,7 @@ namespace IKVM.CoreLib.Linking
         /// <inheritdoc />
         public override void Resolve()
         {
-            var nameAndType = (ConstantPoolItemNameAndType<TType, TMember, TField, TMethod, TTypeSystem>)ClassFile.GetConstantPoolItem(_nameAndTypeHandle);
+            var nameAndType = (ConstantPoolItemNameAndType<TTypeSystem, TType, TMember, TField, TMethod>)ClassFile.GetConstantPoolItem(_nameAndTypeHandle);
             if (nameAndType == null)
                 throw new ClassFormatException("Bad index in constant pool");
 

@@ -30,12 +30,12 @@ using IKVM.CoreLib.Jvm;
 namespace IKVM.CoreLib.Linking
 {
 
-    internal sealed class Field<TType, TMember, TField, TMethod, TTypeSystem> : FieldOrMethod<TType, TMember, TField, TMethod, TTypeSystem>
+    internal sealed class Field<TTypeSystem, TType, TMember, TField, TMethod> : FieldOrMethod<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         object constantValue;
@@ -47,7 +47,7 @@ namespace IKVM.CoreLib.Linking
         /// <param name="classFile"></param>
         /// <param name="field"></param>
         /// <exception cref="ClassFormatException"></exception>
-        internal Field(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, ByteCode.Decoding.Field field) :
+        internal Field(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, ByteCode.Decoding.Field field) :
             base(classFile, field.AccessFlags, field.Name, field.Descriptor)
         {
             if ((IsPrivate && IsPublic) || (IsPrivate && IsProtected) || (IsPublic && IsProtected) || (IsFinal && IsVolatile) || (classFile.IsInterface && (!IsPublic || !IsStatic || !IsFinal || IsTransient)))
@@ -114,7 +114,7 @@ namespace IKVM.CoreLib.Linking
                             goto default;
 
                         var _runtimeVisibleAnnotation = (RuntimeVisibleAnnotationsAttribute)attribute;
-                        annotations = ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.ReadAnnotations(_runtimeVisibleAnnotation.Annotations, classFile);
+                        annotations = ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.ReadAnnotations(_runtimeVisibleAnnotation.Annotations, classFile);
                         break;
                     case AttributeName.RuntimeInvisibleAnnotations:
                         if (classFile.MajorVersion < 49)
@@ -122,7 +122,7 @@ namespace IKVM.CoreLib.Linking
 
                         var _runtimeInvisibleAnnotations = (RuntimeInvisibleAnnotationsAttribute)attribute;
 
-                        foreach (object[] annot in ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.ReadAnnotations(_runtimeInvisibleAnnotations.Annotations, classFile))
+                        foreach (object[] annot in ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.ReadAnnotations(_runtimeInvisibleAnnotations.Annotations, classFile))
                         {
                             if (annot[1].Equals("Likvm/lang/Property;"))
                             {
@@ -151,7 +151,7 @@ namespace IKVM.CoreLib.Linking
 
         }
 
-        private void DecodePropertyAnnotation(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, object[] annot)
+        private void DecodePropertyAnnotation(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, object[] annot)
         {
             if (propertyGetterSetter != null)
             {
@@ -192,9 +192,9 @@ namespace IKVM.CoreLib.Linking
             }
         }
 
-        protected override void ValidateSig(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, string descriptor)
+        protected override void ValidateSig(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, string descriptor)
         {
-            if (!ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.IsValidFieldDescriptor(descriptor))
+            if (!ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.IsValidFieldDescriptor(descriptor))
                 throw new ClassFormatException("{0} (Field \"{1}\" has invalid signature \"{2}\")", classFile.Name, this.Name, descriptor);
         }
 

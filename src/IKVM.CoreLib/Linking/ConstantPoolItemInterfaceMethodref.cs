@@ -29,12 +29,12 @@ using IKVM.CoreLib.Jvm;
 namespace IKVM.CoreLib.Linking
 {
 
-    internal sealed class ConstantPoolItemInterfaceMethodref<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItemMI<TType, TMember, TField, TMethod, TTypeSystem>
+    internal sealed class ConstantPoolItemInterfaceMethodref<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItemMI<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        public ConstantPoolItemInterfaceMethodref(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, InterfaceMethodrefConstantData data) :
+        public ConstantPoolItemInterfaceMethodref(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, InterfaceMethodrefConstantData data) :
             base(classFile, data.Class, data.NameAndType)
         {
 

@@ -9,7 +9,7 @@ using IKVM.Runtime;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using ClassFile = IKVM.CoreLib.Linking.ClassFile<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod, IKVM.Runtime.RuntimeJvmTypeSystem>;
+using ClassFile = IKVM.CoreLib.Linking.ClassFile<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
 
 namespace IKVM.Tests.Runtime
 {

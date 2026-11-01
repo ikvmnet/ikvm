@@ -13,7 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace IKVM.CoreLib.Tests.Linking
 {
 
-    using ClassFile = ClassFile<TestJavaType, TestJavaMember, TestJavaField, TestJavaMethod, TestJvmTypeSystem>;
+    using ClassFile = ClassFile<TestJvmTypeSystem, TestJavaType, TestJavaMember, TestJavaField, TestJavaMethod>;
 
     [TestClass]
     public class ClassFileTests
@@ -58,11 +58,11 @@ namespace IKVM.CoreLib.Tests.Linking
             // instructions are parsed into a pooled array, so put junk into the pooled arrays first
             for (int size = 16; size <= 1024; size *= 2)
             {
-                var junk = ArrayPool<Instruction<TestJavaType, TestJavaMember, TestJavaField, TestJavaMethod, TestJvmTypeSystem>>.Shared.Rent(size);
+                var junk = ArrayPool<Instruction<TestJvmTypeSystem, TestJavaType, TestJavaMember, TestJavaField, TestJavaMethod>>.Shared.Rent(size);
                 for (int i = 0; i < junk.Length; i++)
                     junk[i].PatchOpCode(NormalizedOpCode.Iinc, 123, 456);
 
-                ArrayPool<Instruction<TestJavaType, TestJavaMember, TestJavaField, TestJavaMethod, TestJvmTypeSystem>>.Shared.Return(junk);
+                ArrayPool<Instruction<TestJvmTypeSystem, TestJavaType, TestJavaMember, TestJavaField, TestJavaMethod>>.Shared.Return(junk);
             }
 
             var builder = new ClassFileBuilder(49, AccessFlag.Public, "InstructionPoolTest", "java/lang/Object");

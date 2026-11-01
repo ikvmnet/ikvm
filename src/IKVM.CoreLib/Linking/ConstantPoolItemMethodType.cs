@@ -32,12 +32,12 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a methodtype constant.
     /// </summary>
-    internal sealed class ConstantPoolItemMethodType<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>
+    internal sealed class ConstantPoolItemMethodType<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         readonly Utf8ConstantHandle _signature;
@@ -51,7 +51,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        public ConstantPoolItemMethodType(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, MethodTypeConstantData data) :
+        public ConstantPoolItemMethodType(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, MethodTypeConstantData data) :
             base(classFile)
         {
             _signature = data.Descriptor;
@@ -64,7 +64,7 @@ namespace IKVM.CoreLib.Linking
         public override void Resolve()
         {
             var descriptor = ClassFile.GetConstantPoolUtf8String(_signature);
-            if (descriptor == null || !ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.IsValidMethodDescriptor(descriptor))
+            if (descriptor == null || !ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.IsValidMethodDescriptor(descriptor))
                 throw new ClassFormatException("Invalid MethodType signature");
 
             _descriptor = string.Intern(descriptor.Replace('/', '.'));

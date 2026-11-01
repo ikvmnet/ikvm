@@ -33,14 +33,14 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a class constant.
     /// </summary>
-    internal sealed class ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem> :
-        ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>,
-        IEquatable<ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>>
+    internal sealed class ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod> :
+        ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>,
+        IEquatable<ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         static readonly char[] InvalidJava15Characters = ['.', ';', '[', ']'];
@@ -55,7 +55,7 @@ namespace IKVM.CoreLib.Linking
         /// <param name="context"></param>
         /// <param name="data"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ConstantPoolItemClass(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> context, ClassConstantData data) :
+        public ConstantPoolItemClass(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> context, ClassConstantData data) :
             base(context)
         {
             _data = data;
@@ -67,7 +67,7 @@ namespace IKVM.CoreLib.Linking
         /// <param name="classFile"></param>
         /// <param name="name"></param>
         /// <param name="javaType"></param>
-        public ConstantPoolItemClass(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, string name, TType? javaType) :
+        public ConstantPoolItemClass(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, string name, TType? javaType) :
             base(classFile)
         {
             _name = name;
@@ -96,7 +96,7 @@ namespace IKVM.CoreLib.Linking
                         int end = _name.Length;
                         if (prev == '[')
                         {
-                            if (!ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.IsValidFieldDescriptor(_name))
+                            if (!ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.IsValidFieldDescriptor(_name))
                                 throw new ClassFormatException("Invalid class name \"{0}\"", _name);
 
                             while (_name[skip] == '[')
@@ -126,7 +126,7 @@ namespace IKVM.CoreLib.Linking
                     int end = _name.Length;
                     if (_name[0] == '[')
                     {
-                        if (!ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.IsValidFieldDescriptor(_name))
+                        if (!ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.IsValidFieldDescriptor(_name))
                             throw new ClassFormatException("Invalid class name \"{0}\"", _name);
 
                         // the semicolon is only allowed at the end and IsValidFieldSig enforces this,
@@ -198,7 +198,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public bool Equals(ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>? other)
+        public bool Equals(ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>? other)
         {
             return other != null && ReferenceEquals(_name, other._name);
         }

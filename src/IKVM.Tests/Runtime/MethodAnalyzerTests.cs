@@ -12,9 +12,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using IKVM.CoreLib.Linking;
 using IKVM.CoreLib.Runtime;
 
-using ClassFile = IKVM.CoreLib.Linking.ClassFile<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod, IKVM.Runtime.RuntimeJvmTypeSystem>;
-using Instruction = IKVM.CoreLib.Linking.Instruction<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod, IKVM.Runtime.RuntimeJvmTypeSystem>;
-using Method = IKVM.CoreLib.Linking.Method<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod, IKVM.Runtime.RuntimeJvmTypeSystem>;
+using ClassFile = IKVM.CoreLib.Linking.ClassFile<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+using Instruction = IKVM.CoreLib.Linking.Instruction<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+using Method = IKVM.CoreLib.Linking.Method<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
 
 namespace IKVM.Tests.Runtime
 {

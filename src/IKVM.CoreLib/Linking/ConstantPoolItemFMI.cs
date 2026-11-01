@@ -31,18 +31,18 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a field, method or interface reference.
     /// </summary>
-    internal abstract class ConstantPoolItemFMI<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>
+    internal abstract class ConstantPoolItemFMI<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         readonly ClassConstantHandle _clazzHandle;
         readonly NameAndTypeConstantHandle _nameAndTypeHandle;
 
-        ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem> _clazz;
+        ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod> _clazz;
         string _name;
         string _descriptor;
 
@@ -52,7 +52,7 @@ namespace IKVM.CoreLib.Linking
         /// <param name="classFile"></param>
         /// <param name="clazz"></param>
         /// <param name="nameAndType"></param>
-        public ConstantPoolItemFMI(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndType) :
+        public ConstantPoolItemFMI(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndType) :
             base(classFile)
         {
             _clazzHandle = clazz;
@@ -62,9 +62,9 @@ namespace IKVM.CoreLib.Linking
         /// <inheritdoc />
         public override void Resolve()
         {
-            var name_and_type = (ConstantPoolItemNameAndType<TType, TMember, TField, TMethod, TTypeSystem>)ClassFile.GetConstantPoolItem(_nameAndTypeHandle);
+            var name_and_type = (ConstantPoolItemNameAndType<TTypeSystem, TType, TMember, TField, TMethod>)ClassFile.GetConstantPoolItem(_nameAndTypeHandle);
 
-            _clazz = (ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>)ClassFile.GetConstantPoolItem(_clazzHandle);
+            _clazz = (ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>)ClassFile.GetConstantPoolItem(_clazzHandle);
             // if the constant pool items referred to were strings, GetConstantPoolItem returns null
             if (name_and_type == null || _clazz == null)
                 throw new ClassFormatException("Bad index in constant pool");

@@ -30,12 +30,12 @@ using IKVM.CoreLib.Jvm;
 namespace IKVM.CoreLib.Linking
 {
 
-    internal struct Instruction<TType, TMember, TField, TMethod, TTypeSystem>
+    internal struct Instruction<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         ushort pc;
@@ -107,7 +107,7 @@ namespace IKVM.CoreLib.Linking
             }
         }
 
-        internal void Read(IKVM.ByteCode.Decoding.Instruction instruction, ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile)
+        internal void Read(IKVM.ByteCode.Decoding.Instruction instruction, ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile)
         {
             this.pc = (ushort)instruction.Offset;
 

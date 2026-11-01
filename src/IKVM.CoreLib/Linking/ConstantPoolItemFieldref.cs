@@ -33,12 +33,12 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a fieldRef constant.
     /// </summary>
-    internal sealed class ConstantPoolItemFieldref<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItemFMI<TType, TMember, TField, TMethod, TTypeSystem>
+    internal sealed class ConstantPoolItemFieldref<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItemFMI<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         TField? _field;
@@ -49,7 +49,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        public ConstantPoolItemFieldref(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, FieldrefConstantData data) :
+        public ConstantPoolItemFieldref(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, FieldrefConstantData data) :
             base(classFile, data.Class, data.NameAndType)
         {
 
@@ -57,9 +57,9 @@ namespace IKVM.CoreLib.Linking
 
         protected override void Validate(string name, string descriptor, int majorVersion)
         {
-            if (!ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.IsValidFieldDescriptor(descriptor))
+            if (!ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.IsValidFieldDescriptor(descriptor))
                 throw new ClassFormatException("Invalid field signature \"{0}\"", descriptor);
-            if (!ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.IsValidFieldName(name, new ClassFormatVersion((ushort)majorVersion, 0)))
+            if (!ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.IsValidFieldName(name, new ClassFormatVersion((ushort)majorVersion, 0)))
                 throw new ClassFormatException("Invalid field name \"{0}\"", name);
         }
 

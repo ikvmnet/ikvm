@@ -32,29 +32,29 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a constant pool item.
     /// </summary>
-    internal abstract class ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>
+    internal abstract class ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
-        readonly ClassFile<TType, TMember, TField, TMethod, TTypeSystem> _classFile;
+        readonly ClassFile<TTypeSystem, TType, TMember, TField, TMethod> _classFile;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="classFile"></param>
-        protected ConstantPoolItem(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile)
+        protected ConstantPoolItem(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile)
         {
             _classFile = classFile ?? throw new ArgumentNullException(nameof(classFile));
         }
 
         /// <summary>
-        /// Gets the <see cref="ClassFile{TType, TMember, TField, TMethod, TTypeSystem}" /> that hosts this instance.
+        /// Gets the <see cref="ClassFile{TTypeSystem, TType, TMember, TField, TMethod}" /> that hosts this instance.
         /// </summary>
-        public ClassFile<TType, TMember, TField, TMethod, TTypeSystem> ClassFile => _classFile;
+        public ClassFile<TTypeSystem, TType, TMember, TField, TMethod> ClassFile => _classFile;
 
         /// <summary>
         /// Gets the type of constant represented by this item.

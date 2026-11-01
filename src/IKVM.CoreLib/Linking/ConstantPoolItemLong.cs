@@ -31,12 +31,12 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a long constant.
     /// </summary>
-    sealed class ConstantPoolItemLong<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>
+    sealed class ConstantPoolItemLong<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         internal long _value;
@@ -46,7 +46,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        public ConstantPoolItemLong(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, LongConstantData data) :
+        public ConstantPoolItemLong(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, LongConstantData data) :
             base(classFile)
         {
             _value = data.Value;

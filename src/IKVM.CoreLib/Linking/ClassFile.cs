@@ -34,12 +34,12 @@ using IKVM.CoreLib.Jvm;
 namespace IKVM.CoreLib.Linking
 {
 
-    sealed partial class ClassFile<TType, TMember, TField, TMethod, TTypeSystem> : IDisposable
+    sealed partial class ClassFile<TTypeSystem, TType, TMember, TField, TMethod> : IDisposable
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         /// <summary>
@@ -384,13 +384,13 @@ namespace IKVM.CoreLib.Linking
         readonly TTypeSystem _typeSystem;
         readonly ByteCode.Decoding.ClassFile _decoder;
         readonly ClassFileParseOptions _options;
-        readonly ConstantPool<TType, TMember, TField, TMethod, TTypeSystem> _constants;
+        readonly ConstantPool<TTypeSystem, TType, TMember, TField, TMethod> _constants;
 
         ClassFileAccessFlags _accessFlags;
         ClassFileFlags _flags;
-        readonly ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>[] _interfaces;
-        readonly Field<TType, TMember, TField, TMethod, TTypeSystem>[] _fields;
-        readonly Method<TType, TMember, TField, TMethod, TTypeSystem>[] _methods;
+        readonly ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>[] _interfaces;
+        readonly Field<TTypeSystem, TType, TMember, TField, TMethod>[] _fields;
+        readonly Method<TTypeSystem, TType, TMember, TField, TMethod>[] _methods;
         readonly string? _sourceFile;
         string? _sourcePath;
         readonly string? _ikvmAssembly;
@@ -422,12 +422,12 @@ namespace IKVM.CoreLib.Linking
                     throw new UnsupportedClassVersionException(decoder.Version, inputClassName);
 
                 // load the constants
-                _constants = new ConstantPool<TType, TMember, TField, TMethod, TTypeSystem>(this);
+                _constants = new ConstantPool<TTypeSystem, TType, TMember, TField, TMethod>(this);
                 _constants.Patch(inputClassName, constantPoolPatches);
                 _constants.Resolve(inputClassName);
 
                 // read the access flags
-                _accessFlags = ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.ReadAccessFlags(decoder.AccessFlags);
+                _accessFlags = ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.ReadAccessFlags(decoder.AccessFlags);
 
                 // NOTE although the vmspec says (in 4.1) that interfaces must be marked abstract, earlier versions of
                 // javac (JDK 1.1) didn't do this, so the VM doesn't enforce this rule for older class files.
@@ -448,14 +448,14 @@ namespace IKVM.CoreLib.Linking
                 if (Name[0] == '[')
                     throw new ClassFormatException("Bad name");
 
-                _interfaces = new ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>[decoder.Interfaces.Count];
+                _interfaces = new ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>[decoder.Interfaces.Count];
                 for (int i = 0; i < _interfaces.Length; i++)
                 {
                     var handle = decoder.Interfaces[i].Class;
                     if (handle.IsNil || handle.Slot >= _constants.SlotCount)
                         throw new ClassFormatException("{0} (Illegal constant pool index)", Name);
 
-                    var cpi = _constants[handle] as ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>;
+                    var cpi = _constants[handle] as ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>;
                     if (cpi == null)
                         throw new ClassFormatException("{0} (Interface name has bad constant type)", Name);
 
@@ -464,22 +464,22 @@ namespace IKVM.CoreLib.Linking
 
                 CheckDuplicates(_interfaces, "Repetitive interface name");
 
-                _fields = new Field<TType, TMember, TField, TMethod, TTypeSystem>[decoder.Fields.Count];
+                _fields = new Field<TTypeSystem, TType, TMember, TField, TMethod>[decoder.Fields.Count];
                 for (int i = 0; i < decoder.Fields.Count; i++)
                 {
-                    _fields[i] = new Field<TType, TMember, TField, TMethod, TTypeSystem>(this, decoder.Fields[i]);
+                    _fields[i] = new Field<TTypeSystem, TType, TMember, TField, TMethod>(this, decoder.Fields[i]);
                     var name = _fields[i].Name;
 
                     if (IsValidFieldName(name, decoder.Version) == false)
                         throw new ClassFormatException("{0} (Illegal field name \"{1}\")", Name, name);
                 }
 
-                CheckDuplicates<FieldOrMethod<TType, TMember, TField, TMethod, TTypeSystem>>(_fields, "Repetitive field name/signature");
+                CheckDuplicates<FieldOrMethod<TTypeSystem, TType, TMember, TField, TMethod>>(_fields, "Repetitive field name/signature");
 
-                _methods = new Method<TType, TMember, TField, TMethod, TTypeSystem>[decoder.Methods.Count];
+                _methods = new Method<TTypeSystem, TType, TMember, TField, TMethod>[decoder.Methods.Count];
                 for (int i = 0; i < decoder.Methods.Count; i++)
                 {
-                    _methods[i] = new Method<TType, TMember, TField, TMethod, TTypeSystem>(this, decoder.Methods[i]);
+                    _methods[i] = new Method<TTypeSystem, TType, TMember, TField, TMethod>(this, decoder.Methods[i]);
                     var name = _methods[i].Name;
                     var sig = _methods[i].Signature;
                     if (IsValidMethodName(name, decoder.Version) == false)
@@ -493,7 +493,7 @@ namespace IKVM.CoreLib.Linking
                     }
                 }
 
-                CheckDuplicates<FieldOrMethod<TType, TMember, TField, TMethod, TTypeSystem>>(_methods, "Repetitive method name/signature");
+                CheckDuplicates<FieldOrMethod<TTypeSystem, TType, TMember, TField, TMethod>>(_methods, "Repetitive method name/signature");
 
                 for (int i = 0; i < decoder.Attributes.Count; i++)
                 {
@@ -524,10 +524,10 @@ namespace IKVM.CoreLib.Linking
                                 _innerClasses[j].name = item.InnerName;
                                 _innerClasses[j].accessFlags = ReadAccessFlags(item.InnerAccessFlags);
 
-                                if (_innerClasses[j].innerClass.IsNotNil && GetConstantPoolItem(_innerClasses[j].innerClass) is not ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>)
+                                if (_innerClasses[j].innerClass.IsNotNil && GetConstantPoolItem(_innerClasses[j].innerClass) is not ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>)
                                     throw new ClassFormatException("{0} (inner_class_info_index has bad constant pool index)", Name);
 
-                                if (_innerClasses[j].outerClass.IsNotNil && GetConstantPoolItem(_innerClasses[j].outerClass) is not ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>)
+                                if (_innerClasses[j].outerClass.IsNotNil && GetConstantPoolItem(_innerClasses[j].outerClass) is not ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>)
                                     throw new ClassFormatException("{0} (outer_class_info_index has bad constant pool index)", Name);
 
                                 if (_innerClasses[j].name.IsNotNil && _constants.GetUtf8(_innerClasses[j].name) == null)
@@ -571,7 +571,7 @@ namespace IKVM.CoreLib.Linking
                             }
                             else
                             {
-                                if (GetConstantPoolItem(methodHandle) is not ConstantPoolItemNameAndType<TType, TMember, TField, TMethod, TTypeSystem> m)
+                                if (GetConstantPoolItem(methodHandle) is not ConstantPoolItemNameAndType<TTypeSystem, TType, TMember, TField, TMethod> m)
                                     throw new ClassFormatException("{0} (Bad constant pool index #{1})", inputClassName, methodHandle);
 
                                 _enclosingMethod =
@@ -637,7 +637,7 @@ namespace IKVM.CoreLib.Linking
 
                 // validate the invokedynamic entries to point into the bootstrapMethods array
                 foreach (var handle in _decoder.Constants)
-                    if (_constants[handle] != null && _constants[handle] is ConstantPoolItemInvokeDynamic<TType, TMember, TField, TMethod, TTypeSystem> cpi)
+                    if (_constants[handle] != null && _constants[handle] is ConstantPoolItemInvokeDynamic<TTypeSystem, TType, TMember, TField, TMethod> cpi)
                         if (cpi.BootstrapMethod >= _bootstrapMethods.Count)
                             throw new ClassFormatException("Short length on BootstrapMethods in class file");
             }
@@ -673,7 +673,7 @@ namespace IKVM.CoreLib.Linking
         /// <summary>
         /// Gets the constant pool.
         /// </summary>
-        internal ConstantPool<TType, TMember, TField, TMethod, TTypeSystem> Constants => _constants;
+        internal ConstantPool<TTypeSystem, TType, TMember, TField, TMethod> Constants => _constants;
 
         void CheckDuplicates<T>(T[] members, string msg)
             where T : IEquatable<T>
@@ -705,11 +705,11 @@ namespace IKVM.CoreLib.Linking
             MarkLinkRequiredConstantPoolItem(new ConstantHandle(ConstantKind.Unknown, checked((ushort)index)));
         }
 
-        static BootstrapMethodTable ReadBootstrapMethods(BootstrapMethodTable bootstrapMethods, ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile)
+        static BootstrapMethodTable ReadBootstrapMethods(BootstrapMethodTable bootstrapMethods, ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile)
         {
             foreach (var bootstrapMethod in bootstrapMethods)
             {
-                if (bootstrapMethod.Method.Slot >= classFile.Constants.SlotCount || classFile.Constants[bootstrapMethod.Method] is not ConstantPoolItemMethodHandle<TType, TMember, TField, TMethod, TTypeSystem>)
+                if (bootstrapMethod.Method.Slot >= classFile.Constants.SlotCount || classFile.Constants[bootstrapMethod.Method] is not ConstantPoolItemMethodHandle<TTypeSystem, TType, TMember, TField, TMethod>)
                     throw new ClassFormatException("bootstrap_method_index {0} has bad constant type in class file {1}", bootstrapMethod.Method.Slot, classFile.Name);
 
                 classFile.MarkLinkRequiredConstantPoolItem(bootstrapMethod.Method);
@@ -744,7 +744,7 @@ namespace IKVM.CoreLib.Linking
             return false;
         }
 
-        internal static object[][] ReadAnnotations(AnnotationTable reader, ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile)
+        internal static object[][] ReadAnnotations(AnnotationTable reader, ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile)
         {
             var annotations = new object[reader.Count][];
 
@@ -754,7 +754,7 @@ namespace IKVM.CoreLib.Linking
             return annotations;
         }
 
-        internal static object[] ReadAnnotation(Annotation annotation, ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile)
+        internal static object[] ReadAnnotation(Annotation annotation, ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile)
         {
             var l = new object[2 + annotation.Elements.Count * 2];
             l[0] = AnnotationTag.TAG_ANNOTATION;
@@ -768,7 +768,7 @@ namespace IKVM.CoreLib.Linking
             return l;
         }
 
-        internal static object ReadAnnotationElementValue(in ElementValue reader, ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile)
+        internal static object ReadAnnotationElementValue(in ElementValue reader, ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile)
         {
             try
             {
@@ -846,7 +846,7 @@ namespace IKVM.CoreLib.Linking
 
         void ValidateConstantPoolItemClass(string classFile, ClassConstantHandle handle)
         {
-            if (handle.Slot >= _constants.SlotCount || _constants[handle] is not ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>)
+            if (handle.Slot >= _constants.SlotCount || _constants[handle] is not ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>)
                 throw new ClassFormatException("{0} (Bad constant pool index #{1})", classFile, handle.Slot);
         }
 
@@ -868,7 +868,7 @@ namespace IKVM.CoreLib.Linking
         public void Link(TType thisType, LoadMode mode)
         {
             // this is not just an optimization, it's required for anonymous classes to be able to refer to themselves
-            ((ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>)_constants[_decoder.This]).LinkSelf(thisType);
+            ((ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>)_constants[_decoder.This]).LinkSelf(thisType);
 
             foreach (var handle in _decoder.Constants)
                 _constants[handle]?.Link(thisType, mode);
@@ -919,16 +919,16 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="fld"></param>
         /// <returns></returns>
-        internal bool IsReferenced(Field<TType, TMember, TField, TMethod, TTypeSystem> fld) => _constants.OfType<ConstantPoolItemFieldref<TType, TMember, TField, TMethod, TTypeSystem>>().Any(i => i.Class == Name && i.Name == fld.Name && i.Signature == fld.Signature);
+        internal bool IsReferenced(Field<TTypeSystem, TType, TMember, TField, TMethod> fld) => _constants.OfType<ConstantPoolItemFieldref<TTypeSystem, TType, TMember, TField, TMethod>>().Any(i => i.Class == Name && i.Name == fld.Name && i.Signature == fld.Signature);
 
         /// <summary>
         /// Gets the field ref constant for the given handle.
         /// </summary>
         /// <param name="handle"></param>
         /// <returns></returns>
-        internal ConstantPoolItemFieldref<TType, TMember, TField, TMethod, TTypeSystem> GetFieldref(FieldrefConstantHandle handle)
+        internal ConstantPoolItemFieldref<TTypeSystem, TType, TMember, TField, TMethod> GetFieldref(FieldrefConstantHandle handle)
         {
-            return (ConstantPoolItemFieldref<TType, TMember, TField, TMethod, TTypeSystem>)_constants[handle];
+            return (ConstantPoolItemFieldref<TTypeSystem, TType, TMember, TField, TMethod>)_constants[handle];
         }
 
         /// <summary>
@@ -936,7 +936,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="slot"></param>
         /// <returns></returns>
-        internal ConstantPoolItemFieldref<TType, TMember, TField, TMethod, TTypeSystem> GetFieldref(ushort slot)
+        internal ConstantPoolItemFieldref<TTypeSystem, TType, TMember, TField, TMethod> GetFieldref(ushort slot)
         {
             return GetFieldref(new FieldrefConstantHandle(slot));
         }
@@ -946,10 +946,10 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="handle"></param>
         /// <returns></returns>
-        internal ConstantPoolItemFieldref<TType, TMember, TField, TMethod, TTypeSystem>? SafeGetFieldref(ConstantHandle handle)
+        internal ConstantPoolItemFieldref<TTypeSystem, TType, TMember, TField, TMethod>? SafeGetFieldref(ConstantHandle handle)
         {
             if (handle.IsNotNil && handle.Slot < _constants.SlotCount)
-                return _constants[handle] as ConstantPoolItemFieldref<TType, TMember, TField, TMethod, TTypeSystem>;
+                return _constants[handle] as ConstantPoolItemFieldref<TTypeSystem, TType, TMember, TField, TMethod>;
 
             return null;
         }
@@ -959,18 +959,18 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        internal ConstantPoolItemFieldref<TType, TMember, TField, TMethod, TTypeSystem>? SafeGetFieldref(ushort index)
+        internal ConstantPoolItemFieldref<TTypeSystem, TType, TMember, TField, TMethod>? SafeGetFieldref(ushort index)
         {
             return SafeGetFieldref(new ConstantHandle(ConstantKind.Unknown, index));
         }
 
-        internal ConstantPoolItemMI<TType, TMember, TField, TMethod, TTypeSystem> GetMethodref(MethodrefConstantHandle handle)
+        internal ConstantPoolItemMI<TTypeSystem, TType, TMember, TField, TMethod> GetMethodref(MethodrefConstantHandle handle)
         {
-            return (ConstantPoolItemMI<TType, TMember, TField, TMethod, TTypeSystem>)_constants[handle];
+            return (ConstantPoolItemMI<TTypeSystem, TType, TMember, TField, TMethod>)_constants[handle];
         }
 
         // NOTE this returns an MI, because it used for both normal methods and interface methods
-        internal ConstantPoolItemMI<TType, TMember, TField, TMethod, TTypeSystem> GetMethodref(int handle)
+        internal ConstantPoolItemMI<TTypeSystem, TType, TMember, TField, TMethod> GetMethodref(int handle)
         {
             return GetMethodref(new MethodrefConstantHandle(checked((ushort)handle)));
         }
@@ -980,10 +980,10 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="handle"></param>
         /// <returns></returns>
-        internal ConstantPoolItemMI<TType, TMember, TField, TMethod, TTypeSystem>? SafeGetMethodref(ConstantHandle handle)
+        internal ConstantPoolItemMI<TTypeSystem, TType, TMember, TField, TMethod>? SafeGetMethodref(ConstantHandle handle)
         {
             if (handle.IsNotNil && handle.Slot < _constants.SlotCount)
-                return _constants[handle] as ConstantPoolItemMI<TType, TMember, TField, TMethod, TTypeSystem>;
+                return _constants[handle] as ConstantPoolItemMI<TTypeSystem, TType, TMember, TField, TMethod>;
 
             return null;
         }
@@ -993,7 +993,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="slot"></param>
         /// <returns></returns>
-        internal ConstantPoolItemMI<TType, TMember, TField, TMethod, TTypeSystem>? SafeGetMethodref(int slot)
+        internal ConstantPoolItemMI<TTypeSystem, TType, TMember, TField, TMethod>? SafeGetMethodref(int slot)
         {
             if (slot > ushort.MaxValue || slot < ushort.MinValue)
                 return null;
@@ -1001,32 +1001,32 @@ namespace IKVM.CoreLib.Linking
             return SafeGetMethodref(new ConstantHandle(ConstantKind.Unknown, (ushort)slot));
         }
 
-        internal ConstantPoolItemInvokeDynamic<TType, TMember, TField, TMethod, TTypeSystem> GetInvokeDynamic(InvokeDynamicConstantHandle handle)
+        internal ConstantPoolItemInvokeDynamic<TTypeSystem, TType, TMember, TField, TMethod> GetInvokeDynamic(InvokeDynamicConstantHandle handle)
         {
-            return (ConstantPoolItemInvokeDynamic<TType, TMember, TField, TMethod, TTypeSystem>)_constants[handle];
+            return (ConstantPoolItemInvokeDynamic<TTypeSystem, TType, TMember, TField, TMethod>)_constants[handle];
         }
 
-        internal ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem> GetConstantPoolItem(ConstantHandle handle)
+        internal ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod> GetConstantPoolItem(ConstantHandle handle)
         {
             return _constants[handle];
         }
 
         internal string GetConstantPoolClass(ClassConstantHandle handle)
         {
-            return ((ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>)_constants[handle]).Name;
+            return ((ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>)_constants[handle]).Name;
         }
 
         internal bool SafeIsConstantPoolClass(ClassConstantHandle handle)
         {
             if (handle.Slot > 0 && handle.Slot < _constants.SlotCount)
-                return _constants[handle] as ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem> != null;
+                return _constants[handle] as ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod> != null;
 
             return false;
         }
 
         internal TType GetConstantPoolClassType(ClassConstantHandle handle)
         {
-            return ((ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>)_constants[handle]).GetClassType();
+            return ((ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>)_constants[handle]).GetClassType();
         }
 
         internal TType GetConstantPoolClassType(int slot)
@@ -1060,27 +1060,27 @@ namespace IKVM.CoreLib.Linking
 
         internal double GetConstantPoolConstantDouble(DoubleConstantHandle handle)
         {
-            return ((ConstantPoolItemDouble<TType, TMember, TField, TMethod, TTypeSystem>)_constants[handle]).Value;
+            return ((ConstantPoolItemDouble<TTypeSystem, TType, TMember, TField, TMethod>)_constants[handle]).Value;
         }
 
         internal float GetConstantPoolConstantFloat(FloatConstantHandle handle)
         {
-            return ((ConstantPoolItemFloat<TType, TMember, TField, TMethod, TTypeSystem>)_constants[handle]).Value;
+            return ((ConstantPoolItemFloat<TTypeSystem, TType, TMember, TField, TMethod>)_constants[handle]).Value;
         }
 
         internal int GetConstantPoolConstantInteger(IntegerConstantHandle handle)
         {
-            return ((ConstantPoolItemInteger<TType, TMember, TField, TMethod, TTypeSystem>)_constants[handle]).Value;
+            return ((ConstantPoolItemInteger<TTypeSystem, TType, TMember, TField, TMethod>)_constants[handle]).Value;
         }
 
         internal long GetConstantPoolConstantLong(LongConstantHandle handle)
         {
-            return ((ConstantPoolItemLong<TType, TMember, TField, TMethod, TTypeSystem>)_constants[handle]).Value;
+            return ((ConstantPoolItemLong<TTypeSystem, TType, TMember, TField, TMethod>)_constants[handle]).Value;
         }
 
         internal string GetConstantPoolConstantString(StringConstantHandle handle)
         {
-            return ((ConstantPoolItemString<TType, TMember, TField, TMethod, TTypeSystem>)_constants[handle]).Value;
+            return ((ConstantPoolItemString<TTypeSystem, TType, TMember, TField, TMethod>)_constants[handle]).Value;
         }
 
         internal string GetConstantPoolConstantString(int slot)
@@ -1088,29 +1088,29 @@ namespace IKVM.CoreLib.Linking
             return GetConstantPoolConstantString(new StringConstantHandle(checked((ushort)slot)));
         }
 
-        internal ConstantPoolItemMethodHandle<TType, TMember, TField, TMethod, TTypeSystem> GetConstantPoolConstantMethodHandle(MethodHandleConstantHandle handle)
+        internal ConstantPoolItemMethodHandle<TTypeSystem, TType, TMember, TField, TMethod> GetConstantPoolConstantMethodHandle(MethodHandleConstantHandle handle)
         {
-            return (ConstantPoolItemMethodHandle<TType, TMember, TField, TMethod, TTypeSystem>)_constants[handle];
+            return (ConstantPoolItemMethodHandle<TTypeSystem, TType, TMember, TField, TMethod>)_constants[handle];
         }
 
-        internal ConstantPoolItemMethodHandle<TType, TMember, TField, TMethod, TTypeSystem> GetConstantPoolConstantMethodHandle(ushort slot)
+        internal ConstantPoolItemMethodHandle<TTypeSystem, TType, TMember, TField, TMethod> GetConstantPoolConstantMethodHandle(ushort slot)
         {
             return GetConstantPoolConstantMethodHandle(new MethodHandleConstantHandle(slot));
         }
 
-        internal ConstantPoolItemMethodType<TType, TMember, TField, TMethod, TTypeSystem> GetConstantPoolConstantMethodType(MethodTypeConstantHandle handle)
+        internal ConstantPoolItemMethodType<TTypeSystem, TType, TMember, TField, TMethod> GetConstantPoolConstantMethodType(MethodTypeConstantHandle handle)
         {
-            return (ConstantPoolItemMethodType<TType, TMember, TField, TMethod, TTypeSystem>)_constants[handle];
+            return (ConstantPoolItemMethodType<TTypeSystem, TType, TMember, TField, TMethod>)_constants[handle];
         }
 
-        internal ConstantPoolItemMethodType<TType, TMember, TField, TMethod, TTypeSystem> GetConstantPoolConstantMethodType(ushort slot)
+        internal ConstantPoolItemMethodType<TTypeSystem, TType, TMember, TField, TMethod> GetConstantPoolConstantMethodType(ushort slot)
         {
             return GetConstantPoolConstantMethodType(new MethodTypeConstantHandle(slot));
         }
 
         internal object GetConstantPoolConstantLiveObject(ushort slot)
         {
-            return ((ConstantPoolItemLiveObject<TType, TMember, TField, TMethod, TTypeSystem>)_constants[new(ConstantKind.Unknown, slot)]).Value;
+            return ((ConstantPoolItemLiveObject<TTypeSystem, TType, TMember, TField, TMethod>)_constants[new(ConstantKind.Unknown, slot)]).Value;
         }
 
         /// <summary>
@@ -1121,22 +1121,22 @@ namespace IKVM.CoreLib.Linking
         /// <summary>
         /// Gets the constant pool item that represents the super class.
         /// </summary>
-        internal ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem> SuperClass => (ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>)_constants[_decoder.Super];
+        internal ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod> SuperClass => (ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>)_constants[_decoder.Super];
 
         /// <summary>
         /// Gets the fields of the class.
         /// </summary>
-        internal Field<TType, TMember, TField, TMethod, TTypeSystem>[] Fields => _fields;
+        internal Field<TTypeSystem, TType, TMember, TField, TMethod>[] Fields => _fields;
 
         /// <summary>
         /// Gets the methods of the class.
         /// </summary>
-        internal Method<TType, TMember, TField, TMethod, TTypeSystem>[] Methods => _methods;
+        internal Method<TTypeSystem, TType, TMember, TField, TMethod>[] Methods => _methods;
 
         /// <summary>
         /// Gets the interfaces of the class.
         /// </summary>
-        internal ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>[] Interfaces => _interfaces;
+        internal ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>[] Interfaces => _interfaces;
 
         internal string? SourceFileAttribute => _sourceFile;
 
@@ -1206,7 +1206,7 @@ namespace IKVM.CoreLib.Linking
 
         internal InnerClass[]? InnerClasses => _innerClasses;
 
-        internal Field<TType, TMember, TField, TMethod, TTypeSystem>? GetField(string name, string sig)
+        internal Field<TTypeSystem, TType, TMember, TField, TMethod>? GetField(string name, string sig)
         {
             for (int i = 0; i < _fields.Length; i++)
                 if (_fields[i].Name == name && _fields[i].Signature == sig)
@@ -1219,7 +1219,7 @@ namespace IKVM.CoreLib.Linking
         /// Removes a call to java.lang.Class.desiredAssertionStatus() and replaces it with a hard coded constant (true).
         /// </summary>
         /// <param name="method"></param>
-        void RemoveAssertionInit(Method<TType, TMember, TField, TMethod, TTypeSystem> method)
+        void RemoveAssertionInit(Method<TTypeSystem, TType, TMember, TField, TMethod> method)
         {
             /* We match the following code sequence:
 			 *   0  ldc <class X>
@@ -1230,8 +1230,8 @@ namespace IKVM.CoreLib.Linking
 			 *  12  iconst_0
 			 *  13  putstatic <Field <this class> boolean <static final field>>
 			 */
-            ConstantPoolItemFieldref<TType, TMember, TField, TMethod, TTypeSystem>? fieldref;
-            Field<TType, TMember, TField, TMethod, TTypeSystem> field;
+            ConstantPoolItemFieldref<TTypeSystem, TType, TMember, TField, TMethod>? fieldref;
+            Field<TTypeSystem, TType, TMember, TField, TMethod> field;
             if (method.Instructions is [
                 { NormalizedOpCode: NormalizedOpCode.Ldc },
                 { NormalizedOpCode: NormalizedOpCode.InvokeVirtual },
@@ -1263,10 +1263,10 @@ namespace IKVM.CoreLib.Linking
 
         bool IsDesiredAssertionStatusMethodref(int cpi)
         {
-            return SafeGetMethodref(cpi) is ConstantPoolItemMethodref<TType, TMember, TField, TMethod, TTypeSystem> { Class: "java.lang.Class", Name: "desiredAssertionStatus", Signature: "()Z" };
+            return SafeGetMethodref(cpi) is ConstantPoolItemMethodref<TTypeSystem, TType, TMember, TField, TMethod> { Class: "java.lang.Class", Name: "desiredAssertionStatus", Signature: "()Z" };
         }
 
-        static bool HasBranchIntoRegion(Instruction<TType, TMember, TField, TMethod, TTypeSystem>[] instructions, int checkStart, int checkEnd, int regionStart, int regionEnd)
+        static bool HasBranchIntoRegion(Instruction<TTypeSystem, TType, TMember, TField, TMethod>[] instructions, int checkStart, int checkEnd, int regionStart, int regionEnd)
         {
             for (int i = checkStart; i < checkEnd; i++)
             {
@@ -1309,7 +1309,7 @@ namespace IKVM.CoreLib.Linking
             return false;
         }
 
-        bool HasStaticFieldWrite(Instruction<TType, TMember, TField, TMethod, TTypeSystem>[] instructions, int checkStart, int checkEnd, Field<TType, TMember, TField, TMethod, TTypeSystem> field)
+        bool HasStaticFieldWrite(Instruction<TTypeSystem, TType, TMember, TField, TMethod>[] instructions, int checkStart, int checkEnd, Field<TTypeSystem, TType, TMember, TField, TMethod> field)
         {
             for (int i = checkStart; i < checkEnd; i++)
             {

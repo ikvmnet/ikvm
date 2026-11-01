@@ -12,21 +12,21 @@ namespace IKVM.CoreLib.Linking
     /// Abstracts a class constant pool. We wrap the class file constants from the underlying decoder so we can track
     /// linking status of them, and so we can support constant pool patching and live objects.
     /// </summary>
+    /// <typeparam name="TTypeSystem"></typeparam>
     /// <typeparam name="TType"></typeparam>
     /// <typeparam name="TMember"></typeparam>
     /// <typeparam name="TField"></typeparam>
     /// <typeparam name="TMethod"></typeparam>
-    /// <typeparam name="TTypeSystem"></typeparam>
-    internal struct ConstantPool<TType, TMember, TField, TMethod, TTypeSystem> : IEnumerable<ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>>
+    internal struct ConstantPool<TTypeSystem, TType, TMember, TField, TMethod> : IEnumerable<ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
-        readonly ClassFile<TType, TMember, TField, TMethod, TTypeSystem> _classFile;
-        readonly ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>[] _items;
+        readonly ClassFile<TTypeSystem, TType, TMember, TField, TMethod> _classFile;
+        readonly ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>[] _items;
         readonly string[] _utf8items;
 
         /// <summary>
@@ -35,10 +35,10 @@ namespace IKVM.CoreLib.Linking
         /// <param name="classFile"></param>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ClassFormatException"></exception>
-        public ConstantPool(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile)
+        public ConstantPool(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile)
         {
             _classFile = classFile ?? throw new ArgumentNullException(nameof(classFile));
-            _items = new ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>[_classFile.Decoder.Constants.SlotCount];
+            _items = new ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>[_classFile.Decoder.Constants.SlotCount];
             _utf8items = new string[_classFile.Decoder.Constants.SlotCount];
 
             Read();
@@ -55,52 +55,52 @@ namespace IKVM.CoreLib.Linking
                 switch (handle.Kind)
                 {
                     case ConstantKind.Class:
-                        _items[handle.Slot] = new ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, _classFile.Decoder.Constants.Read((ClassConstantHandle)handle));
+                        _items[handle.Slot] = new ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, _classFile.Decoder.Constants.Read((ClassConstantHandle)handle));
                         break;
                     case ConstantKind.Double:
-                        _items[handle.Slot] = new ConstantPoolItemDouble<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, _classFile.Decoder.Constants.Read((DoubleConstantHandle)handle));
+                        _items[handle.Slot] = new ConstantPoolItemDouble<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, _classFile.Decoder.Constants.Read((DoubleConstantHandle)handle));
                         break;
                     case ConstantKind.Fieldref:
-                        _items[handle.Slot] = new ConstantPoolItemFieldref<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, _classFile.Decoder.Constants.Read((FieldrefConstantHandle)handle));
+                        _items[handle.Slot] = new ConstantPoolItemFieldref<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, _classFile.Decoder.Constants.Read((FieldrefConstantHandle)handle));
                         break;
                     case ConstantKind.Float:
-                        _items[handle.Slot] = new ConstantPoolItemFloat<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, _classFile.Decoder.Constants.Read((FloatConstantHandle)handle));
+                        _items[handle.Slot] = new ConstantPoolItemFloat<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, _classFile.Decoder.Constants.Read((FloatConstantHandle)handle));
                         break;
                     case ConstantKind.Integer:
-                        _items[handle.Slot] = new ConstantPoolItemInteger<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, _classFile.Decoder.Constants.Read((IntegerConstantHandle)handle));
+                        _items[handle.Slot] = new ConstantPoolItemInteger<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, _classFile.Decoder.Constants.Read((IntegerConstantHandle)handle));
                         break;
                     case ConstantKind.InterfaceMethodref:
-                        _items[handle.Slot] = new ConstantPoolItemInterfaceMethodref<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, _classFile.Decoder.Constants.Read((InterfaceMethodrefConstantHandle)handle));
+                        _items[handle.Slot] = new ConstantPoolItemInterfaceMethodref<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, _classFile.Decoder.Constants.Read((InterfaceMethodrefConstantHandle)handle));
                         break;
                     case ConstantKind.Long:
-                        _items[handle.Slot] = new ConstantPoolItemLong<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, _classFile.Decoder.Constants.Read((LongConstantHandle)handle));
+                        _items[handle.Slot] = new ConstantPoolItemLong<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, _classFile.Decoder.Constants.Read((LongConstantHandle)handle));
                         break;
                     case ConstantKind.Methodref:
-                        _items[handle.Slot] = new ConstantPoolItemMethodref<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, _classFile.Decoder.Constants.Read((MethodrefConstantHandle)handle));
+                        _items[handle.Slot] = new ConstantPoolItemMethodref<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, _classFile.Decoder.Constants.Read((MethodrefConstantHandle)handle));
                         break;
                     case ConstantKind.NameAndType:
-                        _items[handle.Slot] = new ConstantPoolItemNameAndType<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, _classFile.Decoder.Constants.Read((NameAndTypeConstantHandle)handle));
+                        _items[handle.Slot] = new ConstantPoolItemNameAndType<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, _classFile.Decoder.Constants.Read((NameAndTypeConstantHandle)handle));
                         break;
                     case ConstantKind.MethodHandle:
                         if (_classFile.Decoder.Version < 51)
                             goto default;
 
-                        _items[handle.Slot] = new ConstantPoolItemMethodHandle<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, _classFile.Decoder.Constants.Read((MethodHandleConstantHandle)handle));
+                        _items[handle.Slot] = new ConstantPoolItemMethodHandle<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, _classFile.Decoder.Constants.Read((MethodHandleConstantHandle)handle));
                         break;
                     case ConstantKind.MethodType:
                         if (_classFile.Decoder.Version < 51)
                             goto default;
 
-                        _items[handle.Slot] = new ConstantPoolItemMethodType<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, _classFile.Decoder.Constants.Read((MethodTypeConstantHandle)handle));
+                        _items[handle.Slot] = new ConstantPoolItemMethodType<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, _classFile.Decoder.Constants.Read((MethodTypeConstantHandle)handle));
                         break;
                     case ConstantKind.InvokeDynamic:
                         if (_classFile.Decoder.Version < 51)
                             goto default;
 
-                        _items[handle.Slot] = new ConstantPoolItemInvokeDynamic<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, _classFile.Decoder.Constants.Read((InvokeDynamicConstantHandle)handle));
+                        _items[handle.Slot] = new ConstantPoolItemInvokeDynamic<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, _classFile.Decoder.Constants.Read((InvokeDynamicConstantHandle)handle));
                         break;
                     case ConstantKind.String:
-                        _items[handle.Slot] = new ConstantPoolItemString<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, _classFile.Decoder.Constants.Read((StringConstantHandle)handle));
+                        _items[handle.Slot] = new ConstantPoolItemString<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, _classFile.Decoder.Constants.Read((StringConstantHandle)handle));
                         break;
                     case ConstantKind.Utf8:
                         _utf8items[handle.Slot] = _classFile.Decoder.Constants.Read((Utf8ConstantHandle)handle).Value;
@@ -138,38 +138,38 @@ namespace IKVM.CoreLib.Linking
                         switch (_items[i].ConstantType)
                         {
                             case ConstantType.String:
-                                _items[i] = new ConstantPoolItemLiveObject<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, cpp);
+                                _items[i] = new ConstantPoolItemLiveObject<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, cpp);
                                 break;
                             case ConstantType.Class:
                                 if (cpp is TType clazz)
-                                    _items[i] = new ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, _classFile.TypeSystem.GetName(clazz), clazz);
+                                    _items[i] = new ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, _classFile.TypeSystem.GetName(clazz), clazz);
                                 else if (cpp is string name)
-                                    _items[i] = new ConstantPoolItemClass<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, string.Intern(name.Replace('/', '.')), null);
+                                    _items[i] = new ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, string.Intern(name.Replace('/', '.')), null);
                                 else
                                     throw new ClassFormatException("Illegal class patch at {0} in class file {1}", i, inputClassName);
 
                                 break;
                             case ConstantType.Integer:
                                 if (cpp is int intV)
-                                    ((ConstantPoolItemInteger<TType, TMember, TField, TMethod, TTypeSystem>)_items[i])._value = intV;
+                                    ((ConstantPoolItemInteger<TTypeSystem, TType, TMember, TField, TMethod>)_items[i])._value = intV;
                                 else
                                     throw new ClassFormatException("Illegal class patch at {0} in class file {1}", i, inputClassName);
                                 break;
                             case ConstantType.Long:
                                 if (cpp is long longV)
-                                    ((ConstantPoolItemLong<TType, TMember, TField, TMethod, TTypeSystem>)_items[i])._value = longV;
+                                    ((ConstantPoolItemLong<TTypeSystem, TType, TMember, TField, TMethod>)_items[i])._value = longV;
                                 else
                                     throw new ClassFormatException("Illegal class patch at {0} in class file {1}", i, inputClassName);
                                 break;
                             case ConstantType.Float:
                                 if (cpp is float floatV)
-                                    ((ConstantPoolItemFloat<TType, TMember, TField, TMethod, TTypeSystem>)_items[i])._value = floatV;
+                                    ((ConstantPoolItemFloat<TTypeSystem, TType, TMember, TField, TMethod>)_items[i])._value = floatV;
                                 else
                                     throw new ClassFormatException("Illegal class patch at {0} in class file {1}", i, inputClassName);
                                 break;
                             case ConstantType.Double:
                                 if (cpp is double doubleV)
-                                    ((ConstantPoolItemDouble<TType, TMember, TField, TMethod, TTypeSystem>)_items[i])._value = doubleV;
+                                    ((ConstantPoolItemDouble<TTypeSystem, TType, TMember, TField, TMethod>)_items[i])._value = doubleV;
                                 else
                                     throw new ClassFormatException("Illegal class patch at {0} in class file {1}", i, inputClassName);
                                 break;
@@ -217,7 +217,7 @@ namespace IKVM.CoreLib.Linking
         /// <summary>
         /// Gets the class file that owns this constant pool.
         /// </summary>
-        public readonly ClassFile<TType, TMember, TField, TMethod, TTypeSystem> ClassFile => _classFile;
+        public readonly ClassFile<TTypeSystem, TType, TMember, TField, TMethod> ClassFile => _classFile;
 
         /// <summary>
         /// Gets the total count of constants.
@@ -234,7 +234,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="handle"></param>
         /// <returns></returns>
-        public readonly ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem> this[ConstantHandle handle] => _items[handle.Slot];
+        public readonly ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod> this[ConstantHandle handle] => _items[handle.Slot];
 
         /// <summary>
         /// Gets the UTF8 constant value.
@@ -250,14 +250,14 @@ namespace IKVM.CoreLib.Linking
         {
             foreach (var handle in _classFile.Decoder.Constants)
                 if (_items[handle.Slot] == null && _utf8items[handle.Slot] != null)
-                    _items[handle.Slot] = new ConstantPoolItemUtf8<TType, TMember, TField, TMethod, TTypeSystem>(_classFile, _utf8items[handle.Slot]);
+                    _items[handle.Slot] = new ConstantPoolItemUtf8<TTypeSystem, TType, TMember, TField, TMethod>(_classFile, _utf8items[handle.Slot]);
         }
 
         /// <summary>
         /// Gets an enumerator over the constant items.
         /// </summary>
         /// <returns></returns>
-        public readonly IEnumerator<ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>> GetEnumerator()
+        public readonly IEnumerator<ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>> GetEnumerator()
         {
             foreach (var handle in _classFile.Decoder.Constants)
                 yield return this[handle];

@@ -27,12 +27,12 @@ using IKVM.CoreLib.Jvm;
 namespace IKVM.CoreLib.Linking
 {
 
-    sealed class ConstantPoolItemLiveObject<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>
+    sealed class ConstantPoolItemLiveObject<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         readonly object _value;
@@ -42,7 +42,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="value"></param>
-        internal ConstantPoolItemLiveObject(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, object value) :
+        internal ConstantPoolItemLiveObject(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, object value) :
             base(classFile)
         {
             _value = value;

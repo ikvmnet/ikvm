@@ -31,12 +31,12 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a double constant.
     /// </summary>
-    sealed class ConstantPoolItemDouble<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>
+    sealed class ConstantPoolItemDouble<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         internal double _value;
@@ -46,7 +46,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        public ConstantPoolItemDouble(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, DoubleConstantData data) :
+        public ConstantPoolItemDouble(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, DoubleConstantData data) :
             base(classFile)
         {
             _value = data.Value;

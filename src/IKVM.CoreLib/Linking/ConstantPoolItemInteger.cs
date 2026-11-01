@@ -31,12 +31,12 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a integer constant.
     /// </summary>
-    sealed class ConstantPoolItemInteger<TType, TMember, TField, TMethod, TTypeSystem> : ConstantPoolItem<TType, TMember, TField, TMethod, TTypeSystem>
+    sealed class ConstantPoolItemInteger<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
         internal int _value;
@@ -46,7 +46,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        internal ConstantPoolItemInteger(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, IntegerConstantData data) :
+        internal ConstantPoolItemInteger(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, IntegerConstantData data) :
             base(classFile)
         {
             _value = data.Value;

@@ -29,15 +29,15 @@ using IKVM.CoreLib.Jvm;
 namespace IKVM.CoreLib.Linking
 {
 
-    internal sealed partial class Method<TType, TMember, TField, TMethod, TTypeSystem> : FieldOrMethod<TType, TMember, TField, TMethod, TTypeSystem>
+    internal sealed partial class Method<TTypeSystem, TType, TMember, TField, TMethod> : FieldOrMethod<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
         where TType : class
         where TMember : class
         where TField : class, TMember
         where TMethod : class, TMember
-        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
     {
 
-        Code<TType, TMember, TField, TMethod, TTypeSystem> code;
+        Code<TTypeSystem, TType, TMember, TField, TMethod> code;
         string[] exceptions;
         LowFreqData? low;
         MethodParametersEntry[] parameters;
@@ -50,7 +50,7 @@ namespace IKVM.CoreLib.Linking
         /// <param name="attribute"></param>
         /// <returns></returns>
         /// <exception cref="ClassFormatException"></exception>
-        static CodeAttribute ReadCodeAttribute(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, IKVM.ByteCode.Decoding.Attribute attribute)
+        static CodeAttribute ReadCodeAttribute(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, IKVM.ByteCode.Decoding.Attribute attribute)
         {
             if (classFile.MajorVersion > 45 || classFile.MinorVersion > 2)
                 return (CodeAttribute)attribute;
@@ -76,7 +76,7 @@ namespace IKVM.CoreLib.Linking
         /// <param name="options"></param>
         /// <param name="reader"></param>
         /// <exception cref="ClassFormatException"></exception>
-        internal Method(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, IKVM.ByteCode.Decoding.Method reader) :
+        internal Method(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, IKVM.ByteCode.Decoding.Method reader) :
             base(classFile, reader.AccessFlags, reader.Name, reader.Descriptor)
         {
             // vmspec 4.6 says that all flags, except ACC_STRICT are ignored on <clinit>
@@ -143,7 +143,7 @@ namespace IKVM.CoreLib.Linking
                             goto default;
 
                         var runtimeVisibleAnnotationsAttribute = (RuntimeVisibleAnnotationsAttribute)attribute;
-                        annotations = ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.ReadAnnotations(runtimeVisibleAnnotationsAttribute.Annotations, classFile);
+                        annotations = ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.ReadAnnotations(runtimeVisibleAnnotationsAttribute.Annotations, classFile);
                         if ((classFile.Options & ClassFileParseOptions.TrustedAnnotations) != 0)
                         {
                             foreach (object[] annot in annotations)
@@ -178,7 +178,7 @@ namespace IKVM.CoreLib.Linking
                             var parameter = runtimeVisibleParameterAnnotationsAttribute.ParameterAnnotations[j];
                             low.parameterAnnotations[j] = new object[parameter.Annotations.Count];
                             for (int k = 0; k < parameter.Annotations.Count; k++)
-                                low.parameterAnnotations[j][k] = ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.ReadAnnotation(parameter.Annotations[k], classFile);
+                                low.parameterAnnotations[j][k] = ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.ReadAnnotation(parameter.Annotations[k], classFile);
                         }
 
                         break;
@@ -188,7 +188,7 @@ namespace IKVM.CoreLib.Linking
 
                         var annotationDefaultAttribute = (AnnotationDefaultAttribute)attribute;
                         low ??= new LowFreqData();
-                        low.annotationDefault = ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.ReadAnnotationElementValue(annotationDefaultAttribute.DefaultValue, classFile);
+                        low.annotationDefault = ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.ReadAnnotationElementValue(annotationDefaultAttribute.DefaultValue, classFile);
 
                         break;
                     case AttributeName.RuntimeInvisibleAnnotations when ClassFile.TypeSystem.IsImporter:
@@ -197,7 +197,7 @@ namespace IKVM.CoreLib.Linking
 
                         var runtimeInvisibleAnnotationsAttribute = (RuntimeInvisibleAnnotationsAttribute)attribute;
 
-                        foreach (object[] annot in ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.ReadAnnotations(runtimeInvisibleAnnotationsAttribute.Annotations, classFile))
+                        foreach (object[] annot in ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.ReadAnnotations(runtimeInvisibleAnnotationsAttribute.Annotations, classFile))
                         {
                             if (annot[1].Equals("Likvm/lang/Internal;"))
                             {
@@ -299,9 +299,9 @@ namespace IKVM.CoreLib.Linking
             return l;
         }
 
-        protected override void ValidateSig(ClassFile<TType, TMember, TField, TMethod, TTypeSystem> classFile, string descriptor)
+        protected override void ValidateSig(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, string descriptor)
         {
-            if (!ClassFile<TType, TMember, TField, TMethod, TTypeSystem>.IsValidMethodDescriptor(descriptor))
+            if (!ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.IsValidMethodDescriptor(descriptor))
                 throw new ClassFormatException("{0} (Method \"{1}\" has invalid signature \"{2}\")", classFile.Name, this.Name, descriptor);
         }
 
@@ -339,7 +339,7 @@ namespace IKVM.CoreLib.Linking
 
         internal int MaxLocals => code._maxLocals;
 
-        internal Instruction<TType, TMember, TField, TMethod, TTypeSystem>[] Instructions
+        internal Instruction<TTypeSystem, TType, TMember, TField, TMethod>[] Instructions
         {
             get => code._instructions;
             set => code._instructions = value;
