@@ -63,7 +63,7 @@ namespace IKVM.CoreLib.Linking
             {
                 _method = ts.GetMethod(javaType, Name, Signature, !ReferenceEquals(Name, StringConstants.INIT));
                 if (_method != null)
-                    ts.LinkMethod(_method, mode);
+                    ts.EnsureLinked(_method, mode);
 
                 if (Name != StringConstants.INIT &&
                     ts.IsInterface(thisJavaType) == false &&
@@ -73,7 +73,7 @@ namespace IKVM.CoreLib.Linking
                 {
                     _invokespecialMethod = ts.GetMethod(ts.GetBaseType(thisJavaType)!, Name, Signature, true);
                     if (_invokespecialMethod != null)
-                        ts.LinkMethod(_invokespecialMethod, mode);
+                        ts.EnsureLinked(_invokespecialMethod, mode);
                 }
             }
         }

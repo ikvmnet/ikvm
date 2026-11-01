@@ -83,7 +83,7 @@ namespace IKVM.CoreLib.Linking
             {
                 fw = ts.GetField(wrapper, Name, Signature);
                 if (fw != null)
-                    ts.LinkField(fw, mode);
+                    ts.EnsureLinked(fw, mode);
             }
 
             var fld = ts.GetFieldTypeFromSignature(thisType, Signature, mode);

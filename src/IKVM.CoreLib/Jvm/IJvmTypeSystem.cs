@@ -177,26 +177,28 @@ namespace IKVM.CoreLib.Jvm
         TType GetReturnTypeFromSignature(TType context, string descriptor, LoadMode mode);
 
         /// <summary>
-        /// Initiates a link of the field with the specified mode.
+        /// Ensures the field is linked, linking it with the specified mode if it is not already. Has no effect on a field
+        /// that is already linked.
         /// </summary>
         /// <remarks>
-        /// These link methods may not belong on the type system. Unlike the other members, they change the state of a
+        /// These lifecycle methods may not belong on the type system. Unlike the other members, they change the state of a
         /// member rather than describe it, and only constant pool linking calls them.
         /// </remarks>
         /// <param name="field"></param>
         /// <param name="mode"></param>
-        void LinkField(TField field, LoadMode mode);
+        void EnsureLinked(TField field, LoadMode mode);
 
         /// <summary>
-        /// Initiates a link of the method with the specified mode.
+        /// Ensures the method is linked, linking it with the specified mode if it is not already. Has no effect on a method
+        /// that is already linked.
         /// </summary>
         /// <remarks>
-        /// These link methods may not belong on the type system. Unlike the other members, they change the state of a
+        /// These lifecycle methods may not belong on the type system. Unlike the other members, they change the state of a
         /// member rather than describe it, and only constant pool linking calls them.
         /// </remarks>
         /// <param name="method"></param>
         /// <param name="mode"></param>
-        void LinkMethod(TMethod method, LoadMode mode);
+        void EnsureLinked(TMethod method, LoadMode mode);
 
     }
 

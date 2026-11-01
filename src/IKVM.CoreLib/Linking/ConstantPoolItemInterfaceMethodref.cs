@@ -65,7 +65,7 @@ namespace IKVM.CoreLib.Linking
                 _method ??= ts.GetMethod(ts.TypeOfJavaLangObject, Name, Signature, false);
 
                 if (_method != null)
-                    ts.LinkMethod(_method, mode);
+                    ts.EnsureLinked(_method, mode);
             }
         }
 

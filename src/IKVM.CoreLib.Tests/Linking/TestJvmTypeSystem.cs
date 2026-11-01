@@ -61,9 +61,9 @@ namespace IKVM.CoreLib.Tests.Linking
 
         public TestJavaType GetReturnTypeFromSignature(TestJavaType context, string descriptor, LoadMode mode) => throw new NotImplementedException();
 
-        public void LinkField(TestJavaField field, LoadMode mode) => throw new NotImplementedException();
+        public void EnsureLinked(TestJavaField field, LoadMode mode) => throw new NotImplementedException();
 
-        public void LinkMethod(TestJavaMethod method, LoadMode mode) => throw new NotImplementedException();
+        public void EnsureLinked(TestJavaMethod method, LoadMode mode) => throw new NotImplementedException();
 
     }
 

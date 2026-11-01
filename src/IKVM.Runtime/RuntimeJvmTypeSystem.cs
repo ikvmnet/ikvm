@@ -117,10 +117,10 @@ namespace IKVM.Runtime
         public RuntimeJavaType GetReturnTypeFromSignature(RuntimeJavaType context, string descriptor, LoadMode mode) => context.ClassLoader.RetTypeWrapperFromSig(descriptor, mode);
 
         /// <inheritdoc />
-        public void LinkField(RuntimeJavaField field, LoadMode mode) => field.Link(mode);
+        public void EnsureLinked(RuntimeJavaField field, LoadMode mode) => field.Link(mode);
 
         /// <inheritdoc />
-        public void LinkMethod(RuntimeJavaMethod method, LoadMode mode) => method.Link(mode);
+        public void EnsureLinked(RuntimeJavaMethod method, LoadMode mode) => method.Link(mode);
 
     }
 
