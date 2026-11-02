@@ -30,17 +30,17 @@ namespace IKVM.Runtime
     readonly struct CodeInfo
     {
 
-        readonly RuntimeContext _context;
+        readonly RuntimeJvmTypeSystem _typeSystem;
         readonly InstructionState[] _state;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="context"></param>
+        /// <param name="typeSystem"></param>
         /// <param name="state"></param>
-        internal CodeInfo(RuntimeContext context, InstructionState[] state)
+        internal CodeInfo(RuntimeJvmTypeSystem typeSystem, InstructionState[] state)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _typeSystem = typeSystem;
             _state = state ?? throw new ArgumentNullException(nameof(state));
         }
 
@@ -107,7 +107,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         internal VerificationType FindCommonBaseType(VerificationType type1, VerificationType type2)
         {
-            return InstructionState.FindCommonBaseType(_context, _state, type1, type2);
+            return InstructionState.FindCommonBaseType(_typeSystem, _state, type1, type2);
         }
 
         /// <summary>

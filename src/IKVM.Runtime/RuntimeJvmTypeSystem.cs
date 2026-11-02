@@ -56,7 +56,28 @@ namespace IKVM.Runtime
         public RuntimeJavaType TypeOfJavaLangObject => _context.JavaBase.TypeOfJavaLangObject;
 
         /// <inheritdoc />
+        public RuntimeJavaType TypeOfJavaLangThrowable => _context.JavaBase.TypeOfjavaLangThrowable;
+
+        /// <inheritdoc />
+        public RuntimeJavaType TypeOfVoid => _context.PrimitiveJavaTypeFactory.VOID;
+
+        /// <inheritdoc />
+        public RuntimeJavaType TypeOfInt => _context.PrimitiveJavaTypeFactory.INT;
+
+        /// <inheritdoc />
+        public RuntimeJavaType TypeOfLong => _context.PrimitiveJavaTypeFactory.LONG;
+
+        /// <inheritdoc />
+        public RuntimeJavaType TypeOfFloat => _context.PrimitiveJavaTypeFactory.FLOAT;
+
+        /// <inheritdoc />
+        public RuntimeJavaType TypeOfDouble => _context.PrimitiveJavaTypeFactory.DOUBLE;
+
+        /// <inheritdoc />
         public RuntimeJavaType TypeOfVerifierNull => _context.VerifierJavaTypeFactory.Null;
+
+        /// <inheritdoc />
+        public RuntimeJavaType TypeOfVerifierUnloadable => _context.VerifierJavaTypeFactory.Unloadable;
 
         /// <inheritdoc />
         public RuntimeJavaType CreateUnloadableType(string name) => new RuntimeUnloadableJavaType(_context, name);
@@ -71,6 +92,24 @@ namespace IKVM.Runtime
         public bool IsInterface(RuntimeJavaType type) => type.IsInterface;
 
         /// <inheritdoc />
+        public bool IsPrimitive(RuntimeJavaType type) => type.IsPrimitive;
+
+        /// <inheritdoc />
+        public bool IsNonPrimitiveValueType(RuntimeJavaType type) => type.IsNonPrimitiveValueType;
+
+        /// <inheritdoc />
+        public bool IsInterfaceOrInterfaceArray(RuntimeJavaType type) => type.IsInterfaceOrInterfaceArray;
+
+        /// <inheritdoc />
+        public int GetArrayRank(RuntimeJavaType type) => type.ArrayRank;
+
+        /// <inheritdoc />
+        public RuntimeJavaType GetElementType(RuntimeJavaType type) => type.ElementTypeWrapper;
+
+        /// <inheritdoc />
+        public RuntimeJavaType MakeArrayType(RuntimeJavaType type, int rank) => type.MakeArrayType(rank);
+
+        /// <inheritdoc />
         public ClassFileAccessFlags GetAccessFlags(RuntimeJavaType type) => (ClassFileAccessFlags)type.Modifiers;
 
         /// <inheritdoc />
@@ -78,6 +117,29 @@ namespace IKVM.Runtime
 
         /// <inheritdoc />
         public bool IsSubTypeOf(RuntimeJavaType type, RuntimeJavaType baseType) => type.IsSubTypeOf(baseType);
+
+        /// <inheritdoc />
+        public bool ImplementsInterface(RuntimeJavaType type, RuntimeJavaType interfaceType) => type.ImplementsInterface(interfaceType);
+
+        /// <inheritdoc />
+        public bool IsAssignableTo(RuntimeJavaType type, RuntimeJavaType target) => type.IsAssignableTo(target);
+
+        /// <inheritdoc />
+        public bool HasUnloadableBaseType(RuntimeJavaType type)
+        {
+            for (RuntimeJavaType baseType; (baseType = type.BaseTypeWrapper) != null; type = baseType)
+            {
+                if (baseType.IsUnloadable)
+                {
+#if IMPORTER
+                    type.Context.StaticCompiler.IssueMissingTypeMessage(type.TypeAsBaseType.BaseType);
+#endif
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         /// <inheritdoc />
         public bool CheckPackageAccess(RuntimeJavaType type, RuntimeJavaType target)
