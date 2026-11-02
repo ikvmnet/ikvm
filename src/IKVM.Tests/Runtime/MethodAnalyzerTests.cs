@@ -15,6 +15,7 @@ using IKVM.CoreLib.Runtime;
 using ClassFile = IKVM.CoreLib.Linking.ClassFile<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
 using Instruction = IKVM.CoreLib.Linking.Instruction<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
 using Method = IKVM.CoreLib.Linking.Method<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+using VerificationType = IKVM.CoreLib.Jvm.VerificationType<IKVM.Runtime.RuntimeJavaType>;
 
 namespace IKVM.Tests.Runtime
 {
@@ -204,7 +205,7 @@ namespace IKVM.Tests.Runtime
             var m = Analyze(c, "m", "()V");
             m.Reachability().Should().Equal(R, R, R | B, R, U);
             m.CodeInfo.GetStackHeight(2).Should().Be(1);
-            m.CodeInfo.GetRawStackTypeWrapper(2, 0).Name.Should().Be("java.lang.Exception");
+            m.CodeInfo.GetRawStackType(2, 0).Type.Name.Should().Be("java.lang.Exception");
         }
 
         [TestMethod]
@@ -265,7 +266,7 @@ namespace IKVM.Tests.Runtime
             });
 
             var m = Analyze(c, "m", "()V");
-            RuntimeVerifierJavaType.IsFaultBlockException(m.CodeInfo.GetRawStackTypeWrapper(2, 0)).Should().BeTrue();
+            m.CodeInfo.GetRawStackType(2, 0).IsFaultBlockException.Should().BeTrue();
             m.Exceptions.Length.Should().Be(1);
             m.Exceptions[0].IsFinally.Should().BeFalse();
             m.Reachability(0, false).Should().Equal(R, R, R | B, U);
@@ -289,7 +290,7 @@ namespace IKVM.Tests.Runtime
             });
 
             var m = Analyze(c, "m", "()V");
-            RuntimeVerifierJavaType.IsFaultBlockException(m.CodeInfo.GetRawStackTypeWrapper(2, 0)).Should().BeFalse();
+            m.CodeInfo.GetRawStackType(2, 0).IsFaultBlockException.Should().BeFalse();
             m.Reachability(0, true).Should().Equal(R, R, R | B, R, U);
         }
 
@@ -310,7 +311,7 @@ namespace IKVM.Tests.Runtime
             });
 
             var m = Analyze(c, "m", "()V");
-            RuntimeVerifierJavaType.IsFaultBlockException(m.CodeInfo.GetRawStackTypeWrapper(2, 0)).Should().BeFalse();
+            m.CodeInfo.GetRawStackType(2, 0).IsFaultBlockException.Should().BeFalse();
             m.Reachability(0, true).Should().Equal(R, R, R | B, R, U);
         }
 
@@ -642,14 +643,13 @@ namespace IKVM.Tests.Runtime
             c.AddMethod("m", "(I)I", 2, 1, (code, handlers) => code.Iload0().Iconst2().Iadd().Ireturn());
 
             var m = Analyze(c, "m", "(I)I");
-            var INT = JVM.Context.PrimitiveJavaTypeFactory.INT;
             m.CodeInfo.GetStackHeight(0).Should().Be(0);
             m.CodeInfo.GetStackHeight(1).Should().Be(1);
             m.CodeInfo.GetStackHeight(2).Should().Be(2);
             m.CodeInfo.GetStackHeight(3).Should().Be(1);
-            m.CodeInfo.GetRawStackTypeWrapper(2, 0).Should().BeSameAs(INT);
-            m.CodeInfo.GetRawStackTypeWrapper(2, 1).Should().BeSameAs(INT);
-            m.CodeInfo.GetLocalTypeWrapper(0, 0).Should().BeSameAs(INT);
+            m.CodeInfo.GetRawStackType(2, 0).Should().Be(VerificationType.Int);
+            m.CodeInfo.GetRawStackType(2, 1).Should().Be(VerificationType.Int);
+            m.CodeInfo.GetLocalType(0, 0).Should().Be(VerificationType.Int);
         }
 
         [TestMethod]
@@ -671,8 +671,8 @@ namespace IKVM.Tests.Runtime
             });
 
             var m = Analyze(c, "m", "(I)Ljava/lang/Object;");
-            m.CodeInfo.GetRawStackTypeWrapper(3, 0).Name.Should().Be("java.lang.String");
-            m.CodeInfo.GetRawStackTypeWrapper(5, 0).Should().BeSameAs(JVM.Context.JavaBase.TypeOfJavaLangObject);
+            m.CodeInfo.GetRawStackType(3, 0).Type.Name.Should().Be("java.lang.String");
+            m.CodeInfo.GetRawStackType(5, 0).Type.Should().BeSameAs(JVM.Context.JavaBase.TypeOfJavaLangObject);
         }
 
         [TestMethod]
@@ -682,9 +682,9 @@ namespace IKVM.Tests.Runtime
             c.AddMethod(AccessFlag.Public, "m", "()V", 1, 1, (code, handlers) => code.Aload0().Pop().Return());
 
             var m = Analyze(c, "m", "()V");
-            RuntimeVerifierJavaType.IsThis(m.CodeInfo.GetLocalTypeWrapper(0, 0)).Should().BeTrue();
-            RuntimeVerifierJavaType.IsThis(m.CodeInfo.GetRawStackTypeWrapper(1, 0)).Should().BeTrue();
-            m.CodeInfo.GetStackTypeWrapper(1, 0).Should().BeSameAs(m.Class.Type);
+            m.CodeInfo.GetLocalType(0, 0).IsThis.Should().BeTrue();
+            m.CodeInfo.GetRawStackType(1, 0).IsThis.Should().BeTrue();
+            m.CodeInfo.GetStackType(1, 0).Should().Be(VerificationType.Reference(m.Class.Type));
         }
 
         [TestMethod]
@@ -703,7 +703,7 @@ namespace IKVM.Tests.Runtime
             var m = Analyze(c, "m", "()V");
             m.Instructions[0].NormalizedOpCode.Should().Be(NormalizedOpCode.LdcNothrow);
             m.Instructions[2].NormalizedOpCode.Should().Be(NormalizedOpCode.Ldc);
-            m.CodeInfo.GetRawStackTypeWrapper(3, 0).Should().BeSameAs(JVM.Context.JavaBase.TypeOfJavaLangClass);
+            m.CodeInfo.GetRawStackType(3, 0).Type.Should().BeSameAs(JVM.Context.JavaBase.TypeOfJavaLangClass);
         }
 
         #endregion
@@ -927,7 +927,7 @@ namespace IKVM.Tests.Runtime
             m.Exceptions[0].IsFinally.Should().BeTrue();
 
             var handler = m.Exceptions[0].HandlerIndex;
-            RuntimeVerifierJavaType.IsFaultBlockException(m.CodeInfo.GetRawStackTypeWrapper(handler, 0)).Should().BeTrue();
+            m.CodeInfo.GetRawStackType(handler, 0).IsFaultBlockException.Should().BeTrue();
 
             var gotos = GotoFinallyIndexes(m);
             gotos.Should().HaveCount(1);
@@ -944,7 +944,7 @@ namespace IKVM.Tests.Runtime
             m.Exceptions.Length.Should().Be(1);
             m.Exceptions[0].IsFinally.Should().BeFalse();
             m.Exceptions[0].CatchType.IsNil.Should().BeFalse();
-            m.CodeInfo.GetRawStackTypeWrapper(m.Exceptions[0].HandlerIndex, 0).Name.Should().Be("java.lang.RuntimeException");
+            m.CodeInfo.GetRawStackType(m.Exceptions[0].HandlerIndex, 0).Type.Name.Should().Be("java.lang.RuntimeException");
             GotoFinallyIndexes(m).Should().BeEmpty();
         }
 

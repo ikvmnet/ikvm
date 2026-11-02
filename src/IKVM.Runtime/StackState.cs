@@ -44,44 +44,33 @@ namespace IKVM.Runtime
             _sp = state[_pc].GetStackHeight();
         }
 
-        internal RuntimeJavaType PeekType()
+        internal VerificationType PeekType()
         {
             if (_sp == 0)
                 throw new VerifyError("Unable to pop operand off an empty stack");
 
             var type = _state[_pc].GetStackByIndex(_sp - 1);
-            if (RuntimeVerifierJavaType.IsThis(type))
-                type = ((RuntimeVerifierJavaType)type).UnderlyingType;
+            if (type.IsThis)
+                type = type.WithoutFlags();
 
             return type;
         }
 
-        internal RuntimeJavaType PopAnyType()
+        internal VerificationType PopAnyType()
         {
             if (_sp == 0)
                 throw new VerifyError("Unable to pop operand off an empty stack");
 
-            var type = _state[_pc].GetStackByIndex(--_sp);
-
-            if (RuntimeVerifierJavaType.IsThis(type))
-                type = ((RuntimeVerifierJavaType)type).UnderlyingType;
-
-            if (RuntimeVerifierJavaType.IsFaultBlockException(type))
-            {
-                RuntimeVerifierJavaType.ClearFaultBlockException(type);
-                type = type.Context.JavaBase.TypeOfjavaLangThrowable;
-            }
-
-            return type;
+            return InstructionState.Unwrap(_state[_pc].Context, _state, _state[_pc].GetStackByIndex(--_sp));
         }
 
-        internal RuntimeJavaType PopType(RuntimeJavaType baseType)
+        internal VerificationType PopType(RuntimeJavaType baseType)
         {
             return InstructionState.PopTypeImpl(baseType, PopAnyType());
         }
 
         // NOTE this can *not* be used to pop double or long
-        internal RuntimeJavaType PopType()
+        internal VerificationType PopType()
         {
             return InstructionState.PopTypeImpl(PopAnyType());
         }
@@ -106,7 +95,7 @@ namespace IKVM.Runtime
             InstructionState.PopLongImpl(PopAnyType());
         }
 
-        internal RuntimeJavaType PopArrayType()
+        internal VerificationType PopArrayType()
         {
             return InstructionState.PopArrayTypeImpl(PopAnyType());
         }
@@ -115,7 +104,7 @@ namespace IKVM.Runtime
         /// Null or an initialized object reference.
         /// </summary>
         /// <returns></returns>
-        internal RuntimeJavaType PopObjectType()
+        internal VerificationType PopObjectType()
         {
             return InstructionState.PopObjectTypeImpl(PopAnyType());
         }
@@ -125,7 +114,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="baseType"></param>
         /// <returns></returns>
-        internal RuntimeJavaType PopObjectType(RuntimeJavaType baseType)
+        internal VerificationType PopObjectType(RuntimeJavaType baseType)
         {
             return InstructionState.PopObjectTypeImpl(baseType, PopObjectType());
         }

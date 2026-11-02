@@ -13,6 +13,7 @@ using IKVM.CoreLib.Runtime;
 using ClassFile = IKVM.CoreLib.Linking.ClassFile<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
 using Instruction = IKVM.CoreLib.Linking.Instruction<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
 using Method = IKVM.CoreLib.Linking.Method<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+using VerificationType = IKVM.CoreLib.Jvm.VerificationType<IKVM.Runtime.RuntimeJavaType>;
 
 namespace IKVM.Tests.Runtime
 {
@@ -79,6 +80,14 @@ namespace IKVM.Tests.Runtime
             }, null);
 
             builder.AddMethod(flags, name, signature, attributes);
+        }
+
+        /// <summary>
+        /// Adds a field.
+        /// </summary>
+        public void AddField(AccessFlag flags, string name, string descriptor)
+        {
+            builder.AddField(flags, name, descriptor, new AttributeTableBuilder(builder.Constants));
         }
 
         /// <summary>
@@ -221,6 +230,59 @@ namespace IKVM.Tests.Runtime
                 l[i] = (Exceptions[i].StartIndex, Exceptions[i].EndIndex, Exceptions[i].HandlerIndex, Exceptions[i].Ordinal);
 
             return l;
+        }
+
+        /// <summary>
+        /// Describes the verifier state on entry to each instruction, as <c>stack|locals</c> with the stack listed from
+        /// bottom to top, or <c>-</c> for an instruction that has no state. This is the only part of the tests that knows
+        /// how the analyzer represents verification types, so that the tests survive changes to that representation.
+        /// </summary>
+        public string[] Frames()
+        {
+            var frames = new string[Instructions.Length];
+            for (int pc = 0; pc < frames.Length; pc++)
+            {
+                if (CodeInfo.HasState(pc) == false)
+                {
+                    frames[pc] = "-";
+                    continue;
+                }
+
+                var height = CodeInfo.GetStackHeight(pc);
+                var stack = new string[height];
+                for (int pos = 0; pos < height; pos++)
+                {
+                    var name = FormatType(CodeInfo.GetRawStackType(pc, pos));
+                    if (CodeInfo.IsStackTypeExtendedDouble(pc, pos) || CodeInfo.IsStackTypeExtendedFloat(pc, pos))
+                        name += "!";
+
+                    stack[height - 1 - pos] = name;
+                }
+
+                var locals = new string[Method.MaxLocals];
+                for (int i = 0; i < locals.Length; i++)
+                    locals[i] = FormatType(CodeInfo.GetLocalType(pc, i));
+
+                frames[pc] = string.Join(",", stack) + "|" + string.Join(",", locals);
+            }
+
+            return frames;
+        }
+
+        static string FormatType(VerificationType type)
+        {
+            if (type.IsUninitializedNew)
+                return "new@" + type.Index + ":" + type.Type.Name;
+            if (type.IsThis)
+                return "this:" + type.Type.Name;
+            if (type.IsFaultBlockException)
+                return "fault@" + type.Index;
+            if (type.IsReference && type.Type.IsUnloadable)
+                return "unloadable:" + type.Type.Name;
+            if (type.IsReference)
+                return type.Type.Name;
+
+            return type.ToString();
         }
 
     }

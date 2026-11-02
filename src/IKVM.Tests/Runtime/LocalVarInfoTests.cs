@@ -7,6 +7,8 @@ using IKVM.Runtime;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using VerificationType = IKVM.CoreLib.Jvm.VerificationType<IKVM.Runtime.RuntimeJavaType>;
+
 namespace IKVM.Tests.Runtime
 {
 
@@ -35,7 +37,7 @@ namespace IKVM.Tests.Runtime
             v.Should().NotBeNull();
             v.local.Should().Be(0);
             v.isArg.Should().BeFalse();
-            v.type.Should().BeSameAs(JVM.Context.PrimitiveJavaTypeFactory.INT);
+            v.type.Should().Be(VerificationType.Int);
             locals.GetLocalVar(2).Should().BeSameAs(v);
             locals.GetAllLocalVars().Should().Equal(v);
         }
@@ -50,7 +52,7 @@ namespace IKVM.Tests.Runtime
             var v = locals.GetLocalVar(0);
             v.local.Should().Be(0);
             v.isArg.Should().BeTrue();
-            v.type.Should().BeSameAs(JVM.Context.PrimitiveJavaTypeFactory.INT);
+            v.type.Should().Be(VerificationType.Int);
         }
 
         [TestMethod]
@@ -96,8 +98,8 @@ namespace IKVM.Tests.Runtime
             var i = locals.GetLocalVar(1);
             var s = locals.GetLocalVar(5);
             i.Should().NotBeSameAs(s);
-            i.type.Should().BeSameAs(JVM.Context.PrimitiveJavaTypeFactory.INT);
-            s.type.Name.Should().Be("java.lang.String");
+            i.type.Should().Be(VerificationType.Int);
+            s.type.Type.Name.Should().Be("java.lang.String");
             locals.GetLocalVar(2).Should().BeSameAs(i);
             locals.GetLocalVar(6).Should().BeSameAs(s);
             locals.GetAllLocalVars().Should().HaveCount(2);
@@ -249,7 +251,7 @@ namespace IKVM.Tests.Runtime
             initialized.Should().HaveCount(1);
             initialized[0].Should().NotBeNull();
             initialized[0].Should().BeSameAs(locals.GetLocalVar(4));
-            initialized[0].type.Should().BeSameAs(JVM.Context.JavaBase.TypeOfJavaLangObject);
+            initialized[0].type.Should().Be(VerificationType.Reference(JVM.Context.JavaBase.TypeOfJavaLangObject));
         }
 
         [TestMethod]
@@ -279,7 +281,7 @@ namespace IKVM.Tests.Runtime
             var v = locals.GetLocalVar(0);
             v.isArg.Should().BeTrue();
             v.local.Should().Be(0);
-            v.type.Should().BeSameAs(m.Class.Type);
+            v.type.Should().Be(VerificationType.Reference(m.Class.Type));
         }
 
         [TestMethod]
@@ -299,10 +301,10 @@ namespace IKVM.Tests.Runtime
 
             var (m, locals) = Analyze(c, "m", "(JD)D");
             locals.GetLocalVar(0).isArg.Should().BeTrue();
-            locals.GetLocalVar(0).type.Should().BeSameAs(JVM.Context.PrimitiveJavaTypeFactory.LONG);
+            locals.GetLocalVar(0).type.Should().Be(VerificationType.Long);
             locals.GetLocalVar(2).isArg.Should().BeTrue();
             locals.GetLocalVar(2).local.Should().Be(2);
-            locals.GetLocalVar(2).type.Should().BeSameAs(JVM.Context.PrimitiveJavaTypeFactory.DOUBLE);
+            locals.GetLocalVar(2).type.Should().Be(VerificationType.Double);
             locals.GetLocalVar(4).Should().BeSameAs(locals.GetLocalVar(5));
             locals.GetLocalVar(5).local.Should().Be(4);
             locals.GetLocalVar(5).isArg.Should().BeFalse();
