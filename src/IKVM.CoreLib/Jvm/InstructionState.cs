@@ -27,10 +27,15 @@ using System.Runtime.CompilerServices;
 
 using IKVM.CoreLib.Linking;
 
-namespace IKVM.Runtime
+namespace IKVM.CoreLib.Jvm
 {
 
-    struct InstructionState
+    struct InstructionState<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
     {
 
         struct LocalStoreSites
@@ -99,12 +104,12 @@ namespace IKVM.Runtime
             All = Stack | Locals
         }
 
-        readonly RuntimeJvmTypeSystem _typeSystem;
-        readonly InstructionState[] _states;
-        VerificationType[] _stack;
+        readonly TTypeSystem _typeSystem;
+        readonly InstructionState<TTypeSystem, TType, TMember, TField, TMethod>[] _states;
+        VerificationType<TType>[] _stack;
         int _stackLen;
         int _stackEnd;
-        VerificationType[] _locals;
+        VerificationType<TType>[] _locals;
         bool _uninitializedThis;
         internal bool _changed = true;
         ShareFlags _flags;
@@ -121,7 +126,7 @@ namespace IKVM.Runtime
         /// <param name="locals"></param>
         /// <param name="uninitializedThis"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        InstructionState(RuntimeJvmTypeSystem typeSystem, InstructionState[] states, VerificationType[] stack, int stackLen, int stackEnd, VerificationType[] locals, bool uninitializedThis)
+        InstructionState(TTypeSystem typeSystem, InstructionState<TTypeSystem, TType, TMember, TField, TMethod>[] states, VerificationType<TType>[] stack, int stackLen, int stackEnd, VerificationType<TType>[] locals, bool uninitializedThis)
         {
             _typeSystem = typeSystem;
             _states = states ?? throw new ArgumentNullException(nameof(states));
@@ -142,36 +147,36 @@ namespace IKVM.Runtime
         /// <param name="maxLocals"></param>
         /// <param name="maxStack"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        internal InstructionState(RuntimeJvmTypeSystem typeSystem, InstructionState[] states, int maxLocals, int maxStack)
+        internal InstructionState(TTypeSystem typeSystem, InstructionState<TTypeSystem, TType, TMember, TField, TMethod>[] states, int maxLocals, int maxStack)
         {
             _typeSystem = typeSystem;
             _states = states ?? throw new ArgumentNullException(nameof(states));
             _flags = ShareFlags.None;
-            _stack = new VerificationType[maxStack];
+            _stack = new VerificationType<TType>[maxStack];
             _stackEnd = maxStack;
-            _locals = new VerificationType[maxLocals];
+            _locals = new VerificationType<TType>[maxLocals];
             _initialized = true;
         }
 
         /// <summary>
         /// Gets the type system.
         /// </summary>
-        internal readonly RuntimeJvmTypeSystem TypeSystem => _typeSystem;
+        internal readonly TTypeSystem TypeSystem => _typeSystem;
 
         /// <summary>
         /// Creates a copy of this instance.
         /// </summary>
         /// <returns></returns>
-        internal InstructionState Copy()
+        internal InstructionState<TTypeSystem, TType, TMember, TField, TMethod> Copy()
         {
-            return new InstructionState(_typeSystem, _states, _stack, _stackLen, _stackEnd, _locals, _uninitializedThis);
+            return new InstructionState<TTypeSystem, TType, TMember, TField, TMethod>(_typeSystem, _states, _stack, _stackLen, _stackEnd, _locals, _uninitializedThis);
         }
 
         /// <summary>
         /// Copies this instruction state to the specified instruction state.
         /// </summary>
         /// <param name="target"></param>
-        internal void CopyTo(ref InstructionState target)
+        internal void CopyTo(ref InstructionState<TTypeSystem, TType, TMember, TField, TMethod> target)
         {
             if (_initialized == false)
                 throw new InvalidOperationException();
@@ -190,9 +195,9 @@ namespace IKVM.Runtime
         /// Creates a new instance with the same local variables.
         /// </summary>
         /// <returns></returns>
-        internal InstructionState CopyLocals()
+        internal InstructionState<TTypeSystem, TType, TMember, TField, TMethod> CopyLocals()
         {
-            var copy = new InstructionState(_typeSystem, _states, new VerificationType[_stack.Length], 0, _stack.Length, _locals, _uninitializedThis);
+            var copy = new InstructionState<TTypeSystem, TType, TMember, TField, TMethod>(_typeSystem, _states, new VerificationType<TType>[_stack.Length], 0, _stack.Length, _locals, _uninitializedThis);
             copy._flags &= ~ShareFlags.Stack;
             return copy;
         }
@@ -204,7 +209,7 @@ namespace IKVM.Runtime
         /// <param name="s2"></param>
         /// <returns></returns>
         /// <exception cref="VerifyException"></exception>
-        public static InstructionState operator +(InstructionState s1, InstructionState s2)
+        public static InstructionState<TTypeSystem, TType, TMember, TField, TMethod> operator +(InstructionState<TTypeSystem, TType, TMember, TField, TMethod> s1, InstructionState<TTypeSystem, TType, TMember, TField, TMethod> s2)
         {
             if (s1._initialized == false)
                 return s2.Copy();
@@ -291,19 +296,19 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="states"></param>
         /// <param name="handlerIndex"></param>
-        static void ClearFaultBlockException(InstructionState[] states, int handlerIndex)
+        static void ClearFaultBlockException(InstructionState<TTypeSystem, TType, TMember, TField, TMethod>[] states, int handlerIndex)
         {
             states[handlerIndex].ClearFaultBlockException();
         }
 
-        internal static VerificationType FindCommonBaseType(RuntimeJvmTypeSystem typeSystem, InstructionState[] states, VerificationType type1, VerificationType type2)
+        internal static VerificationType<TType> FindCommonBaseType(TTypeSystem typeSystem, InstructionState<TTypeSystem, TType, TMember, TField, TMethod>[] states, VerificationType<TType> type1, VerificationType<TType> type2)
         {
             // types are equal
             if (type1 == type2)
                 return type1;
 
             // merging java.lang.Object with anything can only result in java.lang.Object
-            var obj = VerificationType.Reference(typeSystem.TypeOfJavaLangObject);
+            var obj = VerificationType<TType>.Reference(typeSystem.TypeOfJavaLangObject);
             if (type1 == obj || type2 == obj)
                 return obj;
 
@@ -317,35 +322,35 @@ namespace IKVM.Runtime
 
             // verifier invalid
             if (type1.IsTop || type2.IsTop)
-                return VerificationType.Top;
+                return VerificationType<TType>.Top;
 
             if (type1.IsFaultBlockException)
             {
                 ClearFaultBlockException(states, type1.Index);
-                return FindCommonBaseType(typeSystem, states, VerificationType.Reference(typeSystem.TypeOfJavaLangThrowable), type2);
+                return FindCommonBaseType(typeSystem, states, VerificationType<TType>.Reference(typeSystem.TypeOfJavaLangThrowable), type2);
             }
 
             if (type2.IsFaultBlockException)
             {
                 ClearFaultBlockException(states, type2.Index);
-                return FindCommonBaseType(typeSystem, states, type1, VerificationType.Reference(typeSystem.TypeOfJavaLangThrowable));
+                return FindCommonBaseType(typeSystem, states, type1, VerificationType<TType>.Reference(typeSystem.TypeOfJavaLangThrowable));
             }
 
             // primitive types cannot be merged
             if (type1.IsPrimitive || type2.IsPrimitive)
-                return VerificationType.Top;
+                return VerificationType<TType>.Top;
 
             // an object whose constructor has not run cannot be merged
             if (type1.IsUninitialized || type2.IsUninitialized)
-                return VerificationType.Top;
+                return VerificationType<TType>.Top;
 
-            // this type can only be its own underlying
-            var tw1 = type1.Type;
-            var tw2 = type2.Type;
+            // only references remain
+            var tw1 = type1.Type!;
+            var tw2 = type2.Type!;
 
             // unloadable types cannot be merged
             if (typeSystem.IsUnloadable(tw1) || typeSystem.IsUnloadable(tw2))
-                return VerificationType.Reference(typeSystem.TypeOfVerifierUnloadable);
+                return VerificationType<TType>.Reference(typeSystem.TypeOfVerifierUnloadable);
 
             // unpack array types into underlying element
             if (typeSystem.GetArrayRank(tw1) > 0 && typeSystem.GetArrayRank(tw2) > 0)
@@ -368,13 +373,13 @@ namespace IKVM.Runtime
                 // NOTE we don't have to test for the case where the element types are the same, because that
                 // is only relevant if the ranks are the same, but if that is the case the types are completely
                 // identical, in which case the identity test at the top of this method already returned.
-                RuntimeJavaType baseType;
+                TType baseType;
                 if (typeSystem.IsPrimitive(elem1) || typeSystem.IsPrimitive(elem2) || typeSystem.IsNonPrimitiveValueType(elem1) || typeSystem.IsNonPrimitiveValueType(elem2))
                 {
                     baseType = typeSystem.TypeOfJavaLangObject;
                     rank--;
                     if (rank == 0)
-                        return VerificationType.Reference(baseType);
+                        return VerificationType<TType>.Reference(baseType);
                 }
                 else
                 {
@@ -382,13 +387,13 @@ namespace IKVM.Runtime
                 }
 
                 // rebuild array type
-                return VerificationType.Reference(typeSystem.MakeArrayType(baseType, rank));
+                return VerificationType<TType>.Reference(typeSystem.MakeArrayType(baseType, rank));
             }
 
-            return VerificationType.Reference(FindCommonBaseTypeHelper(typeSystem, tw1, tw2));
+            return VerificationType<TType>.Reference(FindCommonBaseTypeHelper(typeSystem, tw1, tw2));
         }
 
-        static RuntimeJavaType FindCommonBaseTypeHelper(RuntimeJvmTypeSystem typeSystem, RuntimeJavaType type1, RuntimeJavaType type2)
+        static TType FindCommonBaseTypeHelper(TTypeSystem typeSystem, TType type1, TType type2)
         {
             if (type1 == type2)
                 return type1;
@@ -412,40 +417,32 @@ namespace IKVM.Runtime
             if (typeSystem.IsInterface(type2))
                 return typeSystem.ImplementsInterface(type1, type2) ? type2 : typeSystem.TypeOfJavaLangObject;
 
-            var st1 = new Stack<RuntimeJavaType>();
-            while (type1 != null)
-            {
-                st1.Push(type1);
-                type1 = typeSystem.GetBaseType(type1);
-            }
+            var st1 = new Stack<TType>();
+            for (TType? t = type1; t != null; t = typeSystem.GetBaseType(t))
+                st1.Push(t);
 
-            var st2 = new Stack<RuntimeJavaType>();
-            while (type2 != null)
-            {
-                st2.Push(type2);
-                type2 = typeSystem.GetBaseType(type2);
-            }
+            var st2 = new Stack<TType>();
+            for (TType? t = type2; t != null; t = typeSystem.GetBaseType(t))
+                st2.Push(t);
 
             // pop each item off of the stacks until they do not match
             var type = typeSystem.TypeOfJavaLangObject;
-            for (; ; )
+            while (st1.Count > 0 && st2.Count > 0 && st1.Peek() == st2.Peek())
             {
-                type1 = st1.Count > 0 ? st1.Pop() : null;
-                type2 = st2.Count > 0 ? st2.Pop() : null;
-                if (type1 != type2)
-                    return type;
-
-                type = type1;
+                type = st1.Pop();
+                st2.Pop();
             }
+
+            return type;
         }
 
-        void SetLocal1(int index, VerificationType type)
+        void SetLocal1(int index, VerificationType<TType> type)
         {
             try
             {
                 LocalsCopyOnWrite();
                 if (index > 0 && _locals[index - 1].IsCategory2)
-                    _locals[index - 1] = VerificationType.Top;
+                    _locals[index - 1] = VerificationType<TType>.Top;
 
                 _locals[index] = type;
             }
@@ -455,16 +452,16 @@ namespace IKVM.Runtime
             }
         }
 
-        void SetLocal2(int index, VerificationType type)
+        void SetLocal2(int index, VerificationType<TType> type)
         {
             try
             {
                 LocalsCopyOnWrite();
                 if (index > 0 && _locals[index - 1].IsCategory2)
-                    _locals[index - 1] = VerificationType.Top;
+                    _locals[index - 1] = VerificationType<TType>.Top;
 
                 _locals[index] = type;
-                _locals[index + 1] = VerificationType.Top;
+                _locals[index + 1] = VerificationType<TType>.Top;
             }
             catch (IndexOutOfRangeException)
             {
@@ -474,49 +471,49 @@ namespace IKVM.Runtime
 
         internal void GetLocalInt(int index)
         {
-            if (GetLocalType(index) != VerificationType.Int)
+            if (GetLocalType(index) != VerificationType<TType>.Int)
                 throw new VerifyException("Invalid local type");
         }
 
         internal void SetLocalInt(int index, int instructionIndex)
         {
-            SetLocal1(index, VerificationType.Int);
+            SetLocal1(index, VerificationType<TType>.Int);
         }
 
         internal void GetLocalLong(int index)
         {
-            if (GetLocalType(index) != VerificationType.Long)
+            if (GetLocalType(index) != VerificationType<TType>.Long)
                 throw new VerifyException("incorrect local type, not long");
         }
 
         internal void SetLocalLong(int index, int instructionIndex)
         {
-            SetLocal2(index, VerificationType.Long);
+            SetLocal2(index, VerificationType<TType>.Long);
         }
 
         internal void GetLocalFloat(int index)
         {
-            if (GetLocalType(index) != VerificationType.Float)
+            if (GetLocalType(index) != VerificationType<TType>.Float)
                 throw new VerifyException("incorrect local type, not float");
         }
 
         internal void SetLocalFloat(int index, int instructionIndex)
         {
-            SetLocal1(index, VerificationType.Float);
+            SetLocal1(index, VerificationType<TType>.Float);
         }
 
         internal void GetLocalDouble(int index)
         {
-            if (GetLocalType(index) != VerificationType.Double)
+            if (GetLocalType(index) != VerificationType<TType>.Double)
                 throw new VerifyException("incorrect local type, not double");
         }
 
         internal void SetLocalDouble(int index, int instructionIndex)
         {
-            SetLocal2(index, VerificationType.Double);
+            SetLocal2(index, VerificationType<TType>.Double);
         }
 
-        internal VerificationType GetLocalType(int index)
+        internal VerificationType<TType> GetLocalType(int index)
         {
             try
             {
@@ -531,12 +528,12 @@ namespace IKVM.Runtime
         // this is used by the compiler (indirectly, through CodeInfo.GetLocalType),
         // we've already verified the code so we know we won't run outside the array boundary,
         // and we don't need to record the fact that we're reading the local.
-        internal VerificationType GetLocalTypeEx(int index)
+        internal VerificationType<TType> GetLocalTypeEx(int index)
         {
             return _locals[index];
         }
 
-        internal void SetLocalType(int index, VerificationType type, int instructionIndex)
+        internal void SetLocalType(int index, VerificationType<TType> type, int instructionIndex)
         {
             if (type.IsCategory2)
                 SetLocal2(index, type);
@@ -544,44 +541,44 @@ namespace IKVM.Runtime
                 SetLocal1(index, type);
         }
 
-        internal void PushType(RuntimeJavaType type)
+        internal void PushType(TType type)
         {
             PushHelper(GetVerificationType(_typeSystem, type));
         }
 
-        internal void PushType(VerificationType type)
+        internal void PushType(VerificationType<TType> type)
         {
             PushHelper(type);
         }
 
         internal void PushInt()
         {
-            PushHelper(VerificationType.Int);
+            PushHelper(VerificationType<TType>.Int);
         }
 
         internal void PushLong()
         {
-            PushHelper(VerificationType.Long);
+            PushHelper(VerificationType<TType>.Long);
         }
 
         internal void PushFloat()
         {
-            PushHelper(VerificationType.Float);
+            PushHelper(VerificationType<TType>.Float);
         }
 
         internal void PushExtendedFloat()
         {
-            PushHelper(VerificationType.ExtendedFloat);
+            PushHelper(VerificationType<TType>.ExtendedFloat);
         }
 
         internal void PushDouble()
         {
-            PushHelper(VerificationType.Double);
+            PushHelper(VerificationType<TType>.Double);
         }
 
         internal void PushExtendedDouble()
         {
-            PushHelper(VerificationType.ExtendedDouble);
+            PushHelper(VerificationType<TType>.ExtendedDouble);
         }
 
         internal void PopInt()
@@ -589,7 +586,7 @@ namespace IKVM.Runtime
             PopIntImpl(PopAnyType());
         }
 
-        internal static void PopIntImpl(VerificationType type)
+        internal static void PopIntImpl(VerificationType<TType> type)
         {
             if (!type.IsInt)
                 throw new VerifyException("Int expected on stack");
@@ -602,7 +599,7 @@ namespace IKVM.Runtime
             return tw.IsExtended;
         }
 
-        internal static void PopFloatImpl(VerificationType tw)
+        internal static void PopFloatImpl(VerificationType<TType> tw)
         {
             if (!tw.IsFloat)
                 throw new VerifyException("Float expected on stack");
@@ -615,7 +612,7 @@ namespace IKVM.Runtime
             return tw.IsExtended;
         }
 
-        internal static void PopDoubleImpl(VerificationType tw)
+        internal static void PopDoubleImpl(VerificationType<TType> tw)
         {
             if (!tw.IsDouble)
                 throw new VerifyException("Double expected on stack");
@@ -626,7 +623,7 @@ namespace IKVM.Runtime
             PopLongImpl(PopAnyType());
         }
 
-        internal static void PopLongImpl(VerificationType tw)
+        internal static void PopLongImpl(VerificationType<TType> tw)
         {
             if (!tw.IsLong)
             {
@@ -634,12 +631,12 @@ namespace IKVM.Runtime
             }
         }
 
-        internal VerificationType PopArrayType()
+        internal VerificationType<TType> PopArrayType()
         {
             return PopArrayTypeImpl(_typeSystem, PopAnyType());
         }
 
-        internal static VerificationType PopArrayTypeImpl(RuntimeJvmTypeSystem typeSystem, VerificationType type)
+        internal static VerificationType<TType> PopArrayTypeImpl(TTypeSystem typeSystem, VerificationType<TType> type)
         {
             if (!type.IsNull && !IsUnloadable(typeSystem, type) && !(type.IsReference && typeSystem.GetArrayRank(type.Type) > 0))
                 throw new VerifyException("Array reference expected on stack");
@@ -648,12 +645,12 @@ namespace IKVM.Runtime
         }
 
         // null or an initialized object reference
-        internal VerificationType PopObjectType()
+        internal VerificationType<TType> PopObjectType()
         {
             return PopObjectTypeImpl(PopType());
         }
 
-        internal static VerificationType PopObjectTypeImpl(VerificationType type)
+        internal static VerificationType<TType> PopObjectTypeImpl(VerificationType<TType> type)
         {
             if (!type.IsReference && !type.IsNull)
                 throw new VerifyException("Expected object reference on stack");
@@ -662,12 +659,12 @@ namespace IKVM.Runtime
         }
 
         // null or an initialized object reference derived from baseType (or baseType)
-        internal VerificationType PopObjectType(RuntimeJavaType baseType)
+        internal VerificationType<TType> PopObjectType(TType baseType)
         {
             return PopObjectTypeImpl(_typeSystem, baseType, PopObjectType());
         }
 
-        internal static VerificationType PopObjectTypeImpl(RuntimeJvmTypeSystem typeSystem, RuntimeJavaType baseType, VerificationType type)
+        internal static VerificationType<TType> PopObjectTypeImpl(TTypeSystem typeSystem, TType baseType, VerificationType<TType> type)
         {
             // HACK because of the way interfaces references works, if baseType
             // is an interface or array of interfaces, any reference will be accepted
@@ -684,7 +681,7 @@ namespace IKVM.Runtime
         /// <param name="type"></param>
         /// <param name="baseType"></param>
         /// <returns></returns>
-        static bool IsAssignableTo(RuntimeJvmTypeSystem typeSystem, VerificationType type, RuntimeJavaType baseType)
+        static bool IsAssignableTo(TTypeSystem typeSystem, VerificationType<TType> type, TType baseType)
         {
             // verifier null can be assigned to anything
             if (type.IsNull)
@@ -699,7 +696,7 @@ namespace IKVM.Runtime
         /// <param name="typeSystem"></param>
         /// <param name="type"></param>
         /// <returns></returns>
-        static bool IsUnloadable(RuntimeJvmTypeSystem typeSystem, VerificationType type)
+        static bool IsUnloadable(TTypeSystem typeSystem, VerificationType<TType> type)
         {
             return type.IsReference && typeSystem.IsUnloadable(type.Type);
         }
@@ -713,7 +710,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException">The type is 'void', which no value has.</exception>
-        internal static VerificationType GetVerificationType(RuntimeJvmTypeSystem typeSystem, RuntimeJavaType type)
+        internal static VerificationType<TType> GetVerificationType(TTypeSystem typeSystem, TType type)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
@@ -721,25 +718,25 @@ namespace IKVM.Runtime
             if (typeSystem.IsPrimitive(type))
             {
                 if (type == typeSystem.TypeOfLong)
-                    return VerificationType.Long;
+                    return VerificationType<TType>.Long;
                 if (type == typeSystem.TypeOfFloat)
-                    return VerificationType.Float;
+                    return VerificationType<TType>.Float;
                 if (type == typeSystem.TypeOfDouble)
-                    return VerificationType.Double;
+                    return VerificationType<TType>.Double;
                 if (type == typeSystem.TypeOfVoid)
                     throw new ArgumentException($"No value can have the type {typeSystem.GetName(type)}.", nameof(type));
 
                 // boolean, byte, char, short and int are all ints on the stack
-                return VerificationType.Int;
+                return VerificationType<TType>.Int;
             }
 
             if (type == typeSystem.TypeOfVerifierNull)
-                return VerificationType.Null;
+                return VerificationType<TType>.Null;
 
-            return VerificationType.Reference(type);
+            return VerificationType<TType>.Reference(type);
         }
 
-        internal VerificationType PeekType()
+        internal VerificationType<TType> PeekType()
         {
             if (_stackLen == 0)
                 throw new VerifyException("Unable to pop operand off an empty stack");
@@ -753,12 +750,12 @@ namespace IKVM.Runtime
                 PopAnyType();
         }
 
-        internal VerificationType PopFaultBlockException()
+        internal VerificationType<TType> PopFaultBlockException()
         {
             return _stack[--_stackLen];
         }
 
-        internal VerificationType PopAnyType()
+        internal VerificationType<TType> PopAnyType()
         {
             if (_stackLen == 0)
                 throw new VerifyException("Unable to pop operand off an empty stack");
@@ -778,7 +775,7 @@ namespace IKVM.Runtime
         /// <param name="states"></param>
         /// <param name="type"></param>
         /// <returns></returns>
-        internal static VerificationType Unwrap(RuntimeJvmTypeSystem typeSystem, InstructionState[] states, VerificationType type)
+        internal static VerificationType<TType> Unwrap(TTypeSystem typeSystem, InstructionState<TTypeSystem, TType, TMember, TField, TMethod>[] states, VerificationType<TType> type)
         {
             if (type.IsThis)
                 type = type.WithoutFlags();
@@ -786,19 +783,19 @@ namespace IKVM.Runtime
             if (type.IsFaultBlockException)
             {
                 ClearFaultBlockException(states, type.Index);
-                type = VerificationType.Reference(typeSystem.TypeOfJavaLangThrowable);
+                type = VerificationType<TType>.Reference(typeSystem.TypeOfJavaLangThrowable);
             }
 
             return type;
         }
 
         // NOTE this can *not* be used to pop double or long
-        internal VerificationType PopType()
+        internal VerificationType<TType> PopType()
         {
             return PopTypeImpl(PopAnyType());
         }
 
-        internal static VerificationType PopTypeImpl(VerificationType type)
+        internal static VerificationType<TType> PopTypeImpl(VerificationType<TType> type)
         {
             if (type.IsCategory2)
                 throw new VerifyException("Attempt to split long or double on the stack");
@@ -809,12 +806,12 @@ namespace IKVM.Runtime
         // this will accept null, a primitive type of the specified type or an initialized reference of the
         // specified type or derived from it
         // NOTE this can also be used to pop double or long
-        internal VerificationType PopType(RuntimeJavaType baseType)
+        internal VerificationType<TType> PopType(TType baseType)
         {
             return PopTypeImpl(_typeSystem, baseType, PopAnyType());
         }
 
-        internal static VerificationType PopTypeImpl(RuntimeJvmTypeSystem typeSystem, RuntimeJavaType baseType, VerificationType type)
+        internal static VerificationType<TType> PopTypeImpl(TTypeSystem typeSystem, TType baseType, VerificationType<TType> type)
         {
             if (type.IsUninitialized)
                 throw new VerifyException("Expecting to find object/array on stack");
@@ -862,7 +859,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="pos"></param>
         /// <returns></returns>
-        internal VerificationType GetStackSlot(int pos)
+        internal VerificationType<TType> GetStackSlot(int pos)
         {
             var tw = _stack[_stackLen - 1 - pos];
             if (tw.IsExtended)
@@ -871,17 +868,17 @@ namespace IKVM.Runtime
             return tw;
         }
 
-        internal VerificationType GetStackSlotEx(int pos)
+        internal VerificationType<TType> GetStackSlotEx(int pos)
         {
             return _stack[_stackLen - 1 - pos];
         }
 
-        internal VerificationType GetStackByIndex(int index)
+        internal VerificationType<TType> GetStackByIndex(int index)
         {
             return _stack[index];
         }
 
-        void PushHelper(VerificationType type)
+        void PushHelper(VerificationType<TType> type)
         {
             if (type.IsCategory2)
                 _stackEnd--;
@@ -893,9 +890,9 @@ namespace IKVM.Runtime
             _stack[_stackLen++] = type;
         }
 
-        internal void MarkInitialized(VerificationType type, VerificationType initType, int instructionIndex)
+        internal void MarkInitialized(VerificationType<TType> type, VerificationType<TType> initType, int instructionIndex)
         {
-            System.Diagnostics.Debug.Assert(type.IsUninitialized && initType.IsReference);
+            global::System.Diagnostics.Debug.Assert(type.IsUninitialized && initType.IsReference);
 
             for (int i = 0; i < _locals.Length; i++)
             {
@@ -924,7 +921,7 @@ namespace IKVM.Runtime
             if ((_flags & ShareFlags.Stack) != 0)
             {
                 _flags &= ~ShareFlags.Stack;
-                _stack = (VerificationType[])_stack.Clone();
+                _stack = (VerificationType<TType>[])_stack.Clone();
             }
         }
 
@@ -936,7 +933,7 @@ namespace IKVM.Runtime
             if ((_flags & ShareFlags.Locals) != 0)
             {
                 _flags &= ~ShareFlags.Locals;
-                _locals = (VerificationType[])_locals.Clone();
+                _locals = (VerificationType<TType>[])_locals.Clone();
             }
         }
 
@@ -946,7 +943,7 @@ namespace IKVM.Runtime
             {
                 StackCopyOnWrite();
                 _changed = true;
-                _stack[0] = VerificationType.Reference(_typeSystem.TypeOfJavaLangThrowable);
+                _stack[0] = VerificationType<TType>.Reference(_typeSystem.TypeOfJavaLangThrowable);
             }
         }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace IKVM.CoreLib.Jvm
@@ -241,6 +242,7 @@ namespace IKVM.CoreLib.Jvm
         /// <summary>
         /// Gets whether this is a reference to an initialized object, including 'this' and a fault block exception.
         /// </summary>
+        [MemberNotNullWhen(true, nameof(Type))]
         public bool IsReference => _kind == VerificationTypeKind.Reference;
 
         /// <summary>

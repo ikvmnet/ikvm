@@ -24,21 +24,26 @@
 
 using System;
 
-namespace IKVM.Runtime
+namespace IKVM.CoreLib.Jvm
 {
 
-    readonly struct CodeInfo
+    readonly struct CodeInfo<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
     {
 
-        readonly RuntimeJvmTypeSystem _typeSystem;
-        readonly InstructionState[] _state;
+        readonly TTypeSystem _typeSystem;
+        readonly InstructionState<TTypeSystem, TType, TMember, TField, TMethod>[] _state;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="typeSystem"></param>
         /// <param name="state"></param>
-        internal CodeInfo(RuntimeJvmTypeSystem typeSystem, InstructionState[] state)
+        internal CodeInfo(TTypeSystem typeSystem, InstructionState<TTypeSystem, TType, TMember, TField, TMethod>[] state)
         {
             _typeSystem = typeSystem;
             _state = state ?? throw new ArgumentNullException(nameof(state));
@@ -61,7 +66,7 @@ namespace IKVM.Runtime
         /// <param name="pc"></param>
         /// <param name="pos"></param>
         /// <returns></returns>
-        internal VerificationType GetStackType(int pc, int pos)
+        internal VerificationType<TType> GetStackType(int pc, int pos)
         {
             var type = _state[pc].GetStackSlot(pos);
             if (type.IsThis)
@@ -77,7 +82,7 @@ namespace IKVM.Runtime
         /// <param name="pc"></param>
         /// <param name="pos"></param>
         /// <returns></returns>
-        internal VerificationType GetRawStackType(int pc, int pos)
+        internal VerificationType<TType> GetRawStackType(int pc, int pos)
         {
             return _state[pc].GetStackSlot(pos);
         }
@@ -94,7 +99,7 @@ namespace IKVM.Runtime
             return type.IsFloat && type.IsExtended;
         }
 
-        internal VerificationType GetLocalType(int pc, int local)
+        internal VerificationType<TType> GetLocalType(int pc, int local)
         {
             return _state[pc].GetLocalTypeEx(local);
         }
@@ -105,9 +110,9 @@ namespace IKVM.Runtime
         /// <param name="type1"></param>
         /// <param name="type2"></param>
         /// <returns></returns>
-        internal VerificationType FindCommonBaseType(VerificationType type1, VerificationType type2)
+        internal VerificationType<TType> FindCommonBaseType(VerificationType<TType> type1, VerificationType<TType> type2)
         {
-            return InstructionState.FindCommonBaseType(_typeSystem, _state, type1, type2);
+            return InstructionState<TTypeSystem, TType, TMember, TField, TMethod>.FindCommonBaseType(_typeSystem, _state, type1, type2);
         }
 
         /// <summary>
