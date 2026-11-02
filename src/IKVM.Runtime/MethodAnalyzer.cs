@@ -111,7 +111,7 @@ namespace IKVM.Runtime
             }
 
             // start by computing the initial state, the stack is empty and the locals contain the arguments
-            _state[0] = new InstructionState(context, _state, classFileMethod.MaxLocals, classFileMethod.MaxStack);
+            _state[0] = new InstructionState(classFile.TypeSystem, _state, classFileMethod.MaxLocals, classFileMethod.MaxStack);
             int firstNonArgLocalIndex = 0;
 
             if (classFileMethod.IsStatic == false)
@@ -142,7 +142,7 @@ namespace IKVM.Runtime
                 if (argType.IsIntOnStackPrimitive)
                     argType = context.PrimitiveJavaTypeFactory.INT;
 
-                _state[0].SetLocalType(firstNonArgLocalIndex++, argType.ToVerificationType(), -1);
+                _state[0].SetLocalType(firstNonArgLocalIndex++, InstructionState.GetVerificationType(classFile.TypeSystem, argType), -1);
                 if (argType.IsWidePrimitive)
                     firstNonArgLocalIndex++;
             }
@@ -185,7 +185,7 @@ namespace IKVM.Runtime
 
         internal CodeInfo GetCodeInfoAndErrors(UntangledExceptionTable exceptions, out List<string> errors)
         {
-            var codeInfo = new CodeInfo(_context, _state);
+            var codeInfo = new CodeInfo(_classFile.TypeSystem, _state);
 
             OptimizationPass(codeInfo, _classFile, _classFileMethod, exceptions, _type, _classLoader);
             PatchHardErrorsAndDynamicMemberAccess(_type, _method);
@@ -200,7 +200,7 @@ namespace IKVM.Runtime
 
         void AnalyzeTypeFlow()
         {
-            var s = new InstructionState(_context, _state, _classFileMethod.MaxLocals, _classFileMethod.MaxStack);
+            var s = new InstructionState(_classFile.TypeSystem, _state, _classFileMethod.MaxLocals, _classFileMethod.MaxStack);
             var done = false;
             var instructions = _classFileMethod.Instructions;
 

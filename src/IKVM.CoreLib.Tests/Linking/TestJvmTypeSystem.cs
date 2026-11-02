@@ -29,7 +29,21 @@ namespace IKVM.CoreLib.Tests.Linking
 
         public TestJavaType TypeOfJavaLangObject => JavaLangObjectType;
 
+        public TestJavaType TypeOfJavaLangThrowable => throw new NotImplementedException();
+
+        public TestJavaType TypeOfVoid => throw new NotImplementedException();
+
+        public TestJavaType TypeOfInt => throw new NotImplementedException();
+
+        public TestJavaType TypeOfLong => throw new NotImplementedException();
+
+        public TestJavaType TypeOfFloat => throw new NotImplementedException();
+
+        public TestJavaType TypeOfDouble => throw new NotImplementedException();
+
         public TestJavaType TypeOfVerifierNull => VerifierNullType;
+
+        public TestJavaType TypeOfVerifierUnloadable => throw new NotImplementedException();
 
         public TestJavaType CreateUnloadableType(string name) => throw new NotImplementedException();
 
@@ -39,11 +53,29 @@ namespace IKVM.CoreLib.Tests.Linking
 
         public bool IsInterface(TestJavaType type) => throw new NotImplementedException();
 
+        public bool IsPrimitive(TestJavaType type) => throw new NotImplementedException();
+
+        public bool IsNonPrimitiveValueType(TestJavaType type) => throw new NotImplementedException();
+
+        public bool IsInterfaceOrInterfaceArray(TestJavaType type) => throw new NotImplementedException();
+
+        public int GetArrayRank(TestJavaType type) => throw new NotImplementedException();
+
+        public TestJavaType GetElementType(TestJavaType type) => throw new NotImplementedException();
+
+        public TestJavaType MakeArrayType(TestJavaType type, int rank) => throw new NotImplementedException();
+
         public ClassFileAccessFlags GetAccessFlags(TestJavaType type) => throw new NotImplementedException();
 
         public TestJavaType? GetBaseType(TestJavaType type) => throw new NotImplementedException();
 
         public bool IsSubTypeOf(TestJavaType type, TestJavaType baseType) => throw new NotImplementedException();
+
+        public bool ImplementsInterface(TestJavaType type, TestJavaType interfaceType) => throw new NotImplementedException();
+
+        public bool IsAssignableTo(TestJavaType type, TestJavaType target) => throw new NotImplementedException();
+
+        public bool HasUnloadableBaseType(TestJavaType type) => throw new NotImplementedException();
 
         public bool CheckPackageAccess(TestJavaType type, TestJavaType target) => throw new NotImplementedException();
 

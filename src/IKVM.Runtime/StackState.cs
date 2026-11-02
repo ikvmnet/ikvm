@@ -44,6 +44,11 @@ namespace IKVM.Runtime
             _sp = state[_pc].GetStackHeight();
         }
 
+        /// <summary>
+        /// Gets the type system.
+        /// </summary>
+        readonly RuntimeJvmTypeSystem TypeSystem => _state[_pc].TypeSystem;
+
         internal VerificationType PeekType()
         {
             if (_sp == 0)
@@ -61,12 +66,12 @@ namespace IKVM.Runtime
             if (_sp == 0)
                 throw new VerifyError("Unable to pop operand off an empty stack");
 
-            return InstructionState.Unwrap(_state[_pc].Context, _state, _state[_pc].GetStackByIndex(--_sp));
+            return InstructionState.Unwrap(TypeSystem, _state, _state[_pc].GetStackByIndex(--_sp));
         }
 
         internal VerificationType PopType(RuntimeJavaType baseType)
         {
-            return InstructionState.PopTypeImpl(baseType, PopAnyType());
+            return InstructionState.PopTypeImpl(TypeSystem, baseType, PopAnyType());
         }
 
         // NOTE this can *not* be used to pop double or long
@@ -97,7 +102,7 @@ namespace IKVM.Runtime
 
         internal VerificationType PopArrayType()
         {
-            return InstructionState.PopArrayTypeImpl(PopAnyType());
+            return InstructionState.PopArrayTypeImpl(TypeSystem, PopAnyType());
         }
 
         /// <summary>
@@ -116,7 +121,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         internal VerificationType PopObjectType(RuntimeJavaType baseType)
         {
-            return InstructionState.PopObjectTypeImpl(baseType, PopObjectType());
+            return InstructionState.PopObjectTypeImpl(TypeSystem, baseType, PopObjectType());
         }
 
     }

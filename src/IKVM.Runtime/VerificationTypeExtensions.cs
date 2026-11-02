@@ -6,44 +6,10 @@ namespace IKVM.Runtime
 {
 
     /// <summary>
-    /// Converts between <see cref="RuntimeJavaType"/> and <see cref="VerificationType{TType}"/>.
+    /// Helpers for <see cref="VerificationType{TType}"/> over <see cref="RuntimeJavaType"/>.
     /// </summary>
     static class VerificationTypeExtensions
     {
-
-        /// <summary>
-        /// Gets the verification type of a value of the given type: an int for every type that is an int on the stack,
-        /// null for the verifier's null type, and otherwise a reference.
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentException"></exception>
-        internal static VerificationType<RuntimeJavaType> ToVerificationType(this RuntimeJavaType type)
-        {
-            if (type == null)
-                throw new ArgumentNullException(nameof(type));
-
-            var context = type.Context;
-            if (type.IsPrimitive)
-            {
-                if (type.IsIntOnStackPrimitive)
-                    return VerificationType<RuntimeJavaType>.Int;
-                if (type == context.PrimitiveJavaTypeFactory.LONG)
-                    return VerificationType<RuntimeJavaType>.Long;
-                if (type == context.PrimitiveJavaTypeFactory.FLOAT)
-                    return VerificationType<RuntimeJavaType>.Float;
-                if (type == context.PrimitiveJavaTypeFactory.DOUBLE)
-                    return VerificationType<RuntimeJavaType>.Double;
-
-                throw new ArgumentException($"No value can have the type {type.Name}.", nameof(type));
-            }
-
-            if (type == context.VerifierJavaTypeFactory.Null)
-                return VerificationType<RuntimeJavaType>.Null;
-
-            return VerificationType<RuntimeJavaType>.Reference(type);
-        }
 
         /// <summary>
         /// Gets the runtime type of a value of the given verification type: the primitive type, the verifier's null type,

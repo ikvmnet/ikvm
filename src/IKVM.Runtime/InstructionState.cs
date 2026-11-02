@@ -97,7 +97,7 @@ namespace IKVM.Runtime
             All = Stack | Locals
         }
 
-        readonly RuntimeContext _context;
+        readonly RuntimeJvmTypeSystem _typeSystem;
         readonly InstructionState[] _states;
         VerificationType[] _stack;
         int _stackLen;
@@ -111,7 +111,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="context"></param>
+        /// <param name="typeSystem"></param>
         /// <param name="states"></param>
         /// <param name="stack"></param>
         /// <param name="stackLen"></param>
@@ -119,9 +119,9 @@ namespace IKVM.Runtime
         /// <param name="locals"></param>
         /// <param name="uninitializedThis"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        InstructionState(RuntimeContext context, InstructionState[] states, VerificationType[] stack, int stackLen, int stackEnd, VerificationType[] locals, bool uninitializedThis)
+        InstructionState(RuntimeJvmTypeSystem typeSystem, InstructionState[] states, VerificationType[] stack, int stackLen, int stackEnd, VerificationType[] locals, bool uninitializedThis)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _typeSystem = typeSystem;
             _states = states ?? throw new ArgumentNullException(nameof(states));
             _flags = ShareFlags.All;
             _stack = stack;
@@ -135,14 +135,14 @@ namespace IKVM.Runtime
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="context"></param>
+        /// <param name="typeSystem"></param>
         /// <param name="states">The states of every instruction of the method, through which a fault block exception is cleared once it is known not to belong to a fault block.</param>
         /// <param name="maxLocals"></param>
         /// <param name="maxStack"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        internal InstructionState(RuntimeContext context, InstructionState[] states, int maxLocals, int maxStack)
+        internal InstructionState(RuntimeJvmTypeSystem typeSystem, InstructionState[] states, int maxLocals, int maxStack)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _typeSystem = typeSystem;
             _states = states ?? throw new ArgumentNullException(nameof(states));
             _flags = ShareFlags.None;
             _stack = new VerificationType[maxStack];
@@ -152,9 +152,9 @@ namespace IKVM.Runtime
         }
 
         /// <summary>
-        /// Gets the runtime context.
+        /// Gets the type system.
         /// </summary>
-        internal readonly RuntimeContext Context => _context;
+        internal readonly RuntimeJvmTypeSystem TypeSystem => _typeSystem;
 
         /// <summary>
         /// Creates a copy of this instance.
@@ -162,7 +162,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         internal InstructionState Copy()
         {
-            return new InstructionState(_context, _states, _stack, _stackLen, _stackEnd, _locals, _uninitializedThis);
+            return new InstructionState(_typeSystem, _states, _stack, _stackLen, _stackEnd, _locals, _uninitializedThis);
         }
 
         /// <summary>
@@ -190,7 +190,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         internal InstructionState CopyLocals()
         {
-            var copy = new InstructionState(_context, _states, new VerificationType[_stack.Length], 0, _stack.Length, _locals, _uninitializedThis);
+            var copy = new InstructionState(_typeSystem, _states, new VerificationType[_stack.Length], 0, _stack.Length, _locals, _uninitializedThis);
             copy._flags &= ~ShareFlags.Stack;
             return copy;
         }
@@ -233,7 +233,7 @@ namespace IKVM.Runtime
                 }
                 else if (!type1.IsPrimitive)
                 {
-                    var baseType = FindCommonBaseType(s1._context, s1._states, type1, type2);
+                    var baseType = FindCommonBaseType(s1._typeSystem, s1._states, type1, type2);
                     if (baseType.IsTop)
                         throw new VerifyError(string.Format("cannot merge {0} and {1}", type1, type2));
 
@@ -254,7 +254,7 @@ namespace IKVM.Runtime
             {
                 var type = s._locals[i];
                 var type2 = s2._locals[i];
-                var baseType = FindCommonBaseType(s1._context, s1._states, type, type2);
+                var baseType = FindCommonBaseType(s1._typeSystem, s1._states, type, type2);
                 if (type != baseType)
                 {
                     s.LocalsCopyOnWrite();
@@ -294,14 +294,14 @@ namespace IKVM.Runtime
             states[handlerIndex].ClearFaultBlockException();
         }
 
-        internal static VerificationType FindCommonBaseType(RuntimeContext context, InstructionState[] states, VerificationType type1, VerificationType type2)
+        internal static VerificationType FindCommonBaseType(RuntimeJvmTypeSystem typeSystem, InstructionState[] states, VerificationType type1, VerificationType type2)
         {
             // types are equal
             if (type1 == type2)
                 return type1;
 
             // merging java.lang.Object with anything can only result in java.lang.Object
-            var obj = VerificationType.Reference(context.JavaBase.TypeOfJavaLangObject);
+            var obj = VerificationType.Reference(typeSystem.TypeOfJavaLangObject);
             if (type1 == obj || type2 == obj)
                 return obj;
 
@@ -320,13 +320,13 @@ namespace IKVM.Runtime
             if (type1.IsFaultBlockException)
             {
                 ClearFaultBlockException(states, type1.Index);
-                return FindCommonBaseType(context, states, VerificationType.Reference(context.JavaBase.TypeOfjavaLangThrowable), type2);
+                return FindCommonBaseType(typeSystem, states, VerificationType.Reference(typeSystem.TypeOfJavaLangThrowable), type2);
             }
 
             if (type2.IsFaultBlockException)
             {
                 ClearFaultBlockException(states, type2.Index);
-                return FindCommonBaseType(context, states, type1, VerificationType.Reference(context.JavaBase.TypeOfjavaLangThrowable));
+                return FindCommonBaseType(typeSystem, states, type1, VerificationType.Reference(typeSystem.TypeOfJavaLangThrowable));
             }
 
             // primitive types cannot be merged
@@ -342,21 +342,21 @@ namespace IKVM.Runtime
             var tw2 = type2.Type;
 
             // unloadable types cannot be merged
-            if (tw1.IsUnloadable || tw2.IsUnloadable)
-                return VerificationType.Reference(context.VerifierJavaTypeFactory.Unloadable);
+            if (typeSystem.IsUnloadable(tw1) || typeSystem.IsUnloadable(tw2))
+                return VerificationType.Reference(typeSystem.TypeOfVerifierUnloadable);
 
             // unpack array types into underlying element
-            if (tw1.ArrayRank > 0 && tw2.ArrayRank > 0)
+            if (typeSystem.GetArrayRank(tw1) > 0 && typeSystem.GetArrayRank(tw2) > 0)
             {
                 int rank = 1;
-                int rank1 = tw1.ArrayRank - 1;
-                int rank2 = tw2.ArrayRank - 1;
-                var elem1 = tw1.ElementTypeWrapper;
-                var elem2 = tw2.ElementTypeWrapper;
+                int rank1 = typeSystem.GetArrayRank(tw1) - 1;
+                int rank2 = typeSystem.GetArrayRank(tw2) - 1;
+                var elem1 = typeSystem.GetElementType(tw1);
+                var elem2 = typeSystem.GetElementType(tw2);
                 while (rank1 != 0 && rank2 != 0)
                 {
-                    elem1 = elem1.ElementTypeWrapper;
-                    elem2 = elem2.ElementTypeWrapper;
+                    elem1 = typeSystem.GetElementType(elem1);
+                    elem2 = typeSystem.GetElementType(elem2);
                     rank++;
                     rank1--;
                     rank2--;
@@ -367,26 +367,26 @@ namespace IKVM.Runtime
                 // is only relevant if the ranks are the same, but if that is the case the types are completely
                 // identical, in which case the identity test at the top of this method already returned.
                 RuntimeJavaType baseType;
-                if (elem1.IsPrimitive || elem2.IsPrimitive || elem1.IsNonPrimitiveValueType || elem2.IsNonPrimitiveValueType)
+                if (typeSystem.IsPrimitive(elem1) || typeSystem.IsPrimitive(elem2) || typeSystem.IsNonPrimitiveValueType(elem1) || typeSystem.IsNonPrimitiveValueType(elem2))
                 {
-                    baseType = context.JavaBase.TypeOfJavaLangObject;
+                    baseType = typeSystem.TypeOfJavaLangObject;
                     rank--;
                     if (rank == 0)
                         return VerificationType.Reference(baseType);
                 }
                 else
                 {
-                    baseType = FindCommonBaseTypeHelper(context, elem1, elem2);
+                    baseType = FindCommonBaseTypeHelper(typeSystem, elem1, elem2);
                 }
 
                 // rebuild array type
-                return VerificationType.Reference(baseType.MakeArrayType(rank));
+                return VerificationType.Reference(typeSystem.MakeArrayType(baseType, rank));
             }
 
-            return VerificationType.Reference(FindCommonBaseTypeHelper(context, tw1, tw2));
+            return VerificationType.Reference(FindCommonBaseTypeHelper(typeSystem, tw1, tw2));
         }
 
-        static RuntimeJavaType FindCommonBaseTypeHelper(RuntimeContext context, RuntimeJavaType type1, RuntimeJavaType type2)
+        static RuntimeJavaType FindCommonBaseTypeHelper(RuntimeJvmTypeSystem typeSystem, RuntimeJavaType type1, RuntimeJavaType type2)
         {
             if (type1 == type2)
                 return type1;
@@ -399,33 +399,33 @@ namespace IKVM.Runtime
             // sure that the reference actually implements the interface.
             // NOTE the ECMA CLI spec also specifies this interface merging algorithm, so we can't
             // really do anything more clever than this.
-            if (type1.IsInterface && type2.IsInterface)
-                return context.JavaBase.TypeOfJavaLangObject;
+            if (typeSystem.IsInterface(type1) && typeSystem.IsInterface(type2))
+                return typeSystem.TypeOfJavaLangObject;
 
             // t1 is an interface and is implemented by t2, common base type is t1
-            if (type1.IsInterface)
-                return type2.ImplementsInterface(type1) ? type1 : context.JavaBase.TypeOfJavaLangObject;
+            if (typeSystem.IsInterface(type1))
+                return typeSystem.ImplementsInterface(type2, type1) ? type1 : typeSystem.TypeOfJavaLangObject;
 
             // t2 is an interface and is implemented by t1, common base type is t2
-            if (type2.IsInterface)
-                return type1.ImplementsInterface(type2) ? type2 : context.JavaBase.TypeOfJavaLangObject;
+            if (typeSystem.IsInterface(type2))
+                return typeSystem.ImplementsInterface(type1, type2) ? type2 : typeSystem.TypeOfJavaLangObject;
 
             var st1 = new Stack<RuntimeJavaType>();
             while (type1 != null)
             {
                 st1.Push(type1);
-                type1 = type1.BaseTypeWrapper;
+                type1 = typeSystem.GetBaseType(type1);
             }
 
             var st2 = new Stack<RuntimeJavaType>();
             while (type2 != null)
             {
                 st2.Push(type2);
-                type2 = type2.BaseTypeWrapper;
+                type2 = typeSystem.GetBaseType(type2);
             }
 
             // pop each item off of the stacks until they do not match
-            var type = context.JavaBase.TypeOfJavaLangObject;
+            var type = typeSystem.TypeOfJavaLangObject;
             for (; ; )
             {
                 type1 = st1.Count > 0 ? st1.Pop() : null;
@@ -544,7 +544,7 @@ namespace IKVM.Runtime
 
         internal void PushType(RuntimeJavaType type)
         {
-            PushHelper(type.ToVerificationType());
+            PushHelper(GetVerificationType(_typeSystem, type));
         }
 
         internal void PushType(VerificationType type)
@@ -634,12 +634,12 @@ namespace IKVM.Runtime
 
         internal VerificationType PopArrayType()
         {
-            return PopArrayTypeImpl(PopAnyType());
+            return PopArrayTypeImpl(_typeSystem, PopAnyType());
         }
 
-        internal static VerificationType PopArrayTypeImpl(VerificationType type)
+        internal static VerificationType PopArrayTypeImpl(RuntimeJvmTypeSystem typeSystem, VerificationType type)
         {
-            if (!type.IsNullOrUnloadable() && !(type.IsReference && type.Type.ArrayRank > 0))
+            if (!type.IsNull && !IsUnloadable(typeSystem, type) && !(type.IsReference && typeSystem.GetArrayRank(type.Type) > 0))
                 throw new VerifyError("Array reference expected on stack");
 
             return type;
@@ -662,15 +662,15 @@ namespace IKVM.Runtime
         // null or an initialized object reference derived from baseType (or baseType)
         internal VerificationType PopObjectType(RuntimeJavaType baseType)
         {
-            return PopObjectTypeImpl(baseType, PopObjectType());
+            return PopObjectTypeImpl(_typeSystem, baseType, PopObjectType());
         }
 
-        internal static VerificationType PopObjectTypeImpl(RuntimeJavaType baseType, VerificationType type)
+        internal static VerificationType PopObjectTypeImpl(RuntimeJvmTypeSystem typeSystem, RuntimeJavaType baseType, VerificationType type)
         {
             // HACK because of the way interfaces references works, if baseType
             // is an interface or array of interfaces, any reference will be accepted
-            if (!baseType.IsUnloadable && !baseType.IsInterfaceOrInterfaceArray && !(type.IsUnloadable() || IsAssignableTo(type, baseType)))
-                throw new VerifyError("Unexpected type " + type + " where " + baseType.Name + " was expected");
+            if (!typeSystem.IsUnloadable(baseType) && !typeSystem.IsInterfaceOrInterfaceArray(baseType) && !(IsUnloadable(typeSystem, type) || IsAssignableTo(typeSystem, type, baseType)))
+                throw new VerifyError("Unexpected type " + type + " where " + typeSystem.GetName(baseType) + " was expected");
 
             return type;
         }
@@ -678,16 +678,63 @@ namespace IKVM.Runtime
         /// <summary>
         /// Returns whether a value of the given type, which is null or an initialized reference, can be assigned to <paramref name="baseType"/>.
         /// </summary>
+        /// <param name="typeSystem"></param>
         /// <param name="type"></param>
         /// <param name="baseType"></param>
         /// <returns></returns>
-        static bool IsAssignableTo(VerificationType type, RuntimeJavaType baseType)
+        static bool IsAssignableTo(RuntimeJvmTypeSystem typeSystem, VerificationType type, RuntimeJavaType baseType)
         {
             // verifier null can be assigned to anything
             if (type.IsNull)
                 return true;
 
-            return type.IsReference && type.Type.IsAssignableTo(baseType);
+            return type.IsReference && typeSystem.IsAssignableTo(type.Type, baseType);
+        }
+
+        /// <summary>
+        /// Returns whether the given type is a reference to an unloadable type.
+        /// </summary>
+        /// <param name="typeSystem"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        static bool IsUnloadable(RuntimeJvmTypeSystem typeSystem, VerificationType type)
+        {
+            return type.IsReference && typeSystem.IsUnloadable(type.Type);
+        }
+
+        /// <summary>
+        /// Gets the verification type of a value of the given type: an int for every type that is an int on the stack,
+        /// null for the verifier's null type, and otherwise a reference.
+        /// </summary>
+        /// <param name="typeSystem"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException">The type is 'void', which no value has.</exception>
+        internal static VerificationType GetVerificationType(RuntimeJvmTypeSystem typeSystem, RuntimeJavaType type)
+        {
+            if (type == null)
+                throw new ArgumentNullException(nameof(type));
+
+            if (typeSystem.IsPrimitive(type))
+            {
+                if (type == typeSystem.TypeOfLong)
+                    return VerificationType.Long;
+                if (type == typeSystem.TypeOfFloat)
+                    return VerificationType.Float;
+                if (type == typeSystem.TypeOfDouble)
+                    return VerificationType.Double;
+                if (type == typeSystem.TypeOfVoid)
+                    throw new ArgumentException($"No value can have the type {typeSystem.GetName(type)}.", nameof(type));
+
+                // boolean, byte, char, short and int are all ints on the stack
+                return VerificationType.Int;
+            }
+
+            if (type == typeSystem.TypeOfVerifierNull)
+                return VerificationType.Null;
+
+            return VerificationType.Reference(type);
         }
 
         internal VerificationType PeekType()
@@ -718,18 +765,18 @@ namespace IKVM.Runtime
             if (type.IsCategory2)
                 _stackEnd++;
 
-            return Unwrap(_context, _states, type);
+            return Unwrap(_typeSystem, _states, type);
         }
 
         /// <summary>
         /// Returns the type of a value as it is once popped off the stack: 'this' becomes a plain reference, and a fault
         /// block exception becomes a plain 'java.lang.Throwable', which means its handler is not a fault block.
         /// </summary>
-        /// <param name="context"></param>
+        /// <param name="typeSystem"></param>
         /// <param name="states"></param>
         /// <param name="type"></param>
         /// <returns></returns>
-        internal static VerificationType Unwrap(RuntimeContext context, InstructionState[] states, VerificationType type)
+        internal static VerificationType Unwrap(RuntimeJvmTypeSystem typeSystem, InstructionState[] states, VerificationType type)
         {
             if (type.IsThis)
                 type = type.WithoutFlags();
@@ -737,7 +784,7 @@ namespace IKVM.Runtime
             if (type.IsFaultBlockException)
             {
                 ClearFaultBlockException(states, type.Index);
-                type = VerificationType.Reference(context.JavaBase.TypeOfjavaLangThrowable);
+                type = VerificationType.Reference(typeSystem.TypeOfJavaLangThrowable);
             }
 
             return type;
@@ -762,18 +809,18 @@ namespace IKVM.Runtime
         // NOTE this can also be used to pop double or long
         internal VerificationType PopType(RuntimeJavaType baseType)
         {
-            return PopTypeImpl(baseType, PopAnyType());
+            return PopTypeImpl(_typeSystem, baseType, PopAnyType());
         }
 
-        internal static VerificationType PopTypeImpl(RuntimeJavaType baseType, VerificationType type)
+        internal static VerificationType PopTypeImpl(RuntimeJvmTypeSystem typeSystem, RuntimeJavaType baseType, VerificationType type)
         {
             if (type.IsUninitialized)
                 throw new VerifyError("Expecting to find object/array on stack");
 
-            if (baseType.IsPrimitive)
+            if (typeSystem.IsPrimitive(baseType))
             {
                 // a float or double of extended precision is accepted where a plain one is expected
-                if (type.WithoutFlags() == baseType.ToVerificationType())
+                if (type.WithoutFlags() == GetVerificationType(typeSystem, baseType))
                     return type;
             }
             else if (type.IsPrimitive == false)
@@ -781,40 +828,26 @@ namespace IKVM.Runtime
                 if (type.IsReference && type.Type == baseType)
                     return type;
 
-                if (baseType == baseType.Context.JavaBase.TypeOfJavaLangObject)
+                if (baseType == typeSystem.TypeOfJavaLangObject)
                     return type;
 
-                if (type.IsUnloadable() || baseType.IsUnloadable)
+                if (IsUnloadable(typeSystem, type) || typeSystem.IsUnloadable(baseType))
                     return type;
 
                 // because of the way interfaces references works, if baseType
                 // is an interface or array of interfaces, any reference will be accepted
-                if (baseType.IsInterfaceOrInterfaceArray)
+                if (typeSystem.IsInterfaceOrInterfaceArray(baseType))
                     return type;
 
-                if (IsAssignableTo(type, baseType))
+                if (IsAssignableTo(typeSystem, type, baseType))
                     return type;
 
-                if ((type.IsReference && HasMissingBaseType(type.Type)) || HasMissingBaseType(baseType))
+                // the importer accepts a type whose hierarchy it cannot load, and reports the missing type
+                if (typeSystem.IsImporter && ((type.IsReference && typeSystem.HasUnloadableBaseType(type.Type)) || typeSystem.HasUnloadableBaseType(baseType)))
                     return type;
             }
 
-            throw new VerifyError("Unexpected type " + type + " where " + baseType.Name + " was expected");
-        }
-
-        static bool HasMissingBaseType(RuntimeJavaType tw)
-        {
-#if IMPORTER
-            for (RuntimeJavaType baseTypeWrapper; (baseTypeWrapper = tw.BaseTypeWrapper) != null; tw = baseTypeWrapper)
-            {
-                if (baseTypeWrapper.IsUnloadable)
-                {
-                    tw.Context.StaticCompiler.IssueMissingTypeMessage(tw.TypeAsBaseType.BaseType);
-                    return true;
-                }
-            }
-#endif
-            return false;
+            throw new VerifyError("Unexpected type " + type + " where " + typeSystem.GetName(baseType) + " was expected");
         }
 
         internal int GetStackHeight()
@@ -911,7 +944,7 @@ namespace IKVM.Runtime
             {
                 StackCopyOnWrite();
                 _changed = true;
-                _stack[0] = VerificationType.Reference(_context.JavaBase.TypeOfjavaLangThrowable);
+                _stack[0] = VerificationType.Reference(_typeSystem.TypeOfJavaLangThrowable);
             }
         }
 
