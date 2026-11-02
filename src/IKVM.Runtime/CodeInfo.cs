@@ -73,6 +73,11 @@ namespace IKVM.Runtime
             return _state[pc].GetStackSlotEx(pos) == _context.VerifierJavaTypeFactory.ExtendedDouble;
         }
 
+        internal bool IsStackTypeExtendedFloat(int pc, int pos)
+        {
+            return _state[pc].GetStackSlotEx(pos) == _context.VerifierJavaTypeFactory.ExtendedFloat;
+        }
+
         internal RuntimeJavaType GetLocalTypeWrapper(int pc, int local)
         {
             return _state[pc].GetLocalTypeEx(local);
