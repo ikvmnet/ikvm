@@ -22,6 +22,8 @@
   
 */
 
+using IKVM.CoreLib.Linking;
+
 namespace IKVM.Runtime
 {
 
@@ -52,7 +54,7 @@ namespace IKVM.Runtime
         internal VerificationType PeekType()
         {
             if (_sp == 0)
-                throw new VerifyError("Unable to pop operand off an empty stack");
+                throw new VerifyException("Unable to pop operand off an empty stack");
 
             var type = _state[_pc].GetStackByIndex(_sp - 1);
             if (type.IsThis)
@@ -64,7 +66,7 @@ namespace IKVM.Runtime
         internal VerificationType PopAnyType()
         {
             if (_sp == 0)
-                throw new VerifyError("Unable to pop operand off an empty stack");
+                throw new VerifyException("Unable to pop operand off an empty stack");
 
             return InstructionState.Unwrap(TypeSystem, _state, _state[_pc].GetStackByIndex(--_sp));
         }

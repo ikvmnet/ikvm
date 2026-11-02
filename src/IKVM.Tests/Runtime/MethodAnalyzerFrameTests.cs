@@ -47,7 +47,7 @@ namespace IKVM.Tests.Runtime
         static void ShouldFailVerification(TestClassBuilder builder, string name, string signature)
         {
             var m = builder.Load().GetMethod(name, signature);
-            m.Invoking(i => i.CreateAnalyzer()).Should().Throw<IKVM.Runtime.VerifyError>();
+            m.Invoking(i => i.CreateAnalyzer()).Should().Throw<IKVM.CoreLib.Linking.VerifyException>();
         }
 
         /// <summary>

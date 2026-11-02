@@ -360,14 +360,14 @@ namespace IKVM.Runtime
             /// <param name="method"></param>
             /// <param name="classLoader"></param>
             /// <param name="flags"></param>
-            /// <exception cref="VerifyError"></exception>
+            /// <exception cref="VerifyException"></exception>
             /// <exception cref="ClassFormatError"></exception>
             /// <exception cref="InvalidOperationException"></exception>
             /// <exception cref="NotImplementedException"></exception>
             internal JsrMethodAnalyzer(RuntimeJavaMethod mw, ClassFile classFile, Method method, RuntimeClassLoader classLoader, InstructionFlags[] flags)
             {
                 if (method.VerifyError != null)
-                    throw new VerifyError(method.VerifyError);
+                    throw new VerifyException(method.VerifyError);
 
                 _classFile = classFile;
                 _state = new InstructionState[method.Instructions.Length];
@@ -467,7 +467,7 @@ namespace IKVM.Runtime
                                         {
                                             var type = s.GetLocalType(instr.NormalizedArg1);
                                             if (type == SimpleType.Invalid || type.IsPrimitive)
-                                                throw new VerifyError("Object reference expected");
+                                                throw new VerifyException("Object reference expected");
 
                                             s.PushType(type);
                                             break;
@@ -731,7 +731,7 @@ namespace IKVM.Runtime
                                     case NormalizedOpCode.Multianewarray:
                                         {
                                             if (instr.Arg2 < 1)
-                                                throw new VerifyError("Illegal dimension argument");
+                                                throw new VerifyException("Illegal dimension argument");
 
                                             for (int j = 0; j < instr.Arg2; j++)
                                                 s.PopPrimitive();
@@ -1054,18 +1054,18 @@ namespace IKVM.Runtime
                                         }
                                     case NormalizedOpCode.Nop:
                                         if (i + 1 == instructions.Length)
-                                            throw new VerifyError("Falling off the end of the code");
+                                            throw new VerifyException("Falling off the end of the code");
 
                                         break;
                                     case NormalizedOpCode.InvokeDynamic:
                                         // it is impossible to have a valid invokedynamic in a pre-7.0 class file
-                                        throw new VerifyError("Illegal type in constant pool");
+                                        throw new VerifyException("Illegal type in constant pool");
                                     default:
                                         throw new NotImplementedException(instr.NormalizedOpCode.ToString());
                                 }
 
                                 if (s.GetStackHeight() > method.MaxStack)
-                                    throw new VerifyError("Stack size too large");
+                                    throw new VerifyException("Stack size too large");
 
                                 for (int j = 0; j < method.ExceptionTable.Length; j++)
                                     if (method.ExceptionTable[j].EndIndex == i + 1)
@@ -1163,16 +1163,16 @@ namespace IKVM.Runtime
                                     // NOTE because PcIndexMap returns -1 for illegal PCs (in the middle of an instruction) and
                                     // we always use that value as an index into the state array, any invalid PC will result
                                     // in an IndexOutOfRangeException
-                                    throw new VerifyError("Illegal target of jump or branch");
+                                    throw new VerifyException("Illegal target of jump or branch");
                                 }
                             }
-                            catch (VerifyError x)
+                            catch (VerifyException x)
                             {
                                 var opcode = instructions[i].NormalizedOpCode.ToString();
                                 if (opcode.StartsWith("__"))
                                     opcode = opcode.Substring(2);
 
-                                throw new VerifyError($"{x.Message} (class: {classFile.Name}, method: {method.Name}, signature: {method.Signature}, offset: {instructions[i].PC}, instruction: {opcode})", x);
+                                throw new VerifyException($"{x.Message} (class: {classFile.Name}, method: {method.Name}, signature: {method.Signature}, offset: {instructions[i].PC}, instruction: {opcode})", x);
                             }
                         }
                     }
@@ -1318,7 +1318,7 @@ namespace IKVM.Runtime
 
                 }
 
-                throw new VerifyError("Illegal constant pool index");
+                throw new VerifyException("Illegal constant pool index");
             }
 
             ConstantPoolItemFieldref GetFieldref(int index)
@@ -1342,7 +1342,7 @@ namespace IKVM.Runtime
 
                 }
 
-                throw new VerifyError("Illegal constant pool index");
+                throw new VerifyException("Illegal constant pool index");
             }
 
             ConstantType GetConstantPoolConstantType(int index)
@@ -1372,7 +1372,7 @@ namespace IKVM.Runtime
                     // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
                 }
 
-                throw new VerifyError("Illegal constant pool index");
+                throw new VerifyException("Illegal constant pool index");
             }
 
             void AddReturnSite(int callSiteIndex, int returnSiteIndex)
@@ -1621,7 +1621,7 @@ namespace IKVM.Runtime
                         return s2.Copy();
 
                     if (s1.stackSize != s2.stackSize || s1.stackEnd != s2.stackEnd)
-                        throw new VerifyError($"Inconsistent stack height: {s1.stackSize + s1.stack.Length - s1.stackEnd} != {s2.stackSize + s2.stack.Length - s2.stackEnd}");
+                        throw new VerifyException($"Inconsistent stack height: {s1.stackSize + s1.stack.Length - s1.stackEnd} != {s2.stackSize + s2.stack.Length - s2.stackEnd}");
 
                     var s = s1.Copy();
                     s.changed = s1.changed;
@@ -1645,7 +1645,7 @@ namespace IKVM.Runtime
                                 }
                                 else
                                 {
-                                    throw new VerifyError(string.Format("cannot merge {0} and {1}", type, type2));
+                                    throw new VerifyException(string.Format("cannot merge {0} and {1}", type, type2));
                                 }
                             }
                             if (type != baseType)
@@ -1657,7 +1657,7 @@ namespace IKVM.Runtime
                         }
                         else
                         {
-                            throw new VerifyError(string.Format("cannot merge {0} and {1}", type, type2));
+                            throw new VerifyException(string.Format("cannot merge {0} and {1}", type, type2));
                         }
                     }
 
@@ -1699,7 +1699,7 @@ namespace IKVM.Runtime
                             if (s.SubroutineIndex == subroutineIndex)
                             {
                                 // subroutines cannot recursivly call themselves
-                                throw new VerifyError("subroutines cannot recurse");
+                                throw new VerifyException("subroutines cannot recurse");
                             }
                         }
                     }
@@ -1714,7 +1714,7 @@ namespace IKVM.Runtime
                             if (s.SubroutineIndex == subroutineIndex)
                                 return s.LocalsModified;
 
-                    throw new VerifyError("return from wrong subroutine");
+                    throw new VerifyException("return from wrong subroutine");
                 }
 
                 internal bool IsSubroutineActive(int subroutineIndex)
@@ -1730,7 +1730,7 @@ namespace IKVM.Runtime
                 internal void CheckSubroutineActive(int subroutineIndex)
                 {
                     if (!IsSubroutineActive(subroutineIndex))
-                        throw new VerifyError("inactive subroutine");
+                        throw new VerifyException("inactive subroutine");
                 }
 
                 internal static SimpleType FindCommonBaseType(SimpleType type1, SimpleType type2)
@@ -1778,7 +1778,7 @@ namespace IKVM.Runtime
                     }
                     catch (IndexOutOfRangeException)
                     {
-                        throw new VerifyError("Illegal local variable number");
+                        throw new VerifyException("Illegal local variable number");
                     }
                 }
 
@@ -1811,7 +1811,7 @@ namespace IKVM.Runtime
                     }
                     catch (IndexOutOfRangeException)
                     {
-                        throw new VerifyError("Illegal local variable number");
+                        throw new VerifyException("Illegal local variable number");
                     }
                 }
 
@@ -1833,7 +1833,7 @@ namespace IKVM.Runtime
                     }
                     catch (IndexOutOfRangeException)
                     {
-                        throw new VerifyError("Illegal local variable number");
+                        throw new VerifyException("Illegal local variable number");
                     }
                 }
 
@@ -1851,7 +1851,7 @@ namespace IKVM.Runtime
                     if (SimpleType.IsRet(type))
                         return type.SubroutineIndex;
 
-                    throw new VerifyError("incorrect local type, not ret");
+                    throw new VerifyException("incorrect local type, not ret");
                 }
 
                 internal void SetLocalType(int index, SimpleType type, int instructionIndex)
@@ -1900,7 +1900,7 @@ namespace IKVM.Runtime
                 {
                     var type = PopType();
                     if (type.IsPrimitive)
-                        throw new VerifyError("Expected object reference on stack");
+                        throw new VerifyException("Expected object reference on stack");
 
                     return type;
                 }
@@ -1914,7 +1914,7 @@ namespace IKVM.Runtime
                 internal SimpleType PopAnyType()
                 {
                     if (stackSize == 0)
-                        throw new VerifyError("Unable to pop operand off an empty stack");
+                        throw new VerifyException("Unable to pop operand off an empty stack");
 
                     var type = stack[--stackSize];
                     if (type.IsWidePrimitive)
@@ -1928,7 +1928,7 @@ namespace IKVM.Runtime
                 {
                     var type = PopAnyType();
                     if (type.IsWidePrimitive)
-                        throw new VerifyError("Attempt to split long or double on the stack");
+                        throw new VerifyException("Attempt to split long or double on the stack");
 
                     return type;
                 }
@@ -1936,14 +1936,14 @@ namespace IKVM.Runtime
                 internal void PopPrimitive()
                 {
                     if (!PopType().IsPrimitive)
-                        throw new VerifyError("Primitive type expected on stack");
+                        throw new VerifyException("Primitive type expected on stack");
                 }
 
                 internal void PopWidePrimitive()
                 {
                     var type = PopAnyType();
                     if (type != SimpleType.WidePrimitive)
-                        throw new VerifyError("Wide primitive type expected on stack");
+                        throw new VerifyException("Wide primitive type expected on stack");
                 }
 
                 internal void PopType(string signature)
@@ -1975,7 +1975,7 @@ namespace IKVM.Runtime
                         stackEnd--;
 
                     if (stackSize >= stackEnd)
-                        throw new VerifyError("Stack overflow");
+                        throw new VerifyException("Stack overflow");
 
                     StackCopyOnWrite();
                     stack[stackSize++] = type;
