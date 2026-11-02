@@ -658,7 +658,7 @@ namespace IKVM.CoreLib.Linking
         /// <summary>
         /// Gets the type system this class file is linked against.
         /// </summary>
-        internal ref readonly TTypeSystem TypeSystem => ref _typeSystem;
+        internal TTypeSystem TypeSystem => _typeSystem;
 
         /// <summary>
         /// Gets the underlying byte code decoder.

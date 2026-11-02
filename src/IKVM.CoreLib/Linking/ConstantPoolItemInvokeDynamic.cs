@@ -78,8 +78,10 @@ namespace IKVM.CoreLib.Linking
                 if (_argTypes != null)
                     return;
 
-            var args = ClassFile.TypeSystem.GetArgTypeListFromSignature(thisType, _descriptor, mode);
-            var ret = ClassFile.TypeSystem.GetReturnTypeFromSignature(thisType, _descriptor, mode);
+            var ts = ClassFile.TypeSystem;
+
+            var args = ts.GetArgTypeListFromSignature(thisType, _descriptor, mode);
+            var ret = ts.GetReturnTypeFromSignature(thisType, _descriptor, mode);
 
             lock (this)
             {
