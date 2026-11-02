@@ -972,7 +972,19 @@ namespace IKVM.CoreLib.Jvm
                                     }
                                     break;
                                 case NormalizedOpCode.Areturn:
-                                    s.PopObjectType(_returnType!);
+                                    if (_isMethodKnown)
+                                    {
+                                        // null is assignable to any type, so check for a primitive return type explicitly
+                                        if (_typeSystem.IsPrimitive(_returnType!))
+                                            throw new VerifyException("Wrong return type in function");
+
+                                        s.PopObjectType(_returnType!);
+                                    }
+                                    else
+                                    {
+                                        s.PopObjectType();
+                                    }
+
                                     break;
                                 case NormalizedOpCode.Ireturn:
                                     {
