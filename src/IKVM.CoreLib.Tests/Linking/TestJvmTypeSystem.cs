@@ -11,9 +11,6 @@ namespace IKVM.CoreLib.Tests.Linking
     readonly struct TestJvmTypeSystem : IJvmTypeSystem<TestJavaType, TestJavaMember, TestJavaField, TestJavaMethod>
     {
 
-        static readonly TestJavaType JavaLangObjectType = new TestJavaType();
-        static readonly TestJavaType VerifierNullType = new TestJavaType();
-
         readonly bool _importer;
 
         public TestJvmTypeSystem(bool importer)
@@ -27,55 +24,114 @@ namespace IKVM.CoreLib.Tests.Linking
 
         public bool AllowNonVirtualCalls => throw new NotImplementedException();
 
-        public TestJavaType TypeOfJavaLangObject => JavaLangObjectType;
+        public TestJavaType TypeOfJavaLangObject => TestTypes.Object;
 
-        public TestJavaType TypeOfJavaLangThrowable => throw new NotImplementedException();
+        public TestJavaType TypeOfJavaLangThrowable => TestTypes.Throwable;
 
-        public TestJavaType TypeOfVoid => throw new NotImplementedException();
+        public TestJavaType TypeOfVoid => TestTypes.PrimitiveVoid;
 
-        public TestJavaType TypeOfInt => throw new NotImplementedException();
+        public TestJavaType TypeOfInt => TestTypes.PrimitiveInt;
 
-        public TestJavaType TypeOfLong => throw new NotImplementedException();
+        public TestJavaType TypeOfLong => TestTypes.PrimitiveLong;
 
-        public TestJavaType TypeOfFloat => throw new NotImplementedException();
+        public TestJavaType TypeOfFloat => TestTypes.PrimitiveFloat;
 
-        public TestJavaType TypeOfDouble => throw new NotImplementedException();
+        public TestJavaType TypeOfDouble => TestTypes.PrimitiveDouble;
 
-        public TestJavaType TypeOfVerifierNull => VerifierNullType;
+        public TestJavaType TypeOfVerifierNull => TestTypes.VerifierNull;
 
-        public TestJavaType TypeOfVerifierUnloadable => throw new NotImplementedException();
+        public TestJavaType TypeOfVerifierUnloadable => TestTypes.VerifierUnloadable;
 
-        public TestJavaType CreateUnloadableType(string name) => throw new NotImplementedException();
+        public TestJavaType CreateUnloadableType(string name) => new TestJavaType(name, isUnloadable: true);
 
-        public string GetName(TestJavaType type) => throw new NotImplementedException();
+        public string GetName(TestJavaType type) => type.Name;
 
-        public bool IsUnloadable(TestJavaType type) => throw new NotImplementedException();
+        public bool IsUnloadable(TestJavaType type) => type.IsUnloadable;
 
-        public bool IsInterface(TestJavaType type) => throw new NotImplementedException();
+        public bool IsInterface(TestJavaType type) => type.IsInterface;
 
-        public bool IsPrimitive(TestJavaType type) => throw new NotImplementedException();
+        public bool IsPrimitive(TestJavaType type) => type.IsPrimitive;
 
-        public bool IsNonPrimitiveValueType(TestJavaType type) => throw new NotImplementedException();
+        public bool IsNonPrimitiveValueType(TestJavaType type) => type.IsValueType;
 
-        public bool IsInterfaceOrInterfaceArray(TestJavaType type) => throw new NotImplementedException();
+        public bool IsInterfaceOrInterfaceArray(TestJavaType type) => type.InnermostElementType.IsInterface;
 
-        public int GetArrayRank(TestJavaType type) => throw new NotImplementedException();
+        public int GetArrayRank(TestJavaType type) => type.ArrayRank;
 
-        public TestJavaType GetElementType(TestJavaType type) => throw new NotImplementedException();
+        public TestJavaType GetElementType(TestJavaType type) => type.ElementType ?? throw new ArgumentException("Not an array type.", nameof(type));
 
-        public TestJavaType MakeArrayType(TestJavaType type, int rank) => throw new NotImplementedException();
+        public TestJavaType MakeArrayType(TestJavaType type, int rank) => type.MakeArrayType(rank);
 
         public ClassFileAccessFlags GetAccessFlags(TestJavaType type) => throw new NotImplementedException();
 
-        public TestJavaType? GetBaseType(TestJavaType type) => throw new NotImplementedException();
+        public TestJavaType? GetBaseType(TestJavaType type) => type.BaseType;
 
-        public bool IsSubTypeOf(TestJavaType type, TestJavaType baseType) => throw new NotImplementedException();
+        public bool IsSubTypeOf(TestJavaType type, TestJavaType baseType)
+        {
+            if (baseType.IsInterface)
+                return type == baseType || ImplementsInterface(type, baseType);
 
-        public bool ImplementsInterface(TestJavaType type, TestJavaType interfaceType) => throw new NotImplementedException();
+            if (baseType == TestTypes.Object)
+                return true;
 
-        public bool IsAssignableTo(TestJavaType type, TestJavaType target) => throw new NotImplementedException();
+            for (TestJavaType? t = type; t != null; t = t.BaseType)
+                if (t == baseType)
+                    return true;
 
-        public bool HasUnloadableBaseType(TestJavaType type) => throw new NotImplementedException();
+            return false;
+        }
+
+        public bool ImplementsInterface(TestJavaType type, TestJavaType interfaceType)
+        {
+            for (TestJavaType? t = type; t != null; t = t.BaseType)
+                foreach (var i in t.Interfaces)
+                    if (i == interfaceType || ImplementsInterface(i, interfaceType))
+                        return true;
+
+            return false;
+        }
+
+        public bool IsAssignableTo(TestJavaType type, TestJavaType target)
+        {
+            if (type == target)
+                return true;
+
+            if (type.IsPrimitive || target.IsPrimitive)
+                return false;
+
+            if (type == TestTypes.VerifierNull)
+                return true;
+
+            if (target.IsInterface)
+                return ImplementsInterface(type, target);
+
+            if (type.ArrayRank > 0 && target.ArrayRank > 0)
+            {
+                var elem1 = type.ElementType!;
+                var elem2 = target.ElementType!;
+                while (elem1.ArrayRank > 0 && elem2.ArrayRank > 0)
+                {
+                    elem1 = elem1.ElementType!;
+                    elem2 = elem2.ElementType!;
+                }
+
+                if (elem1.IsPrimitive || elem2.IsPrimitive)
+                    return false;
+
+                return !elem1.IsValueType && IsSubTypeOf(elem1, elem2);
+            }
+
+            return IsSubTypeOf(type, target);
+        }
+
+        public bool HasUnloadableBaseType(TestJavaType type)
+        {
+            for (var t = type.BaseType; t != null; t = t.BaseType)
+                if (t.IsUnloadable)
+                    return true;
+
+            return false;
+        }
 
         public bool CheckPackageAccess(TestJavaType type, TestJavaType target) => throw new NotImplementedException();
 
