@@ -76,7 +76,7 @@ namespace IKVM.CoreLib.Linking
             if (wrapper == null)
                 return;
 
-            ref readonly var ts = ref ClassFile.TypeSystem;
+            var ts = ClassFile.TypeSystem;
 
             TField? fw = null;
             if (ts.IsUnloadable(wrapper) == false)
