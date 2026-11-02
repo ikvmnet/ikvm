@@ -76,7 +76,7 @@ namespace IKVM.Runtime
                         {
                             var v = new LocalVar();
                             v.local = instructions[i].NormalizedArg1;
-                            v.type = ma.GetStackTypeWrapper(i, 0);
+                            v.type = ma.GetStackType(i, 0);
                             FindLvtEntry(v, method, i);
                             locals.Add(v);
                             localByStoreSite.Add(MakeKey(i, v.local), v);
@@ -99,8 +99,8 @@ namespace IKVM.Runtime
                             // we can only merge if the resulting type is valid (this protects against incorrect
                             // LVT data, but is also needed for constructors, where the uninitialized this is a different
                             // type from the initialized this)
-                            var tw = InstructionState.FindCommonBaseType(classLoader.Context, v1.type, v2.type);
-                            if (tw != classLoader.Context.VerifierJavaTypeFactory.Invalid)
+                            var tw = ma.FindCommonBaseType(v1.type, v2.type);
+                            if (!tw.IsTop)
                             {
                                 v1.isArg |= v2.isArg;
                                 v1.type = tw;
@@ -386,7 +386,7 @@ namespace IKVM.Runtime
                             if (exceptions[j].StartIndex <= i && i < exceptions[j].EndIndex)
                                 state[exceptions[j].HandlerIndex].Merge(curr);
 
-                        if (IsLoadLocal(instructions[i].NormalizedOpCode) && (instructions[i].NormalizedOpCode != NormalizedOpCode.Aload || !RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(i + 1, 0))))
+                        if (IsLoadLocal(instructions[i].NormalizedOpCode) && (instructions[i].NormalizedOpCode != NormalizedOpCode.Aload || !codeInfo.GetRawStackType(i + 1, 0).IsFaultBlockException))
                         {
                             localStoreReaders[i] ??= new Dictionary<int, string>();
 
@@ -394,7 +394,7 @@ namespace IKVM.Runtime
                                 localStoreReaders[i][curr.sites[instructions[i].NormalizedArg1][j]] = "";
                         }
 
-                        if (IsStoreLocal(instructions[i].NormalizedOpCode) && (instructions[i].NormalizedOpCode != NormalizedOpCode.Astore || !RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(i, 0))))
+                        if (IsStoreLocal(instructions[i].NormalizedOpCode) && (instructions[i].NormalizedOpCode != NormalizedOpCode.Astore || !codeInfo.GetRawStackType(i, 0).IsFaultBlockException))
                         {
                             curr.Store(i, instructions[i].NormalizedArg1);
 
@@ -410,11 +410,11 @@ namespace IKVM.Runtime
                             var cpi = classFile.GetMethodref(instructions[i].Arg1);
                             if (ReferenceEquals(cpi.Name, StringConstants.INIT))
                             {
-                                var type = codeInfo.GetRawStackTypeWrapper(i, cpi.GetArgTypes().Length);
+                                var type = codeInfo.GetRawStackType(i, cpi.GetArgTypes().Length);
                                 // after we've invoked the constructor, the uninitialized references are now initialized
-                                if (type == context.VerifierJavaTypeFactory.UninitializedThis || RuntimeVerifierJavaType.IsNew(type))
+                                if (type.IsUninitialized)
                                     for (int j = 0; j < maxLocals; j++)
-                                        if (codeInfo.GetLocalTypeWrapper(i, j) == type)
+                                        if (codeInfo.GetLocalType(i, j) == type)
                                             curr.Store(i, j);
                             }
                         }
@@ -438,8 +438,8 @@ namespace IKVM.Runtime
                             {
                                 if (instructions[j].NormalizedOpCode == NormalizedOpCode.Athrow
                                     && codeInfo.HasState(j)
-                                    && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(j, 0))
-                                    && ((RuntimeVerifierJavaType)codeInfo.GetRawStackTypeWrapper(j, 0)).Index == handler)
+                                    && codeInfo.GetRawStackType(j, 0).IsFaultBlockException
+                                    && codeInfo.GetRawStackType(j, 0).Index == handler)
                                 {
                                     curr.Merge(handlerState[j]);
                                 }
@@ -484,7 +484,7 @@ namespace IKVM.Runtime
             Debug.Assert(IsLoadLocal(method.Instructions[instructionIndex].NormalizedOpCode));
 
             LocalVar local = null;
-            var type = context.VerifierJavaTypeFactory.Null;
+            var type = VerificationType.Null;
             var localIndex = method.Instructions[instructionIndex].NormalizedArg1;
             var isArg = false;
             foreach (int store in storeSites.Keys)
@@ -492,14 +492,14 @@ namespace IKVM.Runtime
                 if (store == -1)
                 {
                     // it's a method argument, it has no initial store, but the type is simply the parameter type
-                    type = InstructionState.FindCommonBaseType(context, type, codeInfo.GetLocalTypeWrapper(0, localIndex));
+                    type = codeInfo.FindCommonBaseType(type, codeInfo.GetLocalType(0, localIndex));
                     isArg = true;
                 }
                 else
                 {
                     if (method.Instructions[store].NormalizedOpCode == NormalizedOpCode.InvokeSpecial)
                     {
-                        type = InstructionState.FindCommonBaseType(context, type, codeInfo.GetLocalTypeWrapper(store + 1, localIndex));
+                        type = codeInfo.FindCommonBaseType(type, codeInfo.GetLocalType(store + 1, localIndex));
                     }
                     else if (method.Instructions[store].NormalizedOpCode == NormalizedOpCode.StaticError)
                     {
@@ -509,11 +509,11 @@ namespace IKVM.Runtime
                     else
                     {
                         Debug.Assert(IsStoreLocal(method.Instructions[store].NormalizedOpCode));
-                        type = InstructionState.FindCommonBaseType(context, type, codeInfo.GetStackTypeWrapper(store, 0));
+                        type = codeInfo.FindCommonBaseType(type, codeInfo.GetStackType(store, 0));
                     }
                 }
                 // we can't have an invalid type, because that would have failed verification earlier
-                Debug.Assert(type != context.VerifierJavaTypeFactory.Invalid);
+                Debug.Assert(!type.IsTop);
 
                 if (localByStoreSite.TryGetValue(MakeKey(store, localIndex), out var l))
                 {
@@ -532,7 +532,7 @@ namespace IKVM.Runtime
                         // try { i = 0; for(; ; ) System.out.println(i); } catch(Exception x) {}
                         // System.out.println(i);
                         //
-                        local = MergeLocals(context, locals, localByStoreSite, local, l);
+                        local = MergeLocals(codeInfo, locals, localByStoreSite, local, l);
                     }
                 }
             }
@@ -541,7 +541,7 @@ namespace IKVM.Runtime
             {
                 local = new LocalVar();
                 local.local = localIndex;
-                local.type = RuntimeVerifierJavaType.IsThis(type) ? ((RuntimeVerifierJavaType)type).UnderlyingType : type;
+                local.type = type.IsThis ? type.WithoutFlags() : type;
                 local.isArg = isArg;
 
                 if (debug)
@@ -552,8 +552,8 @@ namespace IKVM.Runtime
             else
             {
                 local.isArg |= isArg;
-                local.type = InstructionState.FindCommonBaseType(context, local.type, type);
-                Debug.Assert(local.type != context.VerifierJavaTypeFactory.Invalid);
+                local.type = codeInfo.FindCommonBaseType(local.type, type);
+                Debug.Assert(!local.type.IsTop);
             }
 
             foreach (int store in storeSites.Keys)
@@ -564,7 +564,7 @@ namespace IKVM.Runtime
                 }
                 else if (v != local)
                 {
-                    local = MergeLocals(context, locals, localByStoreSite, local, v);
+                    local = MergeLocals(codeInfo, locals, localByStoreSite, local, v);
                 }
             }
         }
@@ -574,7 +574,7 @@ namespace IKVM.Runtime
             return (((long)(uint)i) << 32) + (uint)j;
         }
 
-        static LocalVar MergeLocals(RuntimeContext context, List<LocalVar> locals, Dictionary<long, LocalVar> localByStoreSite, LocalVar l1, LocalVar l2)
+        static LocalVar MergeLocals(CodeInfo codeInfo, List<LocalVar> locals, Dictionary<long, LocalVar> localByStoreSite, LocalVar l1, LocalVar l2)
         {
             Debug.Assert(l1 != l2);
             Debug.Assert(l1.local == l2.local);
@@ -594,8 +594,8 @@ namespace IKVM.Runtime
                 localByStoreSite[kv.Key] = kv.Value == l2 ? l1 : kv.Value;
 
             l1.isArg |= l2.isArg;
-            l1.type = InstructionState.FindCommonBaseType(context, l1.type, l2.type);
-            Debug.Assert(l1.type != context.VerifierJavaTypeFactory.Invalid);
+            l1.type = codeInfo.FindCommonBaseType(l1.type, l2.type);
+            Debug.Assert(!l1.type.IsTop);
 
             return l1;
         }

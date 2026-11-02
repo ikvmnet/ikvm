@@ -13,6 +13,7 @@ using IKVM.CoreLib.Runtime;
 using ClassFile = IKVM.CoreLib.Linking.ClassFile<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
 using Instruction = IKVM.CoreLib.Linking.Instruction<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
 using Method = IKVM.CoreLib.Linking.Method<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+using VerificationType = IKVM.CoreLib.Jvm.VerificationType<IKVM.Runtime.RuntimeJavaType>;
 
 namespace IKVM.Tests.Runtime
 {
@@ -251,7 +252,7 @@ namespace IKVM.Tests.Runtime
                 var stack = new string[height];
                 for (int pos = 0; pos < height; pos++)
                 {
-                    var name = FormatType(CodeInfo.GetRawStackTypeWrapper(pc, pos));
+                    var name = FormatType(CodeInfo.GetRawStackType(pc, pos));
                     if (CodeInfo.IsStackTypeExtendedDouble(pc, pos) || CodeInfo.IsStackTypeExtendedFloat(pc, pos))
                         name += "!";
 
@@ -260,7 +261,7 @@ namespace IKVM.Tests.Runtime
 
                 var locals = new string[Method.MaxLocals];
                 for (int i = 0; i < locals.Length; i++)
-                    locals[i] = FormatType(CodeInfo.GetLocalTypeWrapper(pc, i));
+                    locals[i] = FormatType(CodeInfo.GetLocalType(pc, i));
 
                 frames[pc] = string.Join(",", stack) + "|" + string.Join(",", locals);
             }
@@ -268,35 +269,20 @@ namespace IKVM.Tests.Runtime
             return frames;
         }
 
-        static string FormatType(RuntimeJavaType type)
+        static string FormatType(VerificationType type)
         {
-            var context = JVM.Context;
-            if (type == context.VerifierJavaTypeFactory.Invalid)
-                return "top";
-            if (type == context.PrimitiveJavaTypeFactory.INT)
-                return "I";
-            if (type == context.PrimitiveJavaTypeFactory.LONG)
-                return "J";
-            if (type == context.PrimitiveJavaTypeFactory.FLOAT)
-                return "F";
-            if (type == context.PrimitiveJavaTypeFactory.DOUBLE)
-                return "D";
-            if (type == context.VerifierJavaTypeFactory.Null)
-                return "null";
-            if (type == context.VerifierJavaTypeFactory.UninitializedThis)
-                return "uninitThis";
-            if (RuntimeVerifierJavaType.IsNew(type))
-                return "new@" + ((RuntimeVerifierJavaType)type).Index + ":" + ((RuntimeVerifierJavaType)type).UnderlyingType.Name;
-            if (RuntimeVerifierJavaType.IsThis(type))
-                return "this:" + ((RuntimeVerifierJavaType)type).UnderlyingType.Name;
-            if (RuntimeVerifierJavaType.IsFaultBlockException(type))
-                return "fault@" + ((RuntimeVerifierJavaType)type).Index;
-            if (type.IsUnloadable)
-                return "unloadable:" + type.Name;
-            if (type.IsPrimitive)
-                throw new System.InvalidOperationException($"Unexpected primitive {type.SignatureName} in verifier state.");
+            if (type.IsUninitializedNew)
+                return "new@" + type.Index + ":" + type.Type.Name;
+            if (type.IsThis)
+                return "this:" + type.Type.Name;
+            if (type.IsFaultBlockException)
+                return "fault@" + type.Index;
+            if (type.IsReference && type.Type.IsUnloadable)
+                return "unloadable:" + type.Type.Name;
+            if (type.IsReference)
+                return type.Type.Name;
 
-            return type.Name;
+            return type.ToString();
         }
 
     }

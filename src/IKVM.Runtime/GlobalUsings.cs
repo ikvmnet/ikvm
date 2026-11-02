@@ -23,3 +23,5 @@ global using ConstantPoolItemMI = IKVM.CoreLib.Linking.ConstantPoolItemMI<IKVM.R
 global using ConstantPoolItemNameAndType = IKVM.CoreLib.Linking.ConstantPoolItemNameAndType<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
 global using ConstantPoolItemString = IKVM.CoreLib.Linking.ConstantPoolItemString<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
 global using ConstantPoolItemUtf8 = IKVM.CoreLib.Linking.ConstantPoolItemUtf8<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+
+global using VerificationType = IKVM.CoreLib.Jvm.VerificationType<IKVM.Runtime.RuntimeJavaType>;
