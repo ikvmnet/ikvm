@@ -1250,6 +1250,79 @@ namespace IKVM.Tests.Runtime
             ShouldFailVerification(c, "m", "()V");
         }
 
+        [TestMethod]
+        public void StoringExtendedFloatAsReferenceIsVerifyError()
+        {
+            var c = new TestClassBuilder("FrameErrAstoreExtFloat");
+            c.AddMethod("m", "()V", 2, 1, (code, handlers) => code.Fconst1().Fconst1().Fadd().Astore0().Return());
+            ShouldFailVerification(c, "m", "()V");
+        }
+
+        [TestMethod]
+        public void StoringExtendedFloatFromCallAsReferenceIsVerifyError()
+        {
+            var c = new TestClassBuilder("FrameErrAstoreCallFloat");
+            c.AddMethod("fl", "()F", 1, 0, (code, handlers) => code.Fconst0().Freturn());
+            c.AddMethod("m", "()V", 1, 1, (code, handlers) => code.InvokeStatic(c.Constants.GetOrAddMethodref(c.Name, "fl", "()F")).Astore0().Return());
+            ShouldFailVerification(c, "m", "()V");
+        }
+
+        [TestMethod]
+        public void ReturningExtendedFloatAsReferenceIsVerifyError()
+        {
+            var c = new TestClassBuilder("FrameErrAreturnExtFloat");
+            c.AddMethod("m", "()Ljava/lang/Object;", 2, 0, (code, handlers) => code.Fconst1().Fconst1().Fmul().Areturn());
+            ShouldFailVerification(c, "m", "()Ljava/lang/Object;");
+        }
+
+        [TestMethod]
+        public void PassingExtendedFloatAsReferenceIsVerifyError()
+        {
+            var c = new TestClassBuilder("FrameErrArgExtFloat");
+            c.AddMethod("m", "()Ljava/lang/String;", 2, 0, (code, handlers) => code
+                .Fconst1().Fconst1().Fdiv()
+                .InvokeStatic(c.Constants.GetOrAddMethodref("java/lang/String", "valueOf", "(Ljava/lang/Object;)Ljava/lang/String;"))
+                .Areturn());
+            ShouldFailVerification(c, "m", "()Ljava/lang/String;");
+        }
+
+        [TestMethod]
+        public void MergingExtendedFloatWithReferenceIsVerifyError()
+        {
+            var c = new TestClassBuilder("FrameErrMergeExtFloat");
+            c.AddMethod("m", "(I)V", 2, 1, (code, handlers) =>
+            {
+                var other = code.DefineLabel();
+                var end = code.DefineLabel();
+                code.Iload0();
+                code.Ifeq(other);
+                code.Fconst1().Fconst1().Fadd();
+                code.Goto(end);
+                code.MarkLabel(other);
+                code.AconstNull();
+                code.MarkLabel(end);
+                code.Pop();
+                code.Return();
+            });
+            ShouldFailVerification(c, "m", "(I)V");
+        }
+
+        [TestMethod]
+        public void MonitorOnExtendedFloatIsVerifyError()
+        {
+            var c = new TestClassBuilder("FrameErrMonitorExtFloat");
+            c.AddMethod("m", "()V", 2, 0, (code, handlers) => code.Fconst1().Fconst1().Fsub().MonitorEnter().Return());
+            ShouldFailVerification(c, "m", "()V");
+        }
+
+        [TestMethod]
+        public void ExtendedDoubleIsStillACategory2Value()
+        {
+            var c = new TestClassBuilder("FrameErrPopExtDouble");
+            c.AddMethod("m", "()V", 4, 0, (code, handlers) => code.Dconst1().Dconst1().Dadd().Pop().Return());
+            ShouldFailVerification(c, "m", "()V");
+        }
+
         #endregion
 
     }

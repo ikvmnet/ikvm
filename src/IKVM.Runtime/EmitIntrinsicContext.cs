@@ -81,9 +81,21 @@ namespace IKVM.Runtime
             return Code[OpcodeIndex + offset].NormalizedOpCode == opcode && Code[OpcodeIndex + offset].Arg1 == arg;
         }
 
+        /// <summary>
+        /// Gets the runtime type of the value at the given position from the top of the stack at the instruction at the
+        /// given offset, or <c>null</c> if the value is an object whose constructor has not run, which has no runtime
+        /// type. Intrinsics scan backwards over arbitrary instructions, so they can encounter such values.
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <param name="pos"></param>
+        /// <returns></returns>
         internal RuntimeJavaType GetStackTypeWrapper(int offset, int pos)
         {
-            return ma.GetStackTypeWrapper(OpcodeIndex + offset, pos);
+            var type = ma.GetStackType(OpcodeIndex + offset, pos);
+            if (type.IsUninitialized)
+                return null;
+
+            return type.ToRuntimeJavaType(Context.Context);
         }
 
         internal ConstantPoolItemMI GetMethodref(int offset)

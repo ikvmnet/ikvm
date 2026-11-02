@@ -142,11 +142,11 @@ namespace IKVM.Runtime
                         {
                             // skip unreachable instructions
                         }
-                        else if (m.Instructions[i].NormalizedOpCode == NormalizedOpCode.GetField && RuntimeVerifierJavaType.IsThis(ma.GetRawStackTypeWrapper(i, 0)))
+                        else if (m.Instructions[i].NormalizedOpCode == NormalizedOpCode.GetField && ma.GetRawStackType(i, 0).IsThis)
                         {
                             // loading a field from the current object cannot throw
                         }
-                        else if (m.Instructions[i].NormalizedOpCode == NormalizedOpCode.PutField && RuntimeVerifierJavaType.IsThis(ma.GetRawStackTypeWrapper(i, 1)))
+                        else if (m.Instructions[i].NormalizedOpCode == NormalizedOpCode.PutField && ma.GetRawStackType(i, 1).IsThis)
                         {
                             // storing a field in the current object cannot throw
                         }
@@ -188,7 +188,7 @@ namespace IKVM.Runtime
                         tw = args[arg - 1];
                     }
 
-                    if (!tw.IsUnloadable && (v.type != tw || tw.TypeAsLocalOrStackType != tw.TypeAsSignatureType))
+                    if (!tw.IsUnloadable && (v.type.ToRuntimeJavaType(finish.Context) != tw || tw.TypeAsLocalOrStackType != tw.TypeAsSignatureType))
                     {
                         v.builder = ilGenerator.DeclareLocal(GetLocalBuilderType(v.type));
                         if (debug && v.name != null)
@@ -395,25 +395,31 @@ namespace IKVM.Runtime
 
             internal readonly void SetType(int i, RuntimeJavaType type)
             {
-                if (type == _compiler.finish.Context.VerifierJavaTypeFactory.Null)
+                _types[i] = StackType.Other;
+                _locals[i] = _compiler.ilGenerator.AllocTempLocal(_compiler.GetLocalBuilderType(type));
+            }
+
+            internal readonly void SetType(int i, VerificationType type)
+            {
+                if (type.IsNull)
                 {
                     _types[i] = StackType.Null;
                 }
-                else if (RuntimeVerifierJavaType.IsNew(type))
+                else if (type.IsUninitializedNew)
                 {
                     // new objects aren't really there on the stack
                     _types[i] = StackType.New;
                 }
-                else if (RuntimeVerifierJavaType.IsThis(type))
+                else if (type.IsThis)
                 {
                     _types[i] = StackType.This;
                 }
-                else if (type == _compiler.finish.Context.VerifierJavaTypeFactory.UninitializedThis)
+                else if (type.IsUninitializedThis)
                 {
                     // uninitialized references cannot be stored in a local, but we can reload them
                     _types[i] = StackType.UnitializedThis;
                 }
-                else if (RuntimeVerifierJavaType.IsFaultBlockException(type))
+                else if (type.IsFaultBlockException)
                 {
                     _types[i] = StackType.FaultBlockException;
                 }
@@ -643,7 +649,7 @@ namespace IKVM.Runtime
                         var bc = new BranchCookie(compiler, stackHeight, targetIndex);
                         bc.ContentOnStack = true;
                         for (int i = 0; i < stackHeight; i++)
-                            bc.dh.SetType(i, compiler.ma.GetRawStackTypeWrapper(targetIndex, i));
+                            bc.dh.SetType(i, compiler.ma.GetRawStackType(targetIndex, i));
                         exits.Add(bc);
                         l = bc;
                         labels[targetIndex] = l;
@@ -828,7 +834,7 @@ namespace IKVM.Runtime
 
                     int handlerIndex = exc.HandlerIndex;
 
-                    if (exc.CatchType.IsNil && RuntimeVerifierJavaType.IsFaultBlockException(ma.GetRawStackTypeWrapper(handlerIndex, 0)))
+                    if (exc.CatchType.IsNil && ma.GetRawStackType(handlerIndex, 0).IsFaultBlockException)
                     {
                         if (exc.IsFinally)
                             ilGenerator.BeginFinallyBlock();
@@ -910,7 +916,7 @@ namespace IKVM.Runtime
                         if (unusedException)
                         {
                             // we must still have an item on the stack, even though it isn't used!
-                            bc.dh.SetType(0, finish.Context.VerifierJavaTypeFactory.Null);
+                            bc.dh.SetType(0, VerificationType.Null);
                         }
                         else
                         {
@@ -948,7 +954,7 @@ namespace IKVM.Runtime
                         ilGenerator.MarkLabel(bc.TargetLabel);
 
                         for (int j = 0; j < stackHeight; j++)
-                            bc.dh.SetType(j, ma.GetRawStackTypeWrapper(i, j));
+                            bc.dh.SetType(j, ma.GetRawStackType(i, j));
 
                         for (int j = stackHeight - 1; j >= 0; j--)
                             bc.dh.Load(j);
@@ -969,7 +975,7 @@ namespace IKVM.Runtime
                         var dh = new DupHelper(this, stackHeight);
                         for (int k = 0; k < stackHeight; k++)
                         {
-                            dh.SetType(k, ma.GetRawStackTypeWrapper(i, k));
+                            dh.SetType(k, ma.GetRawStackType(i, k));
                             dh.Store(k);
                         }
 
@@ -1026,7 +1032,7 @@ namespace IKVM.Runtime
                             break;
                         case OpCodeFlowControl.Throw:
                         case OpCodeFlowControl.Switch:
-                            if (ma.GetLocalTypeWrapper(i, 0) != finish.Context.VerifierJavaTypeFactory.UninitializedThis)
+                            if (!ma.GetLocalType(i, 0).IsUninitializedThis)
                             {
                                 ilGenerator.Emit(OpCodes.Ldarg_0);
                                 ilGenerator.Emit(OpCodes.Call, finish.Context.CompilerFactory.KeepAliveMethod);
@@ -1052,7 +1058,7 @@ namespace IKVM.Runtime
                         {
                             var cpi = classFile.GetFieldref(checked((ushort)instr.Arg1));
                             var field = cpi.GetField();
-                            if (ma.GetStackTypeWrapper(i, 0).IsUnloadable)
+                            if (ma.GetStackType(i, 0).IsUnloadable())
                             {
                                 if (field.IsProtected)
                                 {
@@ -1076,7 +1082,7 @@ namespace IKVM.Runtime
                                 nonleaf = true; // we may trigger a static initializer, which is equivalent to a call
                             RuntimeJavaField field = cpi.GetField();
                             RuntimeJavaType tw = field.FieldTypeWrapper;
-                            tw.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
+                            tw.EmitConvStackTypeToSignatureType(ilGenerator, GetStackTypeWrapper(i, 0));
                             if (strictfp)
                             {
                                 // no need to convert
@@ -1093,7 +1099,7 @@ namespace IKVM.Runtime
                             var cpi = classFile.GetFieldref(checked((ushort)instr.Arg1));
                             var field = cpi.GetField();
                             var tw = field.FieldTypeWrapper;
-                            if (ma.GetStackTypeWrapper(i, 1).IsUnloadable)
+                            if (ma.GetStackType(i, 1).IsUnloadable())
                             {
                                 var temp = ilGenerator.UnsafeAllocTempLocal(tw.TypeAsLocalOrStackType);
                                 ilGenerator.Emit(OpCodes.Stloc, temp);
@@ -1111,7 +1117,7 @@ namespace IKVM.Runtime
                                 ilGenerator.Emit(OpCodes.Ldloc, temp);
                             }
 
-                            tw.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
+                            tw.EmitConvStackTypeToSignatureType(ilGenerator, GetStackTypeWrapper(i, 0));
                             if (strictfp)
                             {
                                 // no need to convert
@@ -1207,7 +1213,7 @@ namespace IKVM.Runtime
                                 || instr.NormalizedOpCode == NormalizedOpCode.PrivilegedInvokeSpecial;
                             var method = GetMethodCallEmitter(instr.NormalizedOpCode, instr.Arg1);
                             var argcount = method.GetParameters().Length;
-                            var type = ma.GetRawStackTypeWrapper(i, argcount);
+                            var type = ma.GetRawStackType(i, argcount);
                             var thisType = ComputeThisType(type, method, instr.NormalizedOpCode);
 
                             var eic = new EmitIntrinsicContext(method, finish, ilGenerator, ma, i, mw, classFile, code, flags);
@@ -1240,7 +1246,7 @@ namespace IKVM.Runtime
 
                             // if the stack values don't match the argument types (for interface argument types)
                             // we must emit code to cast the stack value to the interface type
-                            if (isinvokespecial && method.IsConstructor && RuntimeVerifierJavaType.IsNew(type))
+                            if (isinvokespecial && method.IsConstructor && type.IsUninitializedNew)
                             {
                                 CastInterfaceArgs(method.DeclaringType, method.GetParameters(), i, false);
                             }
@@ -1260,7 +1266,7 @@ namespace IKVM.Runtime
 
                             if (isinvokespecial && method.IsConstructor)
                             {
-                                if (RuntimeVerifierJavaType.IsNew(type))
+                                if (type.IsUninitializedNew)
                                 {
                                     // we have to construct a list of all the unitialized references to the object
                                     // we're about to create on the stack, so that we can reconstruct the stack after
@@ -1270,7 +1276,7 @@ namespace IKVM.Runtime
                                     var stackfix = new bool[ma.GetStackHeight(i) - (argcount + 1)];
                                     for (int j = 0; j < stackfix.Length; j++)
                                     {
-                                        if (ma.GetRawStackTypeWrapper(i, argcount + 1 + j) == type)
+                                        if (ma.GetRawStackType(i, argcount + 1 + j) == type)
                                         {
                                             stackfix[j] = true;
                                             if (trivcount == j)
@@ -1288,7 +1294,7 @@ namespace IKVM.Runtime
                                     }
 
                                     for (int j = 0; !nontrivial && j < m.MaxLocals; j++)
-                                        if (ma.GetLocalTypeWrapper(i, j) == type)
+                                        if (ma.GetLocalType(i, j) == type)
                                             nontrivial = true;
 
                                     if (!thisType.IsUnloadable && thisType.IsSubTypeOf(finish.Context.JavaBase.TypeOfjavaLangThrowable))
@@ -1329,16 +1335,16 @@ namespace IKVM.Runtime
                                         {
                                             if (!stackfix[j])
                                             {
-                                                var stacktype = ma.GetStackTypeWrapper(i, argcount + 1 + j);
+                                                var stacktype = ma.GetStackType(i, argcount + 1 + j);
                                                 // it could be another new object reference (not from current invokespecial <init>
                                                 // instruction)
-                                                if (stacktype == finish.Context.VerifierJavaTypeFactory.Null)
+                                                if (stacktype.IsNull)
                                                 {
                                                     // NOTE we abuse the newobj local as a cookie to signal null!
                                                     tempstack[j] = newobj;
                                                     ilGenerator.Emit(OpCodes.Pop);
                                                 }
-                                                else if (!RuntimeVerifierJavaType.IsNotPresentOnStack(stacktype))
+                                                else if (!stacktype.IsNotPresentOnStack())
                                                 {
                                                     var lb = ilGenerator.DeclareLocal(GetLocalBuilderType(stacktype));
                                                     ilGenerator.Emit(OpCodes.Stloc, lb);
@@ -1395,7 +1401,7 @@ namespace IKVM.Runtime
                                 }
                                 else
                                 {
-                                    Debug.Assert(type == finish.Context.VerifierJavaTypeFactory.UninitializedThis);
+                                    Debug.Assert(type.IsUninitializedThis);
 
                                     method.EmitCall(ilGenerator);
                                     var locals = localVars.GetLocalVarsForInvokeSpecial(i);
@@ -1418,7 +1424,7 @@ namespace IKVM.Runtime
 
                                 if (isinvokespecial)
                                 {
-                                    if (RuntimeVerifierJavaType.IsThis(type))
+                                    if (type.IsThis)
                                     {
                                         method.EmitCall(ilGenerator);
                                     }
@@ -1443,7 +1449,7 @@ namespace IKVM.Runtime
                                     // the final Object.getClass() method and we don't want to call Object.getClass()
                                     // on a Throwable instance, because that would yield unverifiable code (java.lang.Throwable
                                     // extends System.Exception instead of java.lang.Object in the .NET type system).
-                                    if (RuntimeVerifierJavaType.IsThis(type) && (method.IsFinal || clazz.IsFinal) && clazz.GetMethod(method.Name, method.Signature, true) == method)
+                                    if (type.IsThis && (method.IsFinal || clazz.IsFinal) && clazz.GetMethod(method.Name, method.Signature, true) == method)
                                     {
                                         // we're calling a method on our own instance that can't possibly be overriden,
                                         // so we don't need to use callvirt
@@ -1476,7 +1482,7 @@ namespace IKVM.Runtime
                                 if (instr.NormalizedOpCode != NormalizedOpCode.Return)
                                 {
                                     var retTypeWrapper = mw.ReturnType;
-                                    retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
+                                    retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, GetStackTypeWrapper(i, 0));
                                     local = ilGenerator.UnsafeAllocTempLocal(retTypeWrapper.TypeAsSignatureType);
                                     ilGenerator.Emit(OpCodes.Stloc, local);
                                 }
@@ -1523,7 +1529,7 @@ namespace IKVM.Runtime
                                 else
                                 {
                                     var retTypeWrapper = mw.ReturnType;
-                                    retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
+                                    retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, GetStackTypeWrapper(i, 0));
                                     if (stackHeight != 1)
                                     {
                                         var local = ilGenerator.AllocTempLocal(retTypeWrapper.TypeAsSignatureType);
@@ -1544,21 +1550,21 @@ namespace IKVM.Runtime
                         }
                     case NormalizedOpCode.Aload:
                         {
-                            var type = ma.GetLocalTypeWrapper(i, instr.NormalizedArg1);
-                            if (type == finish.Context.VerifierJavaTypeFactory.Null)
+                            var type = ma.GetLocalType(i, instr.NormalizedArg1);
+                            if (type.IsNull)
                             {
                                 // if the local is known to be null, we just emit a null
                                 ilGenerator.Emit(OpCodes.Ldnull);
                             }
-                            else if (RuntimeVerifierJavaType.IsNotPresentOnStack(type))
+                            else if (type.IsNotPresentOnStack())
                             {
                                 // since object isn't represented on the stack, we don't need to do anything here
                             }
-                            else if (RuntimeVerifierJavaType.IsThis(type))
+                            else if (type.IsThis)
                             {
                                 ilGenerator.Emit(OpCodes.Ldarg_0);
                             }
-                            else if (type == finish.Context.VerifierJavaTypeFactory.UninitializedThis)
+                            else if (type.IsUninitializedThis)
                             {
                                 // any unitialized this reference has to be loaded from arg 0
                                 // NOTE if the method overwrites the this references, it will always end up in
@@ -1569,21 +1575,22 @@ namespace IKVM.Runtime
                             else
                             {
                                 var v = LoadLocal(i);
-                                if (!type.IsUnloadable && (v.type.IsUnloadable || !v.type.IsAssignableTo(type)))
-                                    type.EmitCheckcast(ilGenerator);
+                                var localType = v.type.ToRuntimeJavaType(finish.Context);
+                                if (!type.Type.IsUnloadable && (localType.IsUnloadable || !localType.IsAssignableTo(type.Type)))
+                                    type.Type.EmitCheckcast(ilGenerator);
                             }
 
                             break;
                         }
                     case NormalizedOpCode.Astore:
                         {
-                            var type = ma.GetRawStackTypeWrapper(i, 0);
-                            if (RuntimeVerifierJavaType.IsNotPresentOnStack(type))
+                            var type = ma.GetRawStackType(i, 0);
+                            if (type.IsNotPresentOnStack())
                             {
                                 // object isn't really on the stack, so we can't copy it into the local
                                 // (and the local doesn't exist anyway)
                             }
-                            else if (type == finish.Context.VerifierJavaTypeFactory.UninitializedThis)
+                            else if (type.IsUninitializedThis)
                             {
                                 // any unitialized reference is always the this reference, we don't store anything
                                 // here (because CLR won't allow unitialized references in locals) and then when
@@ -1769,7 +1776,7 @@ namespace IKVM.Runtime
                         }
                     case NormalizedOpCode.Aaload:
                         {
-                            var tw = ma.GetRawStackTypeWrapper(i, 1);
+                            var tw = GetStackTypeWrapper(i, 1);
                             if (tw.IsUnloadable)
                             {
                                 Profiler.Count("EmitDynamicAaload");
@@ -1840,7 +1847,7 @@ namespace IKVM.Runtime
                         break;
                     case NormalizedOpCode.Aastore:
                         {
-                            var tw = ma.GetRawStackTypeWrapper(i, 2);
+                            var tw = GetStackTypeWrapper(i, 2);
                             if (tw.IsUnloadable)
                             {
                                 Profiler.Count("EmitDynamicAastore");
@@ -1871,7 +1878,7 @@ namespace IKVM.Runtime
                             break;
                         }
                     case NormalizedOpCode.Arraylength:
-                        if (ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
+                        if (ma.GetRawStackType(i, 0).IsUnloadable())
                         {
                             ilGenerator.Emit(OpCodes.Castclass, finish.Context.Types.Array);
                             ilGenerator.Emit(OpCodes.Callvirt, finish.Context.Types.Array.GetMethod("get_Length"));
@@ -2087,8 +2094,8 @@ namespace IKVM.Runtime
                     case NormalizedOpCode.Swap:
                         {
                             var dh = new DupHelper(this, 2);
-                            dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
-                            dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+                            dh.SetType(0, ma.GetRawStackType(i, 0));
+                            dh.SetType(1, ma.GetRawStackType(i, 1));
                             dh.Store(0);
                             dh.Store(1);
                             dh.Load(0);
@@ -2098,14 +2105,14 @@ namespace IKVM.Runtime
                         }
                     case NormalizedOpCode.Dup:
                         // if the TOS contains a "new" object or a fault block exception, it isn't really there, so we don't dup it
-                        if (!RuntimeVerifierJavaType.IsNotPresentOnStack(ma.GetRawStackTypeWrapper(i, 0)))
+                        if (!ma.GetRawStackType(i, 0).IsNotPresentOnStack())
                             ilGenerator.Emit(OpCodes.Dup);
 
                         break;
                     case NormalizedOpCode.Dup2:
                         {
-                            var type1 = ma.GetRawStackTypeWrapper(i, 0);
-                            if (type1.IsWidePrimitive)
+                            var type1 = ma.GetRawStackType(i, 0);
+                            if (type1.IsCategory2)
                             {
                                 ilGenerator.Emit(OpCodes.Dup);
                             }
@@ -2113,7 +2120,7 @@ namespace IKVM.Runtime
                             {
                                 var dh = new DupHelper(this, 2);
                                 dh.SetType(0, type1);
-                                dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+                                dh.SetType(1, ma.GetRawStackType(i, 1));
                                 dh.Store(0);
                                 dh.Store(1);
                                 dh.Load(1);
@@ -2127,8 +2134,8 @@ namespace IKVM.Runtime
                     case NormalizedOpCode.DupX1:
                         {
                             var dh = new DupHelper(this, 2);
-                            dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
-                            dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+                            dh.SetType(0, ma.GetRawStackType(i, 0));
+                            dh.SetType(1, ma.GetRawStackType(i, 1));
                             dh.Store(0);
                             dh.Store(1);
                             dh.Load(0);
@@ -2139,12 +2146,12 @@ namespace IKVM.Runtime
                         }
                     case NormalizedOpCode.Dup2X1:
                         {
-                            var type1 = ma.GetRawStackTypeWrapper(i, 0);
-                            if (type1.IsWidePrimitive)
+                            var type1 = ma.GetRawStackType(i, 0);
+                            if (type1.IsCategory2)
                             {
                                 var dh = new DupHelper(this, 2);
                                 dh.SetType(0, type1);
-                                dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+                                dh.SetType(1, ma.GetRawStackType(i, 1));
                                 dh.Store(0);
                                 dh.Store(1);
                                 dh.Load(0);
@@ -2156,8 +2163,8 @@ namespace IKVM.Runtime
                             {
                                 var dh = new DupHelper(this, 3);
                                 dh.SetType(0, type1);
-                                dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
-                                dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
+                                dh.SetType(1, ma.GetRawStackType(i, 1));
+                                dh.SetType(2, ma.GetRawStackType(i, 2));
                                 dh.Store(0);
                                 dh.Store(1);
                                 dh.Store(2);
@@ -2172,11 +2179,11 @@ namespace IKVM.Runtime
                         }
                     case NormalizedOpCode.Dup2X2:
                         {
-                            var type1 = ma.GetRawStackTypeWrapper(i, 0);
-                            var type2 = ma.GetRawStackTypeWrapper(i, 1);
-                            if (type1.IsWidePrimitive)
+                            var type1 = ma.GetRawStackType(i, 0);
+                            var type2 = ma.GetRawStackType(i, 1);
+                            if (type1.IsCategory2)
                             {
-                                if (type2.IsWidePrimitive)
+                                if (type2.IsCategory2)
                                 {
                                     // Form 4
                                     var dh = new DupHelper(this, 2);
@@ -2195,7 +2202,7 @@ namespace IKVM.Runtime
                                     var dh = new DupHelper(this, 3);
                                     dh.SetType(0, type1);
                                     dh.SetType(1, type2);
-                                    dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
+                                    dh.SetType(2, ma.GetRawStackType(i, 2));
                                     dh.Store(0);
                                     dh.Store(1);
                                     dh.Store(2);
@@ -2208,8 +2215,8 @@ namespace IKVM.Runtime
                             }
                             else
                             {
-                                var type3 = ma.GetRawStackTypeWrapper(i, 2);
-                                if (type3.IsWidePrimitive)
+                                var type3 = ma.GetRawStackType(i, 2);
+                                if (type3.IsCategory2)
                                 {
                                     // Form 3
                                     var dh = new DupHelper(this, 3);
@@ -2233,7 +2240,7 @@ namespace IKVM.Runtime
                                     dh.SetType(0, type1);
                                     dh.SetType(1, type2);
                                     dh.SetType(2, type3);
-                                    dh.SetType(3, ma.GetRawStackTypeWrapper(i, 3));
+                                    dh.SetType(3, ma.GetRawStackType(i, 3));
                                     dh.Store(0);
                                     dh.Store(1);
                                     dh.Store(2);
@@ -2251,12 +2258,12 @@ namespace IKVM.Runtime
                         }
                     case NormalizedOpCode.DupX2:
                         {
-                            var type2 = ma.GetRawStackTypeWrapper(i, 1);
-                            if (type2.IsWidePrimitive)
+                            var type2 = ma.GetRawStackType(i, 1);
+                            if (type2.IsCategory2)
                             {
                                 // Form 2
                                 var dh = new DupHelper(this, 2);
-                                dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
+                                dh.SetType(0, ma.GetRawStackType(i, 0));
                                 dh.SetType(1, type2);
                                 dh.Store(0);
                                 dh.Store(1);
@@ -2269,9 +2276,9 @@ namespace IKVM.Runtime
                             {
                                 // Form 1
                                 var dh = new DupHelper(this, 3);
-                                dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
+                                dh.SetType(0, ma.GetRawStackType(i, 0));
                                 dh.SetType(1, type2);
-                                dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
+                                dh.SetType(2, ma.GetRawStackType(i, 2));
                                 dh.Store(0);
                                 dh.Store(1);
                                 dh.Store(2);
@@ -2285,23 +2292,23 @@ namespace IKVM.Runtime
                         }
                     case NormalizedOpCode.Pop2:
                         {
-                            var type1 = ma.GetRawStackTypeWrapper(i, 0);
-                            if (type1.IsWidePrimitive)
+                            var type1 = ma.GetRawStackType(i, 0);
+                            if (type1.IsCategory2)
                             {
                                 ilGenerator.Emit(OpCodes.Pop);
                             }
                             else
                             {
-                                if (!RuntimeVerifierJavaType.IsNotPresentOnStack(type1))
+                                if (!type1.IsNotPresentOnStack())
                                     ilGenerator.Emit(OpCodes.Pop);
-                                if (!RuntimeVerifierJavaType.IsNotPresentOnStack(ma.GetRawStackTypeWrapper(i, 1)))
+                                if (!ma.GetRawStackType(i, 1).IsNotPresentOnStack())
                                     ilGenerator.Emit(OpCodes.Pop);
                             }
                             break;
                         }
                     case NormalizedOpCode.Pop:
                         // if the TOS is a new object or a fault block exception, it isn't really there, so we don't need to pop it
-                        if (!RuntimeVerifierJavaType.IsNotPresentOnStack(ma.GetRawStackTypeWrapper(i, 0)))
+                        if (!ma.GetRawStackType(i, 0).IsNotPresentOnStack())
                         {
                             ilGenerator.Emit(OpCodes.Pop);
                         }
@@ -2313,20 +2320,20 @@ namespace IKVM.Runtime
                         ilGenerator.EmitMonitorExit();
                         break;
                     case NormalizedOpCode.AthrowNoUnmap:
-                        if (ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
+                        if (ma.GetRawStackType(i, 0).IsUnloadable())
                         {
                             ilGenerator.Emit(OpCodes.Castclass, finish.Context.Types.Exception);
                         }
                         ilGenerator.Emit(OpCodes.Throw);
                         break;
                     case NormalizedOpCode.Athrow:
-                        if (RuntimeVerifierJavaType.IsFaultBlockException(ma.GetRawStackTypeWrapper(i, 0)))
+                        if (ma.GetRawStackType(i, 0).IsFaultBlockException)
                         {
                             ilGenerator.Emit(OpCodes.Endfinally);
                         }
                         else
                         {
-                            if (ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
+                            if (ma.GetRawStackType(i, 0).IsUnloadable())
                             {
                                 ilGenerator.Emit(OpCodes.Castclass, finish.Context.Types.Exception);
                             }
@@ -3049,7 +3056,7 @@ namespace IKVM.Runtime
                     }
                     else if (args[i].IsInterfaceOrInterfaceArray)
                     {
-                        var tw = ma.GetStackTypeWrapper(instructionIndex, args.Length - 1 - i);
+                        var tw = GetStackTypeWrapper(instructionIndex, args.Length - 1 - i);
                         if (tw.IsUnloadable || NeedsInterfaceDownCast(tw, args[i]))
                         {
                             needsCast = true;
@@ -3072,7 +3079,7 @@ namespace IKVM.Runtime
                     }
                     // if the stack contains an unloadable, we might need to cast it
                     // (e.g. if the argument type is a base class that is loadable)
-                    if (ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i).IsUnloadable)
+                    if (ma.GetRawStackType(instructionIndex, args.Length - 1 - i).IsUnloadable())
                     {
                         needsCast = true;
                         firstCastArg = i;
@@ -3086,19 +3093,18 @@ namespace IKVM.Runtime
                 var dh = new DupHelper(this, args.Length);
                 for (int i = firstCastArg + 1; i < args.Length; i++)
                 {
-                    var tw = ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i);
-                    if (tw != finish.Context.VerifierJavaTypeFactory.UninitializedThis
-                        && !RuntimeVerifierJavaType.IsThis(tw))
-                        tw = args[i];
-
-                    dh.SetType(i, tw);
+                    var tw = ma.GetRawStackType(instructionIndex, args.Length - 1 - i);
+                    if (tw.IsUninitializedThis || tw.IsThis)
+                        dh.SetType(i, tw);
+                    else
+                        dh.SetType(i, args[i]);
                 }
 
                 for (int i = args.Length - 1; i >= firstCastArg; i--)
                 {
                     if (!args[i].IsUnloadable && !args[i].IsGhost)
                     {
-                        var tw = ma.GetStackTypeWrapper(instructionIndex, args.Length - 1 - i);
+                        var tw = GetStackTypeWrapper(instructionIndex, args.Length - 1 - i);
                         if (tw.IsUnloadable || (args[i].IsInterfaceOrInterfaceArray && NeedsInterfaceDownCast(tw, args[i])))
                         {
                             ilGenerator.EmitAssertType(args[i].TypeAsTBD);
@@ -3134,7 +3140,7 @@ namespace IKVM.Runtime
                             // we're calling a java.lang.Object method through a ghost interface reference,
                             // no ghost handling is needed
                         }
-                        else if (RuntimeVerifierJavaType.IsThis(ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i)))
+                        else if (ma.GetRawStackType(instructionIndex, args.Length - 1 - i).IsThis)
                         {
                             // we're an instance method in a ghost interface, so the this pointer is a managed pointer to the
                             // wrapper value and if we're not calling another instance method on ourself, we need to load
@@ -3178,7 +3184,7 @@ namespace IKVM.Runtime
                                     args[i].EmitUnbox(ilGenerator);
                                 }
                             }
-                            else if (ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i).IsUnloadable)
+                            else if (ma.GetRawStackType(instructionIndex, args.Length - 1 - i).IsUnloadable())
                             {
                                 ilGenerator.Emit(OpCodes.Castclass, args[i].TypeAsSignatureType);
                             }
@@ -3230,7 +3236,7 @@ namespace IKVM.Runtime
             var fieldType = cpi.GetFieldType();
             if (kind == MethodHandleKind.PutField || kind == MethodHandleKind.PutStatic)
             {
-                fieldType.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
+                fieldType.EmitConvStackTypeToSignatureType(ilGenerator, GetStackTypeWrapper(i, 0));
                 if (strictfp)
                 {
                     // no need to convert
@@ -3750,18 +3756,18 @@ namespace IKVM.Runtime
             return finish.GetValue<DynamicBinder>(index | ((byte)kind << 24)).Get(this, kind, cpi, privileged);
         }
 
-        RuntimeJavaType ComputeThisType(RuntimeJavaType type, RuntimeJavaMethod method, NormalizedOpCode invoke)
+        RuntimeJavaType ComputeThisType(VerificationType type, RuntimeJavaMethod method, NormalizedOpCode invoke)
         {
-            if (type == finish.Context.VerifierJavaTypeFactory.UninitializedThis || RuntimeVerifierJavaType.IsThis(type))
+            if (type.IsUninitializedThis || type.IsThis)
                 return clazz;
-            else if (RuntimeVerifierJavaType.IsNew(type))
-                return ((RuntimeVerifierJavaType)type).UnderlyingType;
-            else if (type == finish.Context.VerifierJavaTypeFactory.Null)
+            else if (type.IsUninitializedNew)
+                return type.Type;
+            else if (type.IsNull)
                 return method.DeclaringType;
-            else if (invoke == NormalizedOpCode.InvokeVirtual && method.IsProtected && type.IsUnloadable)
+            else if (invoke == NormalizedOpCode.InvokeVirtual && method.IsProtected && type.IsUnloadable())
                 return clazz;
             else
-                return type;
+                return type.Type;
         }
 
         LocalVar LoadLocal(int instructionIndex)
@@ -3772,12 +3778,12 @@ namespace IKVM.Runtime
                 var instr = m.Instructions[instructionIndex];
                 int i = m.ArgMap[instr.NormalizedArg1];
                 ilGenerator.EmitLdarg(i);
-                if (v.type == finish.Context.PrimitiveJavaTypeFactory.DOUBLE)
+                if (v.type.IsDouble)
                     ilGenerator.Emit(OpCodes.Conv_R8);
-                if (v.type == finish.Context.PrimitiveJavaTypeFactory.FLOAT)
+                if (v.type.IsFloat)
                     ilGenerator.Emit(OpCodes.Conv_R4);
             }
-            else if (v.type == finish.Context.VerifierJavaTypeFactory.Null)
+            else if (v.type.IsNull)
             {
                 ilGenerator.Emit(OpCodes.Ldnull);
             }
@@ -3810,7 +3816,7 @@ namespace IKVM.Runtime
                 int i = m.ArgMap[instr.NormalizedArg1];
                 ilGenerator.EmitStarg(i);
             }
-            else if (v.type == finish.Context.VerifierJavaTypeFactory.Null)
+            else if (v.type.IsNull)
             {
                 ilGenerator.Emit(OpCodes.Pop);
             }
@@ -3827,6 +3833,22 @@ namespace IKVM.Runtime
             }
 
             return v;
+        }
+
+        /// <summary>
+        /// Gets the runtime type of the value at the given position from the top of the stack at the given instruction.
+        /// </summary>
+        /// <param name="instructionIndex"></param>
+        /// <param name="pos"></param>
+        /// <returns></returns>
+        RuntimeJavaType GetStackTypeWrapper(int instructionIndex, int pos)
+        {
+            return ma.GetStackType(instructionIndex, pos).ToRuntimeJavaType(finish.Context);
+        }
+
+        Type GetLocalBuilderType(VerificationType type)
+        {
+            return GetLocalBuilderType(type.ToRuntimeJavaType(finish.Context));
         }
 
         Type GetLocalBuilderType(RuntimeJavaType tw)
