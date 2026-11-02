@@ -25,15 +25,17 @@
 using System;
 
 using IKVM.CoreLib.Runtime;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
 
-    internal struct Instruction<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    internal struct Instruction<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
     {
 
         ushort pc;
@@ -105,7 +107,7 @@ namespace IKVM.CoreLib.Linking
             }
         }
 
-        internal void Read(IKVM.ByteCode.Decoding.Instruction instruction, ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile)
+        internal void Read(IKVM.ByteCode.Decoding.Instruction instruction, ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile)
         {
             this.pc = (ushort)instruction.Offset;
 

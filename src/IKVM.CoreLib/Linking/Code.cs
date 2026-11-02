@@ -27,22 +27,24 @@ using System.Collections.Generic;
 
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
 
-    struct Code<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    struct Code<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
     {
 
         internal bool _hasJsr;
         internal string _verifyError;
         internal ushort _maxStack;
         internal ushort _maxLocals;
-        internal Instruction<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>[] _instructions;
+        internal Instruction<TTypeSystem, TType, TMember, TField, TMethod>[] _instructions;
         internal ExceptionTableEntry[] _exceptionTable;
         internal int[] _argmap;
         internal LineNumberTable _lineNumberTable;
@@ -57,7 +59,7 @@ namespace IKVM.CoreLib.Linking
         /// <param name="attribute"></param>
         /// <param name="options"></param>
         /// <exception cref="ClassFormatException"></exception>
-        internal void Read(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, Method<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> method, CodeAttribute attribute)
+        internal void Read(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, Method<TTypeSystem, TType, TMember, TField, TMethod> method, CodeAttribute attribute)
         {
             _maxStack = attribute.MaxStack;
             _maxLocals = attribute.MaxLocals;
@@ -65,7 +67,7 @@ namespace IKVM.CoreLib.Linking
                 throw new ClassFormatException("Invalid method Code length {1} in class file {0}", classFile.Name, attribute.Code.Length);
 
             // we don't know how many instructions we will read until we read them, so first parse them into a temporary array
-            var _instructions = ArrayPool<Instruction<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>>.Shared.Rent((int)attribute.Code.Length + 1);
+            var _instructions = ArrayPool<Instruction<TTypeSystem, TType, TMember, TField, TMethod>>.Shared.Rent((int)attribute.Code.Length + 1);
 
             // a rented array contains whatever was left in it, and reading an instruction only sets the fields its opcode uses
             Array.Clear(_instructions, 0, (int)attribute.Code.Length + 1);
@@ -106,7 +108,7 @@ namespace IKVM.CoreLib.Linking
                 }
 
                 // copy from temporary array into properly sized array
-                this._instructions = new Instruction<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>[instructionCount];
+                this._instructions = new Instruction<TTypeSystem, TType, TMember, TField, TMethod>[instructionCount];
                 Array.Copy(_instructions, 0, this._instructions, 0, instructionCount);
 
                 // build the pcIndexMap
@@ -254,7 +256,7 @@ namespace IKVM.CoreLib.Linking
             }
             finally
             {
-                ArrayPool<Instruction<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>>.Shared.Return(_instructions);
+                ArrayPool<Instruction<TTypeSystem, TType, TMember, TField, TMethod>>.Shared.Return(_instructions);
             }
         }
 

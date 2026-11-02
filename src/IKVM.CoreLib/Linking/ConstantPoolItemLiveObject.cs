@@ -22,14 +22,17 @@
   
 */
 
+using IKVM.CoreLib.Jvm;
+
 namespace IKVM.CoreLib.Linking
 {
 
-    sealed class ConstantPoolItemLiveObject<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> : ConstantPoolItem<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    sealed class ConstantPoolItemLiveObject<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
     {
 
         readonly object _value;
@@ -39,7 +42,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="value"></param>
-        internal ConstantPoolItemLiveObject(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, object value) :
+        internal ConstantPoolItemLiveObject(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, object value) :
             base(classFile)
         {
             _value = value;

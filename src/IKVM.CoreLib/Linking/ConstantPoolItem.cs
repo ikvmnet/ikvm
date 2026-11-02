@@ -24,6 +24,7 @@
 using System;
 
 using IKVM.CoreLib.Runtime;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
@@ -31,28 +32,29 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a constant pool item.
     /// </summary>
-    internal abstract class ConstantPoolItem<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    internal abstract class ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
     {
 
-        readonly ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> _classFile;
+        readonly ClassFile<TTypeSystem, TType, TMember, TField, TMethod> _classFile;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="classFile"></param>
-        protected ConstantPoolItem(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile)
+        protected ConstantPoolItem(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile)
         {
             _classFile = classFile ?? throw new ArgumentNullException(nameof(classFile));
         }
 
         /// <summary>
-        /// Gets the <see cref="ClassFile{TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod}" /> that hosts this instance.
+        /// Gets the <see cref="ClassFile{TTypeSystem, TType, TMember, TField, TMethod}" /> that hosts this instance.
         /// </summary>
-        public ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> ClassFile => _classFile;
+        public ClassFile<TTypeSystem, TType, TMember, TField, TMethod> ClassFile => _classFile;
 
         /// <summary>
         /// Gets the type of constant represented by this item.
@@ -85,7 +87,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="thisType"></param>
         /// <param name="mode"></param>
-        public virtual void Link(TLinkingType thisType, LoadMode mode)
+        public virtual void Link(TType thisType, LoadMode mode)
         {
 
         }

@@ -22,16 +22,19 @@
   
 */
 
+using IKVM.CoreLib.Jvm;
+
 namespace IKVM.CoreLib.Linking
 {
 
     // this is only used to copy strings into "constantpool" when we see a RuntimeVisibleTypeAnnotations attribute,
     // because we need a consistent way of exposing constant pool items to the runtime and that case
-    sealed class ConstantPoolItemUtf8<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> : ConstantPoolItem<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    sealed class ConstantPoolItemUtf8<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
     {
 
         readonly string _value;
@@ -41,7 +44,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="value"></param>
-        public ConstantPoolItemUtf8(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, string value) :
+        public ConstantPoolItemUtf8(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, string value) :
             base(classFile)
         {
             _value = value;

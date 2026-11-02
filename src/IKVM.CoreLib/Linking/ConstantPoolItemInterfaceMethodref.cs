@@ -24,15 +24,17 @@
 
 using IKVM.ByteCode.Decoding;
 using IKVM.CoreLib.Runtime;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
 
-    internal sealed class ConstantPoolItemInterfaceMethodref<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> : ConstantPoolItemMI<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    internal sealed class ConstantPoolItemInterfaceMethodref<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItemMI<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
     {
 
         /// <summary>
@@ -40,28 +42,30 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        public ConstantPoolItemInterfaceMethodref(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, InterfaceMethodrefConstantData data) :
+        public ConstantPoolItemInterfaceMethodref(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, InterfaceMethodrefConstantData data) :
             base(classFile, data.Class, data.NameAndType)
         {
 
         }
 
         /// <inheritdoc />
-        public override void Link(TLinkingType thisType, LoadMode mode)
+        public override void Link(TType thisType, LoadMode mode)
         {
             base.Link(thisType, mode);
 
             var wrapper = GetClassType();
             if (wrapper != null)
             {
-                if (!wrapper.IsUnloadable)
-                    _method = wrapper.GetInterfaceMethod(Name, Signature);
+                ref readonly var ts = ref ClassFile.TypeSystem;
+
+                if (!ts.IsUnloadable(wrapper))
+                    _method = ts.GetInterfaceMethod(wrapper, Name, Signature);
 
                 // NOTE vmspec 5.4.3.4 clearly states that an interfacemethod may also refer to a method in Object
-                _method ??= ClassFile.Context.TypeOfJavaLangObject.GetMethod(Name, Signature, false);
+                _method ??= ts.GetMethod(ts.TypeOfJavaLangObject, Name, Signature, false);
 
                 if (_method != null)
-                    _method.Link(mode);
+                    ts.EnsureLinked(_method, mode);
             }
         }
 

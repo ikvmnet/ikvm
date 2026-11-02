@@ -23,6 +23,7 @@
 */
 
 using IKVM.ByteCode.Decoding;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
@@ -30,11 +31,12 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a integer constant.
     /// </summary>
-    sealed class ConstantPoolItemInteger<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> : ConstantPoolItem<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    sealed class ConstantPoolItemInteger<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
     {
 
         internal int _value;
@@ -44,7 +46,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        internal ConstantPoolItemInteger(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, IntegerConstantData data) :
+        internal ConstantPoolItemInteger(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, IntegerConstantData data) :
             base(classFile)
         {
             _value = data.Value;

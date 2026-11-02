@@ -52,7 +52,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Encapsulates the information about a type available to Java.
     /// </summary>
-    internal abstract class RuntimeJavaType : ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>
+    internal abstract class RuntimeJavaType
     {
 
         internal const Modifiers UnloadableModifiersHack = Modifiers.Final | Modifiers.Interface | Modifiers.Private;
@@ -1613,77 +1613,6 @@ namespace IKVM.Runtime
         }
 
 #endif
-
-        #region ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>
-
-        RuntimeJavaField ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.GetField(string name, string signature)
-        {
-            return GetFieldWrapper(name, signature);
-        }
-
-        RuntimeJavaMethod ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.GetMethod(string name, string signature, bool inherit)
-        {
-            return GetMethod(name, signature, inherit);
-        }
-
-        RuntimeJavaMethod ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.GetInterfaceMethod(string name, string signature)
-        {
-            return GetInterfaceMethod(name, signature);
-        }
-
-        bool ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.IsSubTypeOf(RuntimeJavaType type)
-        {
-            return IsSubTypeOf(type);
-        }
-
-        RuntimeJavaType ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.LoadType(string name, LoadMode mode)
-        {
-            return ClassLoader.LoadClass(name, mode);
-        }
-
-        bool ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.CheckPackageAccess(RuntimeJavaType type)
-        {
-#if IMPORTER == false && EXPORTER == false && FIRST_PASS == false
-            try
-            {
-                ClassLoader.CheckPackageAccess(type, ClassObject.pd);
-                return true;
-            }
-            catch (java.lang.SecurityException)
-            {
-                return false;
-            }
-#else
-            return false;
-#endif
-        }
-
-        RuntimeJavaType ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.GetFieldTypeFromSignature(string signature, LoadMode mode)
-        {
-            return ClassLoader.FieldTypeWrapperFromSig(signature, mode);
-        }
-
-        RuntimeJavaType[] ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.GetArgTypeListFromSignature(string descriptor, LoadMode mode)
-        {
-            return ClassLoader.ArgJavaTypeListFromSig(descriptor, mode);
-        }
-
-        RuntimeJavaType ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.GetReturnTypeFromSignature(string descriptor, LoadMode mode)
-        {
-            return ClassLoader.RetTypeWrapperFromSig(descriptor, mode);
-        }
-
-        string ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.Name => Name;
-
-        bool ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.IsUnloadable => IsUnloadable;
-
-        bool ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.IsInterface => IsInterface;
-
-        ClassFileAccessFlags ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.AccessFlags => (ClassFileAccessFlags)Modifiers;
-
-        RuntimeJavaType ILinkingType<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.BaseType => BaseTypeWrapper;
-
-        #endregion
 
     }
 

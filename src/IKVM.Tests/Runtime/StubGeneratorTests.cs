@@ -9,7 +9,7 @@ using IKVM.Runtime;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using ClassFile = IKVM.CoreLib.Linking.ClassFile<IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
+using ClassFile = IKVM.CoreLib.Linking.ClassFile<IKVM.Runtime.RuntimeJvmTypeSystem, IKVM.Runtime.RuntimeJavaType, IKVM.Runtime.RuntimeJavaMember, IKVM.Runtime.RuntimeJavaField, IKVM.Runtime.RuntimeJavaMethod>;
 
 namespace IKVM.Tests.Runtime
 {
@@ -27,7 +27,7 @@ namespace IKVM.Tests.Runtime
         {
             using var stream = new MemoryStream();
             JVM.Context.StubGenerator.Write(stream, RuntimeJavaType.FromClass(clazz), true, true, true, true, false);
-            return new ClassFile(JVM.Context, IKVM.ByteCode.Decoding.ClassFile.Read(stream.ToArray()), clazz.getName(), ClassFileParseOptions.None, []);
+            return new ClassFile(new RuntimeJvmTypeSystem(JVM.Context), IKVM.ByteCode.Decoding.ClassFile.Read(stream.ToArray()), clazz.getName(), ClassFileParseOptions.None, []);
         }
 
         [TestMethod]

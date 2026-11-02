@@ -23,6 +23,7 @@
 */
 using IKVM.ByteCode;
 using IKVM.CoreLib.Runtime;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
@@ -30,17 +31,18 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a field, method or interface reference.
     /// </summary>
-    internal abstract class ConstantPoolItemFMI<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> : ConstantPoolItem<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    internal abstract class ConstantPoolItemFMI<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
     {
 
         readonly ClassConstantHandle _clazzHandle;
         readonly NameAndTypeConstantHandle _nameAndTypeHandle;
 
-        ConstantPoolItemClass<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> _clazz;
+        ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod> _clazz;
         string _name;
         string _descriptor;
 
@@ -50,7 +52,7 @@ namespace IKVM.CoreLib.Linking
         /// <param name="classFile"></param>
         /// <param name="clazz"></param>
         /// <param name="nameAndType"></param>
-        public ConstantPoolItemFMI(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndType) :
+        public ConstantPoolItemFMI(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndType) :
             base(classFile)
         {
             _clazzHandle = clazz;
@@ -60,9 +62,9 @@ namespace IKVM.CoreLib.Linking
         /// <inheritdoc />
         public override void Resolve()
         {
-            var name_and_type = (ConstantPoolItemNameAndType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>)ClassFile.GetConstantPoolItem(_nameAndTypeHandle);
+            var name_and_type = (ConstantPoolItemNameAndType<TTypeSystem, TType, TMember, TField, TMethod>)ClassFile.GetConstantPoolItem(_nameAndTypeHandle);
 
-            _clazz = (ConstantPoolItemClass<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>)ClassFile.GetConstantPoolItem(_clazzHandle);
+            _clazz = (ConstantPoolItemClass<TTypeSystem, TType, TMember, TField, TMethod>)ClassFile.GetConstantPoolItem(_clazzHandle);
             // if the constant pool items referred to were strings, GetConstantPoolItem returns null
             if (name_and_type == null || _clazz == null)
                 throw new ClassFormatException("Bad index in constant pool");
@@ -88,7 +90,7 @@ namespace IKVM.CoreLib.Linking
         }
 
         /// <inheritdoc />
-        public override void Link(TLinkingType thisType, LoadMode mode)
+        public override void Link(TType thisType, LoadMode mode)
         {
             _clazz.Link(thisType, mode);
         }
@@ -108,9 +110,9 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         public string Class => _clazz.Name;
 
-        public TLinkingType GetClassType() => _clazz.GetClassType();
+        public TType GetClassType() => _clazz.GetClassType();
 
-        public abstract TLinkingMember? GetMember();
+        public abstract TMember? GetMember();
 
     }
 

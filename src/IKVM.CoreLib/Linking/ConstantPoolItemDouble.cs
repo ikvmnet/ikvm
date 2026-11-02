@@ -23,6 +23,7 @@
 */
 
 using IKVM.ByteCode.Decoding;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
@@ -30,11 +31,12 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a double constant.
     /// </summary>
-    sealed class ConstantPoolItemDouble<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> : ConstantPoolItem<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    sealed class ConstantPoolItemDouble<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItem<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
     {
 
         internal double _value;
@@ -44,7 +46,7 @@ namespace IKVM.CoreLib.Linking
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        public ConstantPoolItemDouble(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, DoubleConstantData data) :
+        public ConstantPoolItemDouble(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, DoubleConstantData data) :
             base(classFile)
         {
             _value = data.Value;

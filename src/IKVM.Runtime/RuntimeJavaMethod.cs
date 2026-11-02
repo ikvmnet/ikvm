@@ -44,9 +44,7 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    abstract class RuntimeJavaMethod :
-        RuntimeJavaMember,
-        ILinkingMethod<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>
+    abstract class RuntimeJavaMethod : RuntimeJavaMember
     {
 
         MethodBase method;
@@ -578,11 +576,6 @@ namespace IKVM.Runtime
             {
                 return IsProtected && (DeclaringType == DeclaringType.Context.JavaBase.TypeOfJavaLangObject || DeclaringType == DeclaringType.Context.JavaBase.TypeOfjavaLangThrowable) && (Name == StringConstants.CLONE || Name == StringConstants.FINALIZE);
             }
-        }
-
-        void ILinkingMethod<RuntimeJavaType, RuntimeJavaMember, RuntimeJavaField, RuntimeJavaMethod>.Link(LoadMode mode)
-        {
-            Link(mode);
         }
 
     }

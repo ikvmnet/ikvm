@@ -25,6 +25,7 @@
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
 using IKVM.CoreLib.Runtime;
+using IKVM.CoreLib.Jvm;
 
 namespace IKVM.CoreLib.Linking
 {
@@ -32,22 +33,23 @@ namespace IKVM.CoreLib.Linking
     /// <summary>
     /// Type-model representation of a fieldRef constant.
     /// </summary>
-    internal sealed class ConstantPoolItemFieldref<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> : ConstantPoolItemFMI<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingType : class, ILinkingType<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingMember : class, ILinkingMember<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>
-        where TLinkingField : class, ILinkingField<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
-        where TLinkingMethod : class, ILinkingMethod<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>, TLinkingMember
+    internal sealed class ConstantPoolItemFieldref<TTypeSystem, TType, TMember, TField, TMethod> : ConstantPoolItemFMI<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
     {
 
-        TLinkingField? _field;
-        TLinkingType? _fieldJavaType;
+        TField? _field;
+        TType? _fieldJavaType;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="classFile"></param>
         /// <param name="data"></param>
-        public ConstantPoolItemFieldref(ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod> classFile, FieldrefConstantData data) :
+        public ConstantPoolItemFieldref(ClassFile<TTypeSystem, TType, TMember, TField, TMethod> classFile, FieldrefConstantData data) :
             base(classFile, data.Class, data.NameAndType)
         {
 
@@ -55,14 +57,14 @@ namespace IKVM.CoreLib.Linking
 
         protected override void Validate(string name, string descriptor, int majorVersion)
         {
-            if (!ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>.IsValidFieldDescriptor(descriptor))
+            if (!ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.IsValidFieldDescriptor(descriptor))
                 throw new ClassFormatException("Invalid field signature \"{0}\"", descriptor);
-            if (!ClassFile<TLinkingType, TLinkingMember, TLinkingField, TLinkingMethod>.IsValidFieldName(name, new ClassFormatVersion((ushort)majorVersion, 0)))
+            if (!ClassFile<TTypeSystem, TType, TMember, TField, TMethod>.IsValidFieldName(name, new ClassFormatVersion((ushort)majorVersion, 0)))
                 throw new ClassFormatException("Invalid field name \"{0}\"", name);
         }
 
         /// <inheritdoc />
-        public override void Link(TLinkingType thisType, LoadMode mode)
+        public override void Link(TType thisType, LoadMode mode)
         {
             base.Link(thisType, mode);
 
@@ -74,15 +76,17 @@ namespace IKVM.CoreLib.Linking
             if (wrapper == null)
                 return;
 
-            TLinkingField? fw = null;
-            if (wrapper.IsUnloadable == false)
+            ref readonly var ts = ref ClassFile.TypeSystem;
+
+            TField? fw = null;
+            if (ts.IsUnloadable(wrapper) == false)
             {
-                fw = wrapper.GetField(Name, Signature);
+                fw = ts.GetField(wrapper, Name, Signature);
                 if (fw != null)
-                    fw.Link(mode);
+                    ts.EnsureLinked(fw, mode);
             }
 
-            var fld = thisType.GetFieldTypeFromSignature(Signature, mode);
+            var fld = ts.GetFieldTypeFromSignature(thisType, Signature, mode);
 
             lock (this)
             {
@@ -98,7 +102,7 @@ namespace IKVM.CoreLib.Linking
         /// Gets the type of the linked field.
         /// </summary>
         /// <returns></returns>
-        public TLinkingType? GetFieldType()
+        public TType? GetFieldType()
         {
             return _fieldJavaType;
         }
@@ -107,13 +111,13 @@ namespace IKVM.CoreLib.Linking
         /// Gets the linked field.
         /// </summary>
         /// <returns></returns>
-        public TLinkingField? GetField()
+        public TField? GetField()
         {
             return _field;
         }
 
         /// <inheritdoc />
-        public override TLinkingMember? GetMember()
+        public override TMember? GetMember()
         {
             return _field;
         }
