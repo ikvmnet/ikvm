@@ -76,13 +76,13 @@ namespace IKVM.Runtime
         /// <param name="classFile"></param>
         /// <param name="classFileMethod"></param>
         /// <param name="classLoader"></param>
-        /// <exception cref="VerifyError"></exception>
+        /// <exception cref="VerifyException"></exception>
         /// <exception cref="ClassFormatError"></exception>
         internal MethodAnalyzer(RuntimeContext context, RuntimeJavaType host, RuntimeJavaType type, RuntimeJavaMethod method, ClassFile classFile, Method classFileMethod, RuntimeClassLoader classLoader) :
             this(context)
         {
             if (classFileMethod.VerifyError != null)
-                throw new VerifyError(classFileMethod.VerifyError);
+                throw new VerifyException(classFileMethod.VerifyError);
 
             _host = host;
             _type = type;
@@ -233,7 +233,7 @@ namespace IKVM.Runtime
                                     {
                                         var type = s.GetLocalType(inst.NormalizedArg1);
                                         if (type.IsTop || type.IsPrimitive)
-                                            throw new VerifyError("Object reference expected");
+                                            throw new VerifyException("Object reference expected");
 
                                         s.PushType(type);
                                         break;
@@ -249,7 +249,7 @@ namespace IKVM.Runtime
                                         // NOTE since the reference can be uninitialized, we cannot use PopObjectType
                                         var type = s.PopType();
                                         if (type.IsPrimitive)
-                                            throw new VerifyError("Object reference expected");
+                                            throw new VerifyException("Object reference expected");
 
                                         s.SetLocalType(inst.NormalizedArg1, type, i);
                                         break;
@@ -275,7 +275,7 @@ namespace IKVM.Runtime
                                         {
                                             var elementType = type.Type.ElementTypeWrapper;
                                             if (elementType.IsPrimitive)
-                                                throw new VerifyError("Object array expected");
+                                                throw new VerifyException("Object array expected");
 
                                             s.PushType(elementType);
                                         }
@@ -293,7 +293,7 @@ namespace IKVM.Runtime
 
                                         var type = s.PopArrayType();
                                         if (!type.IsNullOrUnloadable() && type.Type != _context.MethodAnalyzerFactory.ByteArrayType && type.Type != _context.MethodAnalyzerFactory.BooleanArrayType)
-                                            throw new VerifyError();
+                                            throw new VerifyException();
 
                                         s.PushInt();
                                         break;
@@ -305,7 +305,7 @@ namespace IKVM.Runtime
 
                                         var type = s.PopArrayType();
                                         if (!type.IsNullOrUnloadable() && type.Type != _context.MethodAnalyzerFactory.ByteArrayType && type.Type != _context.MethodAnalyzerFactory.BooleanArrayType)
-                                            throw new VerifyError();
+                                            throw new VerifyException();
 
                                         break;
                                     }
@@ -429,7 +429,7 @@ namespace IKVM.Runtime
                                                 break;
                                             case 'L':
                                             case '[':
-                                                throw new VerifyError();
+                                                throw new VerifyException();
                                             default:
                                                 throw new InvalidOperationException();
                                         }
@@ -469,7 +469,7 @@ namespace IKVM.Runtime
                                             case 'L':
                                             case '[':
                                                 if (!s.PopAnyType().IsNull)
-                                                    throw new VerifyError();
+                                                    throw new VerifyException();
                                                 break;
                                             default:
                                                 throw new InvalidOperationException();
@@ -529,7 +529,7 @@ namespace IKVM.Runtime
                                                 break;
                                             case ConstantType.Class:
                                                 if (_classFile.MajorVersion < 49)
-                                                    throw new VerifyError("Illegal type in constant pool");
+                                                    throw new VerifyException("Illegal type in constant pool");
 
                                                 s.PushType(_context.JavaBase.TypeOfJavaLangClass);
                                                 break;
@@ -735,7 +735,7 @@ namespace IKVM.Runtime
                                         {
                                             var classType = GetConstantPoolClassType(inst.Arg1);
                                             if (classType.IsArray)
-                                                throw new VerifyError("Illegal use of array type");
+                                                throw new VerifyException("Illegal use of array type");
 
                                             type = VerificationType.Uninitialized(classType, i);
                                             _newTypes[i] = type;
@@ -747,14 +747,14 @@ namespace IKVM.Runtime
                                 case NormalizedOpCode.Multianewarray:
                                     {
                                         if (inst.Arg2 < 1)
-                                            throw new VerifyError("Illegal dimension argument");
+                                            throw new VerifyException("Illegal dimension argument");
 
                                         for (int j = 0; j < inst.Arg2; j++)
                                             s.PopInt();
 
                                         var type = GetConstantPoolClassType(inst.Arg1);
                                         if (type.ArrayRank < inst.Arg2)
-                                            throw new VerifyError("Illegal dimension argument");
+                                            throw new VerifyException("Illegal dimension argument");
 
                                         s.PushType(type);
                                         break;
@@ -799,7 +799,7 @@ namespace IKVM.Runtime
                                             s.PushType(_context.MethodAnalyzerFactory.LongArrayType);
                                             break;
                                         default:
-                                            throw new VerifyError("Bad type");
+                                            throw new VerifyException("Bad type");
                                     }
                                     break;
                                 case NormalizedOpCode.Swap:
@@ -958,7 +958,7 @@ namespace IKVM.Runtime
                                     if (_method != null)
                                     {
                                         if (_method.ReturnType != _context.PrimitiveJavaTypeFactory.VOID)
-                                            throw new VerifyError("Wrong return type in function");
+                                            throw new VerifyException("Wrong return type in function");
 
                                         // if we're a constructor, make sure we called the base class constructor
                                         s.CheckUninitializedThis();
@@ -971,26 +971,26 @@ namespace IKVM.Runtime
                                     {
                                         s.PopInt();
                                         if (!_method.ReturnType.IsIntOnStackPrimitive)
-                                            throw new VerifyError("Wrong return type in function");
+                                            throw new VerifyException("Wrong return type in function");
 
                                         break;
                                     }
                                 case NormalizedOpCode.Lreturn:
                                     s.PopLong();
                                     if (_method.ReturnType != _context.PrimitiveJavaTypeFactory.LONG)
-                                        throw new VerifyError("Wrong return type in function");
+                                        throw new VerifyException("Wrong return type in function");
 
                                     break;
                                 case NormalizedOpCode.Freturn:
                                     s.PopFloat();
                                     if (_method.ReturnType != _context.PrimitiveJavaTypeFactory.FLOAT)
-                                        throw new VerifyError("Wrong return type in function");
+                                        throw new VerifyException("Wrong return type in function");
 
                                     break;
                                 case NormalizedOpCode.Dreturn:
                                     s.PopDouble();
                                     if (_method.ReturnType != _context.PrimitiveJavaTypeFactory.DOUBLE)
-                                        throw new VerifyError("Wrong return type in function");
+                                        throw new VerifyException("Wrong return type in function");
 
                                     break;
                                 case NormalizedOpCode.Fload:
@@ -1130,19 +1130,19 @@ namespace IKVM.Runtime
                                     break;
                                 case NormalizedOpCode.Nop:
                                     if (i + 1 == instructions.Length)
-                                        throw new VerifyError("Falling off the end of the code");
+                                        throw new VerifyException("Falling off the end of the code");
                                     break;
                                 case NormalizedOpCode.StaticError:
                                     break;
                                 case NormalizedOpCode.Jsr:
                                 case NormalizedOpCode.Ret:
-                                    throw new VerifyError("Bad instruction");
+                                    throw new VerifyException("Bad instruction");
                                 default:
                                     throw new NotImplementedException(inst.NormalizedOpCode.ToString());
                             }
 
                             if (s.GetStackHeight() > _classFileMethod.MaxStack)
-                                throw new VerifyError("Stack size too large");
+                                throw new VerifyException("Stack size too large");
 
                             for (int j = 0; j < _classFileMethod.ExceptionTable.Length; j++)
                                 if (_classFileMethod.ExceptionTable[j].EndIndex == i + 1)
@@ -1181,17 +1181,17 @@ namespace IKVM.Runtime
                                 // NOTE because PcIndexMap returns -1 for illegal PCs (in the middle of an instruction) and
                                 // we always use that value as an index into the state array, any invalid PC will result
                                 // in an IndexOutOfRangeException
-                                throw new VerifyError("Illegal target of jump or branch");
+                                throw new VerifyException("Illegal target of jump or branch");
                             }
                         }
 
-                        catch (VerifyError x)
+                        catch (VerifyException x)
                         {
                             var opcode = instructions[i].NormalizedOpCode.ToString();
                             if (opcode.StartsWith("__"))
                                 opcode = opcode.Substring(2);
 
-                            throw new VerifyError($"{x.Message} (class: {_classFile.Name}, method: {_classFileMethod.Name}, signature: {_classFileMethod.Signature}, offset: {instructions[i].PC}, instruction: {opcode})", x);
+                            throw new VerifyException($"{x.Message} (class: {_classFile.Name}, method: {_classFileMethod.Name}, signature: {_classFileMethod.Signature}, offset: {instructions[i].PC}, instruction: {opcode})", x);
                         }
                     }
                 }
@@ -1241,13 +1241,13 @@ namespace IKVM.Runtime
                                 break;
                         }
                     }
-                    catch (VerifyError x)
+                    catch (VerifyException x)
                     {
                         var opcode = instructions[i].NormalizedOpCode.ToString();
                         if (opcode.StartsWith("__"))
                             opcode = opcode.Substring(2);
 
-                        throw new VerifyError($"{x.Message} (class: {_classFile.Name}, method: {_classFileMethod.Name}, signature: {_classFileMethod.Signature}, offset: {instructions[i].PC}, instruction: {opcode})", x);
+                        throw new VerifyException($"{x.Message} (class: {_classFile.Name}, method: {_classFileMethod.Name}, signature: {_classFileMethod.Signature}, offset: {instructions[i].PC}, instruction: {opcode})", x);
                     }
                 }
             }
@@ -1270,20 +1270,20 @@ namespace IKVM.Runtime
                     }
                     else if (cpi.GetClassType() != _type && Array.IndexOf(_type.Interfaces, cpi.GetClassType()) == -1)
                     {
-                        throw new VerifyError("Bad invokespecial instruction: interface method reference is in an indirect superinterface.");
+                        throw new VerifyException("Bad invokespecial instruction: interface method reference is in an indirect superinterface.");
                     }
                 }
             }
             else if ((cpi is ConstantPoolItemInterfaceMethodref) != (invoke == NormalizedOpCode.InvokeInterface))
             {
-                throw new VerifyError("Illegal constant pool index");
+                throw new VerifyException("Illegal constant pool index");
             }
 
             if (invoke != NormalizedOpCode.InvokeSpecial && ReferenceEquals(cpi.Name, StringConstants.INIT))
-                throw new VerifyError("Must call initializers using invokespecial");
+                throw new VerifyException("Must call initializers using invokespecial");
 
             if (ReferenceEquals(cpi.Name, StringConstants.CLINIT))
-                throw new VerifyError("Illegal call to internal method");
+                throw new VerifyException("Illegal call to internal method");
 
             var args = cpi.GetArgTypes();
             for (int j = args.Length - 1; j >= 0; j--)
@@ -1297,7 +1297,7 @@ namespace IKVM.Runtime
                         argcount++;
 
                 if (_classFileMethod.Instructions[index].Arg2 != argcount)
-                    throw new VerifyError("Inconsistent args size");
+                    throw new VerifyException("Inconsistent args size");
             }
 
             if (invoke != NormalizedOpCode.InvokeStatic)
@@ -1313,7 +1313,7 @@ namespace IKVM.Runtime
                         // verified...
                         // NOTE when a constructor isn't verifiable, the static initializer
                         // doesn't run either
-                        throw new VerifyError("Call to wrong initialization method");
+                        throw new VerifyException("Call to wrong initialization method");
                     }
                 }
                 else
@@ -1324,7 +1324,7 @@ namespace IKVM.Runtime
                         var targetType = cpi.GetClassType();
 
                         if (!refType.IsNullOrUnloadable() && !targetType.IsUnloadable && !refType.Type.IsAssignableTo(targetType))
-                            throw new VerifyError("Incompatible object argument for function call");
+                            throw new VerifyException("Incompatible object argument for function call");
 
                         // for invokespecial we also need to make sure we're calling ourself or a base class
                         if (invoke == NormalizedOpCode.InvokeSpecial)
@@ -1343,7 +1343,7 @@ namespace IKVM.Runtime
                             }
                             else
                             {
-                                throw new VerifyError("Incompatible target object for invokespecial");
+                                throw new VerifyException("Incompatible target object for invokespecial");
                             }
                             if (targetType.IsUnloadable)
                             {
@@ -1359,7 +1359,7 @@ namespace IKVM.Runtime
                             }
                             else
                             {
-                                throw new VerifyError("Invokespecial cannot call subclass methods");
+                                throw new VerifyException("Invokespecial cannot call subclass methods");
                             }
                         }
                     }
@@ -1371,7 +1371,7 @@ namespace IKVM.Runtime
                         var refType = stack.PopObjectType();
                         var targetType = cpi.GetClassType();
                         if (!refType.IsNullOrUnloadable() && !targetType.IsUnloadable && !refType.Type.IsAssignableTo(targetType) && !targetType.IsInterface)
-                            throw new VerifyError("Incompatible object argument for function call");
+                            throw new VerifyException("Incompatible object argument for function call");
                     }
                 }
             }
@@ -2523,7 +2523,7 @@ namespace IKVM.Runtime
                             if (isnew)
                                 instr.PatchOpCode(NormalizedOpCode.DynamicInvokeSpecial);
                             else
-                                throw new VerifyError("Invokespecial cannot call subclass methods");
+                                throw new VerifyException("Invokespecial cannot call subclass methods");
 
                             break;
                         default:
@@ -2674,7 +2674,7 @@ namespace IKVM.Runtime
                             case '[':
                                 if (!stack.PopAnyType().IsNull)
                                 {
-                                    throw new VerifyError();
+                                    throw new VerifyException();
                                 }
                                 break;
                             default:
@@ -2856,7 +2856,7 @@ namespace IKVM.Runtime
                 // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
             }
 
-            throw new VerifyError("Illegal constant pool index");
+            throw new VerifyException("Illegal constant pool index");
         }
 
         ConstantPoolItemMI GetMethodref(int index)
@@ -2888,7 +2888,7 @@ namespace IKVM.Runtime
                 // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
             }
 
-            throw new VerifyError("Illegal constant pool index");
+            throw new VerifyException("Illegal constant pool index");
         }
 
         ConstantPoolItemFieldref GetFieldref(int index)
@@ -2920,7 +2920,7 @@ namespace IKVM.Runtime
                 // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
             }
 
-            throw new VerifyError("Illegal constant pool index");
+            throw new VerifyException("Illegal constant pool index");
         }
 
         ConstantType GetConstantPoolConstantType(int slot)
@@ -2946,7 +2946,7 @@ namespace IKVM.Runtime
                 // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
             }
 
-            throw new VerifyError("Illegal constant pool index");
+            throw new VerifyException("Illegal constant pool index");
         }
 
         RuntimeJavaType GetConstantPoolClassType(int slot)
@@ -2972,7 +2972,7 @@ namespace IKVM.Runtime
                 // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
             }
 
-            throw new VerifyError("Illegal constant pool index");
+            throw new VerifyException("Illegal constant pool index");
         }
 
         RuntimeJavaType GetConstantPoolClassType(ClassConstantHandle handle)

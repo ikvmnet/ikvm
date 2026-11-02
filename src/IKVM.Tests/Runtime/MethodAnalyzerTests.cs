@@ -717,7 +717,7 @@ namespace IKVM.Tests.Runtime
             c.AddMethod("m", "()V", 1, 0, (code, handlers) => code.Pop().Return());
 
             var m = c.Load().GetMethod("m", "()V");
-            m.Invoking(i => i.CreateAnalyzer()).Should().Throw<IKVM.Runtime.VerifyError>();
+            m.Invoking(i => i.CreateAnalyzer()).Should().Throw<IKVM.CoreLib.Linking.VerifyException>();
         }
 
         [TestMethod]
@@ -727,7 +727,7 @@ namespace IKVM.Tests.Runtime
             c.AddMethod("m", "()V", 1, 0, (code, handlers) => code.Iconst0().Iconst0().Pop2().Return());
 
             var m = c.Load().GetMethod("m", "()V");
-            m.Invoking(i => i.CreateAnalyzer()).Should().Throw<IKVM.Runtime.VerifyError>();
+            m.Invoking(i => i.CreateAnalyzer()).Should().Throw<IKVM.CoreLib.Linking.VerifyException>();
         }
 
         [TestMethod]
@@ -737,7 +737,7 @@ namespace IKVM.Tests.Runtime
             c.AddMethod("m", "()Ljava/lang/Object;", 1, 0, (code, handlers) => code.Iconst0().Areturn());
 
             var m = c.Load().GetMethod("m", "()Ljava/lang/Object;");
-            m.Invoking(i => i.CreateAnalyzer()).Should().Throw<IKVM.Runtime.VerifyError>();
+            m.Invoking(i => i.CreateAnalyzer()).Should().Throw<IKVM.CoreLib.Linking.VerifyException>();
         }
 
         [TestMethod]
@@ -755,7 +755,7 @@ namespace IKVM.Tests.Runtime
             });
 
             var m = c.Load().GetMethod("m", "(I)V");
-            m.Invoking(i => i.CreateAnalyzer()).Should().Throw<IKVM.Runtime.VerifyError>();
+            m.Invoking(i => i.CreateAnalyzer()).Should().Throw<IKVM.CoreLib.Linking.VerifyException>();
         }
 
         [TestMethod]
@@ -765,7 +765,7 @@ namespace IKVM.Tests.Runtime
             c.AddMethod("m", "()V", 1, 2, (code, handlers) => code.Iload1().Pop().Return());
 
             var m = c.Load().GetMethod("m", "()V");
-            m.Invoking(i => i.CreateAnalyzer()).Should().Throw<IKVM.Runtime.VerifyError>();
+            m.Invoking(i => i.CreateAnalyzer()).Should().Throw<IKVM.CoreLib.Linking.VerifyException>();
         }
 
         [TestMethod]
@@ -775,7 +775,7 @@ namespace IKVM.Tests.Runtime
             c.AddMethod("m", "()V", 0, 0, (code, handlers) => code.Nop());
 
             var m = c.Load().GetMethod("m", "()V");
-            m.Invoking(i => i.CreateAnalyzer()).Should().Throw<IKVM.Runtime.VerifyError>();
+            m.Invoking(i => i.CreateAnalyzer()).Should().Throw<IKVM.CoreLib.Linking.VerifyException>();
         }
 
         #endregion

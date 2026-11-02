@@ -25,6 +25,8 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
+using IKVM.CoreLib.Linking;
+
 namespace IKVM.Runtime
 {
 
@@ -201,14 +203,14 @@ namespace IKVM.Runtime
         /// <param name="s1"></param>
         /// <param name="s2"></param>
         /// <returns></returns>
-        /// <exception cref="VerifyError"></exception>
+        /// <exception cref="VerifyException"></exception>
         public static InstructionState operator +(InstructionState s1, InstructionState s2)
         {
             if (s1._initialized == false)
                 return s2.Copy();
 
             if (s1._stackLen != s2._stackLen || s1._stackEnd != s2._stackEnd)
-                throw new VerifyError($"Inconsistent stack height: {s1._stackLen + s1._stack.Length - s1._stackEnd} != {s2._stackLen + s2._stack.Length - s2._stackEnd}");
+                throw new VerifyException($"Inconsistent stack height: {s1._stackLen + s1._stack.Length - s1._stackEnd} != {s2._stackLen + s2._stack.Length - s2._stackEnd}");
 
             var s = s1.Copy();
             s._changed = s1._changed;
@@ -235,7 +237,7 @@ namespace IKVM.Runtime
                 {
                     var baseType = FindCommonBaseType(s1._typeSystem, s1._states, type1, type2);
                     if (baseType.IsTop)
-                        throw new VerifyError(string.Format("cannot merge {0} and {1}", type1, type2));
+                        throw new VerifyException(string.Format("cannot merge {0} and {1}", type1, type2));
 
                     if (type1 != baseType)
                     {
@@ -246,7 +248,7 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    throw new VerifyError(string.Format("cannot merge {0} and {1}", type1, type2));
+                    throw new VerifyException(string.Format("cannot merge {0} and {1}", type1, type2));
                 }
             }
 
@@ -280,7 +282,7 @@ namespace IKVM.Runtime
         internal void CheckUninitializedThis()
         {
             if (_uninitializedThis)
-                throw new VerifyError("Base class constructor wasn't called");
+                throw new VerifyException("Base class constructor wasn't called");
         }
 
         /// <summary>
@@ -449,7 +451,7 @@ namespace IKVM.Runtime
             }
             catch (IndexOutOfRangeException)
             {
-                throw new VerifyError("Illegal local variable number");
+                throw new VerifyException("Illegal local variable number");
             }
         }
 
@@ -466,14 +468,14 @@ namespace IKVM.Runtime
             }
             catch (IndexOutOfRangeException)
             {
-                throw new VerifyError("Illegal local variable number");
+                throw new VerifyException("Illegal local variable number");
             }
         }
 
         internal void GetLocalInt(int index)
         {
             if (GetLocalType(index) != VerificationType.Int)
-                throw new VerifyError("Invalid local type");
+                throw new VerifyException("Invalid local type");
         }
 
         internal void SetLocalInt(int index, int instructionIndex)
@@ -484,7 +486,7 @@ namespace IKVM.Runtime
         internal void GetLocalLong(int index)
         {
             if (GetLocalType(index) != VerificationType.Long)
-                throw new VerifyError("incorrect local type, not long");
+                throw new VerifyException("incorrect local type, not long");
         }
 
         internal void SetLocalLong(int index, int instructionIndex)
@@ -495,7 +497,7 @@ namespace IKVM.Runtime
         internal void GetLocalFloat(int index)
         {
             if (GetLocalType(index) != VerificationType.Float)
-                throw new VerifyError("incorrect local type, not float");
+                throw new VerifyException("incorrect local type, not float");
         }
 
         internal void SetLocalFloat(int index, int instructionIndex)
@@ -506,7 +508,7 @@ namespace IKVM.Runtime
         internal void GetLocalDouble(int index)
         {
             if (GetLocalType(index) != VerificationType.Double)
-                throw new VerifyError("incorrect local type, not double");
+                throw new VerifyException("incorrect local type, not double");
         }
 
         internal void SetLocalDouble(int index, int instructionIndex)
@@ -522,7 +524,7 @@ namespace IKVM.Runtime
             }
             catch (IndexOutOfRangeException)
             {
-                throw new VerifyError("Illegal local variable number");
+                throw new VerifyException("Illegal local variable number");
             }
         }
 
@@ -590,7 +592,7 @@ namespace IKVM.Runtime
         internal static void PopIntImpl(VerificationType type)
         {
             if (!type.IsInt)
-                throw new VerifyError("Int expected on stack");
+                throw new VerifyException("Int expected on stack");
         }
 
         internal bool PopFloat()
@@ -603,7 +605,7 @@ namespace IKVM.Runtime
         internal static void PopFloatImpl(VerificationType tw)
         {
             if (!tw.IsFloat)
-                throw new VerifyError("Float expected on stack");
+                throw new VerifyException("Float expected on stack");
         }
 
         internal bool PopDouble()
@@ -616,7 +618,7 @@ namespace IKVM.Runtime
         internal static void PopDoubleImpl(VerificationType tw)
         {
             if (!tw.IsDouble)
-                throw new VerifyError("Double expected on stack");
+                throw new VerifyException("Double expected on stack");
         }
 
         internal void PopLong()
@@ -628,7 +630,7 @@ namespace IKVM.Runtime
         {
             if (!tw.IsLong)
             {
-                throw new VerifyError("Long expected on stack");
+                throw new VerifyException("Long expected on stack");
             }
         }
 
@@ -640,7 +642,7 @@ namespace IKVM.Runtime
         internal static VerificationType PopArrayTypeImpl(RuntimeJvmTypeSystem typeSystem, VerificationType type)
         {
             if (!type.IsNull && !IsUnloadable(typeSystem, type) && !(type.IsReference && typeSystem.GetArrayRank(type.Type) > 0))
-                throw new VerifyError("Array reference expected on stack");
+                throw new VerifyException("Array reference expected on stack");
 
             return type;
         }
@@ -654,7 +656,7 @@ namespace IKVM.Runtime
         internal static VerificationType PopObjectTypeImpl(VerificationType type)
         {
             if (!type.IsReference && !type.IsNull)
-                throw new VerifyError("Expected object reference on stack");
+                throw new VerifyException("Expected object reference on stack");
 
             return type;
         }
@@ -670,7 +672,7 @@ namespace IKVM.Runtime
             // HACK because of the way interfaces references works, if baseType
             // is an interface or array of interfaces, any reference will be accepted
             if (!typeSystem.IsUnloadable(baseType) && !typeSystem.IsInterfaceOrInterfaceArray(baseType) && !(IsUnloadable(typeSystem, type) || IsAssignableTo(typeSystem, type, baseType)))
-                throw new VerifyError("Unexpected type " + type + " where " + typeSystem.GetName(baseType) + " was expected");
+                throw new VerifyException("Unexpected type " + type + " where " + typeSystem.GetName(baseType) + " was expected");
 
             return type;
         }
@@ -740,7 +742,7 @@ namespace IKVM.Runtime
         internal VerificationType PeekType()
         {
             if (_stackLen == 0)
-                throw new VerifyError("Unable to pop operand off an empty stack");
+                throw new VerifyException("Unable to pop operand off an empty stack");
 
             return _stack[_stackLen - 1];
         }
@@ -759,7 +761,7 @@ namespace IKVM.Runtime
         internal VerificationType PopAnyType()
         {
             if (_stackLen == 0)
-                throw new VerifyError("Unable to pop operand off an empty stack");
+                throw new VerifyException("Unable to pop operand off an empty stack");
 
             var type = _stack[--_stackLen];
             if (type.IsCategory2)
@@ -799,7 +801,7 @@ namespace IKVM.Runtime
         internal static VerificationType PopTypeImpl(VerificationType type)
         {
             if (type.IsCategory2)
-                throw new VerifyError("Attempt to split long or double on the stack");
+                throw new VerifyException("Attempt to split long or double on the stack");
 
             return type;
         }
@@ -815,7 +817,7 @@ namespace IKVM.Runtime
         internal static VerificationType PopTypeImpl(RuntimeJvmTypeSystem typeSystem, RuntimeJavaType baseType, VerificationType type)
         {
             if (type.IsUninitialized)
-                throw new VerifyError("Expecting to find object/array on stack");
+                throw new VerifyException("Expecting to find object/array on stack");
 
             if (typeSystem.IsPrimitive(baseType))
             {
@@ -847,7 +849,7 @@ namespace IKVM.Runtime
                     return type;
             }
 
-            throw new VerifyError("Unexpected type " + type + " where " + typeSystem.GetName(baseType) + " was expected");
+            throw new VerifyException("Unexpected type " + type + " where " + typeSystem.GetName(baseType) + " was expected");
         }
 
         internal int GetStackHeight()
@@ -885,7 +887,7 @@ namespace IKVM.Runtime
                 _stackEnd--;
 
             if (_stackLen >= _stackEnd)
-                throw new VerifyError("Stack overflow");
+                throw new VerifyException("Stack overflow");
 
             StackCopyOnWrite();
             _stack[_stackLen++] = type;

@@ -139,7 +139,7 @@ namespace IKVM.Runtime
                         && mw.IsVirtual
                         && mw.IsFinal)
                     {
-                        throw new VerifyError("class " + f.Name + " overrides final method " + method.Name + "." + method.Signature);
+                        throw new VerifyException("class " + f.Name + " overrides final method " + method.Name + "." + method.Signature);
                     }
                 }
             }
@@ -152,7 +152,7 @@ namespace IKVM.Runtime
                 }
                 if (BaseTypeWrapper.IsFinal)
                 {
-                    throw new VerifyError("Class " + f.Name + " extends final class " + BaseTypeWrapper.Name);
+                    throw new VerifyException("Class " + f.Name + " extends final class " + BaseTypeWrapper.Name);
                 }
                 if (BaseTypeWrapper.IsInterface)
                 {
@@ -160,12 +160,12 @@ namespace IKVM.Runtime
                 }
                 if (BaseTypeWrapper.TypeAsTBD == Context.Types.Delegate)
                 {
-                    throw new VerifyError(BaseTypeWrapper.Name + " cannot be used as a base class");
+                    throw new VerifyException(BaseTypeWrapper.Name + " cannot be used as a base class");
                 }
                 // NOTE defining value types, enums is not supported in IKVM v1
                 if (BaseTypeWrapper.TypeAsTBD == Context.Types.ValueType || BaseTypeWrapper.TypeAsTBD == Context.Types.Enum)
                 {
-                    throw new VerifyError("Defining value types in Java is not implemented in IKVM v1");
+                    throw new VerifyException("Defining value types in Java is not implemented in IKVM v1");
                 }
                 if (IsDelegate)
                 {
@@ -196,7 +196,7 @@ namespace IKVM.Runtime
         {
             if (!f.IsFinal)
             {
-                throw new VerifyError("Delegate must be final");
+                throw new VerifyException("Delegate must be final");
             }
             Method invoke = null;
             Method beginInvoke = null;
@@ -208,7 +208,7 @@ namespace IKVM.Runtime
                 {
                     if (invoke != null)
                     {
-                        throw new VerifyError("Delegate may only have a single Invoke method");
+                        throw new VerifyException("Delegate may only have a single Invoke method");
                     }
                     invoke = m;
                 }
@@ -216,7 +216,7 @@ namespace IKVM.Runtime
                 {
                     if (beginInvoke != null)
                     {
-                        throw new VerifyError("Delegate may only have a single BeginInvoke method");
+                        throw new VerifyException("Delegate may only have a single BeginInvoke method");
                     }
                     beginInvoke = m;
                 }
@@ -224,7 +224,7 @@ namespace IKVM.Runtime
                 {
                     if (endInvoke != null)
                     {
-                        throw new VerifyError("Delegate may only have a single EndInvoke method");
+                        throw new VerifyException("Delegate may only have a single EndInvoke method");
                     }
                     endInvoke = m;
                 }
@@ -232,30 +232,30 @@ namespace IKVM.Runtime
                 {
                     if (constructor != null)
                     {
-                        throw new VerifyError("Delegate may only have a single constructor");
+                        throw new VerifyException("Delegate may only have a single constructor");
                     }
                     constructor = m;
                 }
                 else if (m.IsNative)
                 {
-                    throw new VerifyError("Delegate may not have any native methods besides Invoke, BeginInvoke and EndInvoke");
+                    throw new VerifyException("Delegate may not have any native methods besides Invoke, BeginInvoke and EndInvoke");
                 }
             }
             if (invoke == null || constructor == null)
             {
-                throw new VerifyError("Delegate must have a constructor and an Invoke method");
+                throw new VerifyException("Delegate must have a constructor and an Invoke method");
             }
             if (!invoke.IsPublic || !invoke.IsNative || invoke.IsFinal || invoke.IsStatic)
             {
-                throw new VerifyError("Delegate Invoke method must be a public native non-final instance method");
+                throw new VerifyException("Delegate Invoke method must be a public native non-final instance method");
             }
             if ((beginInvoke != null && endInvoke == null) || (beginInvoke == null && endInvoke != null))
             {
-                throw new VerifyError("Delegate must have both BeginInvoke and EndInvoke or neither");
+                throw new VerifyException("Delegate must have both BeginInvoke and EndInvoke or neither");
             }
             if (!constructor.IsPublic)
             {
-                throw new VerifyError("Delegate constructor must be public");
+                throw new VerifyException("Delegate constructor must be public");
             }
             if (constructor.Instructions.Length < 3
                 || constructor.Instructions[0].NormalizedOpCode != NormalizedOpCode.Aload
@@ -263,11 +263,11 @@ namespace IKVM.Runtime
                 || constructor.Instructions[1].NormalizedOpCode != NormalizedOpCode.InvokeSpecial
                 || constructor.Instructions[2].NormalizedOpCode != NormalizedOpCode.Return)
             {
-                throw new VerifyError("Delegate constructor must be empty");
+                throw new VerifyException("Delegate constructor must be empty");
             }
             if (f.Fields.Length != 0)
             {
-                throw new VerifyError("Delegate may not declare any fields");
+                throw new VerifyException("Delegate may not declare any fields");
             }
             var iface = classLoader.TryLoadClassByName(f.Name + RuntimeManagedJavaType.DelegateInterfaceSuffix);
             DelegateInnerClassCheck(iface != null);
@@ -278,23 +278,23 @@ namespace IKVM.Runtime
             DelegateInnerClassCheck(methods.Length == 1 && methods[0].Name == "Invoke");
             if (methods[0].Signature != invoke.Signature)
             {
-                throw new VerifyError("Delegate Invoke method signature must be identical to inner interface Invoke method signature");
+                throw new VerifyException("Delegate Invoke method signature must be identical to inner interface Invoke method signature");
             }
             if (iface.Interfaces.Length != 0)
             {
-                throw new VerifyError("Delegate inner interface may not extend any interfaces");
+                throw new VerifyException("Delegate inner interface may not extend any interfaces");
             }
             if (constructor.Signature != "(" + iface.SignatureName + ")V")
             {
-                throw new VerifyError("Delegate constructor must take a single argument of type inner Method interface");
+                throw new VerifyException("Delegate constructor must take a single argument of type inner Method interface");
             }
             if (beginInvoke != null && beginInvoke.Signature != invoke.Signature.Substring(0, invoke.Signature.IndexOf(')')) + "Lcli.System.AsyncCallback;Ljava.lang.Object;)Lcli.System.IAsyncResult;")
             {
-                throw new VerifyError("Delegate BeginInvoke method has incorrect signature");
+                throw new VerifyException("Delegate BeginInvoke method has incorrect signature");
             }
             if (endInvoke != null && endInvoke.Signature != "(Lcli.System.IAsyncResult;)" + invoke.Signature.Substring(invoke.Signature.IndexOf(')') + 1))
             {
-                throw new VerifyError("Delegate EndInvoke method has incorrect signature");
+                throw new VerifyException("Delegate EndInvoke method has incorrect signature");
             }
         }
 
@@ -302,7 +302,7 @@ namespace IKVM.Runtime
         {
             if (!cond)
             {
-                throw new VerifyError("Delegate must have a public inner interface named Method with a single method named Invoke");
+                throw new VerifyException("Delegate must have a public inner interface named Method with a single method named Invoke");
             }
         }
 

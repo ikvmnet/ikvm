@@ -2909,12 +2909,6 @@
             </code>
         </exception>
 
-        <exception src="IKVM.Runtime.VerifyError" dst="java.lang.VerifyError">
-            <code>
-                <callvirt type="IKVM.Runtime.RetargetableJavaException" name="ToJava" sig="()Lcli.System.Exception;" />
-            </code>
-        </exception>
-
         <exception src="IKVM.Runtime.ClassNotFoundException" dst="java.lang.NoClassDefFoundError">
             <code>
                 <callvirt type="IKVM.Runtime.RetargetableJavaException" name="ToJava" sig="()Lcli.System.Exception;" />
@@ -2961,6 +2955,13 @@
             <code>
                 <callvirt type="System.Exception" name="get_Message" sig="()Ljava.lang.String;" />
                 <newobj class="java.lang.ClassFormatError" name="&lt;init&gt;" sig="(Ljava.lang.String;)V" />
+            </code>
+        </exception>
+
+        <exception src="IKVM.CoreLib.Linking.VerifyException" dst="java.lang.VerifyError">
+            <code>
+                <callvirt type="System.Exception" name="get_Message" sig="()Ljava.lang.String;" />
+                <newobj class="java.lang.VerifyError" name="&lt;init&gt;" sig="(Ljava.lang.String;)V" />
             </code>
         </exception>
 

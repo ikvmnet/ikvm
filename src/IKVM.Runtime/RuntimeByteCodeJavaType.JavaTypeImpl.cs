@@ -793,7 +793,7 @@ namespace IKVM.Runtime
                     wrapper.Context.MethodAnalyzerFactory.Create(null, wrapper, null, classFile, m, wrapper.classLoader);
                     return true;
                 }
-                catch (VerifyError)
+                catch (VerifyException)
                 {
                     return false;
                 }
@@ -1968,7 +1968,7 @@ namespace IKVM.Runtime
                     }
                     else if (baseMethod.IsFinal && (baseMethod.IsPublic || baseMethod.IsProtected || IsAccessibleInternal(baseMethod) || baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)))
                     {
-                        throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overridden in " + wrapper.Name);
+                        throw new VerifyException("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overridden in " + wrapper.Name);
                     }
                     else if (baseMethod.IsStatic)
                     {
@@ -2069,7 +2069,7 @@ namespace IKVM.Runtime
                                 else if (baseMethod2.DeclaringType.IsPackageAccessibleFrom(wrapper) && !baseMethod2.IsPrivate)
                                 {
                                     if (baseMethod2.IsFinal)
-                                        throw new VerifyError("final method " + baseMethod2.Name + baseMethod2.Signature + " in " + baseMethod2.DeclaringType.Name + " is overridden in " + wrapper.Name);
+                                        throw new VerifyException("final method " + baseMethod2.Name + baseMethod2.Signature + " in " + baseMethod2.DeclaringType.Name + " is overridden in " + wrapper.Name);
 
                                     if (!baseMethod2.IsStatic)
                                     {
@@ -2157,7 +2157,7 @@ namespace IKVM.Runtime
                     // (note that we intentionally not check IsStatic here!)
                     else if (baseMethod.IsFinal && !baseMethod.IsPrivate && (baseMethod.IsPublic || baseMethod.IsProtected || baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)))
                     {
-                        throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overridden in " + wrapper.Name);
+                        throw new VerifyException("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overridden in " + wrapper.Name);
                     }
                     // RULE 1a: static methods are ignored (other than the RULE 1 check)
                     else if (baseMethod.IsStatic)
@@ -2193,7 +2193,7 @@ namespace IKVM.Runtime
                                 {
                                     if (baseMethod2.IsFinal)
                                     {
-                                        throw new VerifyError("final method " + baseMethod2.Name + baseMethod2.Signature + " in " + baseMethod2.DeclaringType.Name + " is overridden in " + wrapper.Name);
+                                        throw new VerifyException("final method " + baseMethod2.Name + baseMethod2.Signature + " in " + baseMethod2.DeclaringType.Name + " is overridden in " + wrapper.Name);
                                     }
                                     if (!baseMethod2.IsStatic)
                                     {

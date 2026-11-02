@@ -520,7 +520,7 @@ namespace IKVM.Runtime
                     Profiler.Leave("new Compiler");
                 }
             }
-            catch (VerifyError x)
+            catch (VerifyException x)
             {
                 classLoader.Diagnostics.EmittedVerificationError(classFile.Name + "." + m.Name + m.Signature, x.Message);
                 clazz.SetHasVerifyError();
