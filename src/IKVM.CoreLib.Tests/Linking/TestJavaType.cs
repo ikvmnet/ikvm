@@ -37,7 +37,7 @@ namespace IKVM.CoreLib.Tests.Linking
         /// </summary>
         /// <param name="elementType"></param>
         TestJavaType(TestJavaType elementType) :
-            this(elementType.Name + "[]", TestTypes.Object, [TestTypes.Cloneable, TestTypes.Serializable])
+            this("[" + elementType.SignatureName, TestTypes.Object, [TestTypes.Cloneable, TestTypes.Serializable])
         {
             ElementType = elementType;
         }
@@ -57,6 +57,16 @@ namespace IKVM.CoreLib.Tests.Linking
         public bool IsUnloadable { get; }
 
         public TestJavaType? ElementType { get; }
+
+        /// <summary>
+        /// Gets the name of the type as it appears in a field descriptor, with dots in place of slashes.
+        /// </summary>
+        public string SignatureName => IsPrimitive ? PrimitiveSignatureName! : ElementType is null ? "L" + Name + ";" : "[" + ElementType.SignatureName;
+
+        /// <summary>
+        /// Gets the descriptor character of a primitive type.
+        /// </summary>
+        public string? PrimitiveSignatureName { get; set; }
 
         public int ArrayRank => ElementType is null ? 0 : ElementType.ArrayRank + 1;
 

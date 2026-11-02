@@ -1,3 +1,6 @@
+using System.Linq;
+using System.Reflection;
+
 namespace IKVM.CoreLib.Tests.Linking
 {
 
@@ -21,21 +24,24 @@ namespace IKVM.CoreLib.Tests.Linking
         public static readonly TestJavaType Integer = new("java.lang.Integer", Number, [Comparable]);
         public static readonly TestJavaType Double = new("java.lang.Double", Number, [Comparable]);
         public static readonly TestJavaType ArrayList = new("java.util.ArrayList", Object, [List]);
+        public static readonly TestJavaType Class = new("java.lang.Class", Object, [Serializable]);
+        public static readonly TestJavaType MethodHandle = new("java.lang.invoke.MethodHandle", Object);
+        public static readonly TestJavaType MethodType = new("java.lang.invoke.MethodType", Object, [Serializable]);
 
         public static readonly TestJavaType Throwable = new("java.lang.Throwable", Object, [Serializable]);
         public static readonly TestJavaType Exception = new("java.lang.Exception", Throwable);
         public static readonly TestJavaType RuntimeException = new("java.lang.RuntimeException", Exception);
         public static readonly TestJavaType Error = new("java.lang.Error", Throwable);
 
-        public static readonly TestJavaType PrimitiveVoid = new("void", isPrimitive: true);
-        public static readonly TestJavaType PrimitiveBoolean = new("boolean", isPrimitive: true);
-        public static readonly TestJavaType PrimitiveByte = new("byte", isPrimitive: true);
-        public static readonly TestJavaType PrimitiveChar = new("char", isPrimitive: true);
-        public static readonly TestJavaType PrimitiveShort = new("short", isPrimitive: true);
-        public static readonly TestJavaType PrimitiveInt = new("int", isPrimitive: true);
-        public static readonly TestJavaType PrimitiveLong = new("long", isPrimitive: true);
-        public static readonly TestJavaType PrimitiveFloat = new("float", isPrimitive: true);
-        public static readonly TestJavaType PrimitiveDouble = new("double", isPrimitive: true);
+        public static readonly TestJavaType PrimitiveVoid = new("void", isPrimitive: true) { PrimitiveSignatureName = "V" };
+        public static readonly TestJavaType PrimitiveBoolean = new("boolean", isPrimitive: true) { PrimitiveSignatureName = "Z" };
+        public static readonly TestJavaType PrimitiveByte = new("byte", isPrimitive: true) { PrimitiveSignatureName = "B" };
+        public static readonly TestJavaType PrimitiveChar = new("char", isPrimitive: true) { PrimitiveSignatureName = "C" };
+        public static readonly TestJavaType PrimitiveShort = new("short", isPrimitive: true) { PrimitiveSignatureName = "S" };
+        public static readonly TestJavaType PrimitiveInt = new("int", isPrimitive: true) { PrimitiveSignatureName = "I" };
+        public static readonly TestJavaType PrimitiveLong = new("long", isPrimitive: true) { PrimitiveSignatureName = "J" };
+        public static readonly TestJavaType PrimitiveFloat = new("float", isPrimitive: true) { PrimitiveSignatureName = "F" };
+        public static readonly TestJavaType PrimitiveDouble = new("double", isPrimitive: true) { PrimitiveSignatureName = "D" };
 
         /// <summary>
         /// A .NET value type that is not a Java primitive.
@@ -54,6 +60,16 @@ namespace IKVM.CoreLib.Tests.Linking
 
         public static readonly TestJavaType VerifierNull = new("<verifier>null");
         public static readonly TestJavaType VerifierUnloadable = new("<verifier>", isUnloadable: true);
+
+        /// <summary>
+        /// Gets every type above that can be loaded by name: all but the primitives.
+        /// </summary>
+        public static TestJavaType[] Classes { get; } = typeof(TestTypes)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(i => i.FieldType == typeof(TestJavaType))
+            .Select(i => (TestJavaType)i.GetValue(null)!)
+            .Where(i => i.IsPrimitive == false)
+            .ToArray();
 
     }
 

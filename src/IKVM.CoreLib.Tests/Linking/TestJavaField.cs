@@ -1,8 +1,16 @@
-﻿namespace IKVM.CoreLib.Tests.Linking
+namespace IKVM.CoreLib.Tests.Linking
 {
 
-    abstract class TestJavaField : TestJavaMember
+    class TestJavaField : TestJavaMember
     {
+
+        public TestJavaField(TestJavaType declaringType, string name, string signature, TestJavaType fieldType) :
+            base(declaringType, name, signature)
+        {
+            FieldType = fieldType;
+        }
+
+        public TestJavaType FieldType { get; }
 
     }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using IKVM.CoreLib.Diagnostics;
 using IKVM.CoreLib.Jvm;
@@ -12,23 +13,51 @@ namespace IKVM.CoreLib.Tests.Linking
     {
 
         readonly bool _importer;
+        readonly Dictionary<string, TestJavaType>? _types;
 
-        public TestJvmTypeSystem(bool importer)
+        /// <summary>
+        /// Initializes a new instance that can load the types in <see cref="TestTypes"/> and the given types by name, and
+        /// loads every other name as an unloadable type.
+        /// </summary>
+        /// <param name="importer"></param>
+        /// <param name="types"></param>
+        public TestJvmTypeSystem(bool importer, params TestJavaType[] types)
         {
             _importer = importer;
+            _types = new Dictionary<string, TestJavaType>(StringComparer.Ordinal);
+            foreach (var type in TestTypes.Classes)
+                _types[type.Name] = type;
+            foreach (var type in types)
+                _types[type.Name] = type;
         }
 
         public bool IsImporter => _importer;
 
         public IDiagnosticHandler Diagnostics => throw new NotImplementedException();
 
-        public bool AllowNonVirtualCalls => throw new NotImplementedException();
+        public bool AllowNonVirtualCalls => false;
 
         public TestJavaType TypeOfJavaLangObject => TestTypes.Object;
 
         public TestJavaType TypeOfJavaLangThrowable => TestTypes.Throwable;
 
+        public TestJavaType TypeOfJavaLangString => TestTypes.String;
+
+        public TestJavaType TypeOfJavaLangClass => TestTypes.Class;
+
+        public TestJavaType TypeOfJavaLangInvokeMethodHandle => TestTypes.MethodHandle;
+
+        public TestJavaType TypeOfJavaLangInvokeMethodType => TestTypes.MethodType;
+
         public TestJavaType TypeOfVoid => TestTypes.PrimitiveVoid;
+
+        public TestJavaType TypeOfBoolean => TestTypes.PrimitiveBoolean;
+
+        public TestJavaType TypeOfByte => TestTypes.PrimitiveByte;
+
+        public TestJavaType TypeOfChar => TestTypes.PrimitiveChar;
+
+        public TestJavaType TypeOfShort => TestTypes.PrimitiveShort;
 
         public TestJavaType TypeOfInt => TestTypes.PrimitiveInt;
 
@@ -46,6 +75,8 @@ namespace IKVM.CoreLib.Tests.Linking
 
         public string GetName(TestJavaType type) => type.Name;
 
+        public string GetSignatureName(TestJavaType type) => type.SignatureName;
+
         public bool IsUnloadable(TestJavaType type) => type.IsUnloadable;
 
         public bool IsInterface(TestJavaType type) => type.IsInterface;
@@ -62,9 +93,11 @@ namespace IKVM.CoreLib.Tests.Linking
 
         public TestJavaType MakeArrayType(TestJavaType type, int rank) => type.MakeArrayType(rank);
 
-        public ClassFileAccessFlags GetAccessFlags(TestJavaType type) => throw new NotImplementedException();
+        public ClassFileAccessFlags GetAccessFlags(TestJavaType type) => ClassFileAccessFlags.Public | ClassFileAccessFlags.Super | (type.IsInterface ? ClassFileAccessFlags.Interface | ClassFileAccessFlags.Abstract : 0);
 
         public TestJavaType? GetBaseType(TestJavaType type) => type.BaseType;
+
+        public TestJavaType[] GetInterfaces(TestJavaType type) => type.Interfaces;
 
         public bool IsSubTypeOf(TestJavaType type, TestJavaType baseType)
         {
@@ -133,25 +166,111 @@ namespace IKVM.CoreLib.Tests.Linking
             return false;
         }
 
-        public bool CheckPackageAccess(TestJavaType type, TestJavaType target) => throw new NotImplementedException();
+        public bool CheckPackageAccess(TestJavaType type, TestJavaType target) => true;
 
-        public TestJavaField? GetField(TestJavaType type, string name, string signature) => throw new NotImplementedException();
+        public TestJavaField? GetField(TestJavaType type, string name, string signature) => null;
 
-        public TestJavaMethod? GetMethod(TestJavaType type, string name, string signature, bool inherit) => throw new NotImplementedException();
+        public TestJavaMethod? GetMethod(TestJavaType type, string name, string signature, bool inherit) => null;
 
-        public TestJavaMethod? GetInterfaceMethod(TestJavaType type, string name, string signature) => throw new NotImplementedException();
+        public TestJavaMethod? GetInterfaceMethod(TestJavaType type, string name, string signature) => null;
 
-        public TestJavaType LoadType(TestJavaType context, string name, LoadMode mode) => throw new NotImplementedException();
+        public TestJavaType GetFieldType(TestJavaField field) => field.FieldType;
 
-        public TestJavaType GetFieldTypeFromSignature(TestJavaType context, string signature, LoadMode mode) => throw new NotImplementedException();
+        public TestJavaType GetReturnType(TestJavaMethod method) => method.ReturnType;
 
-        public TestJavaType[] GetArgTypeListFromSignature(TestJavaType context, string descriptor, LoadMode mode) => throw new NotImplementedException();
+        public TestJavaType LoadType(TestJavaType context, string name, LoadMode mode)
+        {
+            if (name.StartsWith("[", StringComparison.Ordinal))
+                return GetFieldTypeFromSignature(context, name, mode);
 
-        public TestJavaType GetReturnTypeFromSignature(TestJavaType context, string descriptor, LoadMode mode) => throw new NotImplementedException();
+            return GetOrAddUnloadableType(name);
+        }
 
-        public void EnsureLinked(TestJavaField field, LoadMode mode) => throw new NotImplementedException();
+        /// <summary>
+        /// Gets the known type with the given name, or the single unloadable type with that name.
+        /// </summary>
+        TestJavaType GetOrAddUnloadableType(string name)
+        {
+            var types = _types ?? throw new InvalidOperationException("This instance cannot load types.");
+            lock (types)
+            {
+                if (types.TryGetValue(name, out var type) == false)
+                    types[name] = type = new TestJavaType(name, isUnloadable: true);
 
-        public void EnsureLinked(TestJavaMethod method, LoadMode mode) => throw new NotImplementedException();
+                return type;
+            }
+        }
+
+        public TestJavaType GetFieldTypeFromSignature(TestJavaType context, string signature, LoadMode mode)
+        {
+            int index = 0;
+            var type = ParseFieldType(context, signature, ref index, mode);
+            if (index != signature.Length)
+                throw new ArgumentException($"Invalid field descriptor '{signature}'.", nameof(signature));
+
+            return type;
+        }
+
+        public TestJavaType[] GetArgTypeListFromSignature(TestJavaType context, string descriptor, LoadMode mode)
+        {
+            var types = new List<TestJavaType>();
+            int index = 1;
+            while (descriptor[index] != ')')
+                types.Add(ParseFieldType(context, descriptor, ref index, mode));
+
+            return types.ToArray();
+        }
+
+        public TestJavaType GetReturnTypeFromSignature(TestJavaType context, string descriptor, LoadMode mode)
+        {
+            int index = descriptor.IndexOf(')') + 1;
+            if (descriptor[index] == 'V')
+                return TestTypes.PrimitiveVoid;
+
+            return ParseFieldType(context, descriptor, ref index, mode);
+        }
+
+        /// <summary>
+        /// Parses the field type that starts at the given index of a descriptor, and advances the index past it.
+        /// </summary>
+        TestJavaType ParseFieldType(TestJavaType context, string descriptor, ref int index, LoadMode mode)
+        {
+            switch (descriptor[index++])
+            {
+                case 'Z': return TestTypes.PrimitiveBoolean;
+                case 'B': return TestTypes.PrimitiveByte;
+                case 'C': return TestTypes.PrimitiveChar;
+                case 'S': return TestTypes.PrimitiveShort;
+                case 'I': return TestTypes.PrimitiveInt;
+                case 'J': return TestTypes.PrimitiveLong;
+                case 'F': return TestTypes.PrimitiveFloat;
+                case 'D': return TestTypes.PrimitiveDouble;
+                case 'L':
+                    {
+                        var end = descriptor.IndexOf(';', index);
+                        var name = descriptor.Substring(index, end - index).Replace('/', '.');
+                        index = end + 1;
+                        return LoadType(context, name, mode);
+                    }
+                case '[':
+                    {
+                        var start = index - 1;
+                        var elementType = ParseFieldType(context, descriptor, ref index, mode);
+
+                        // like the runtime, an array of an unloadable type is itself unloadable
+                        if (elementType.IsUnloadable)
+                            return GetOrAddUnloadableType(descriptor.Substring(start, index - start).Replace('/', '.'));
+
+                        return elementType.MakeArrayType();
+                    }
+                default:
+                    throw new ArgumentException($"Invalid descriptor '{descriptor}'.", nameof(descriptor));
+            }
+        }
+
+        public void EnsureLinked(TestJavaField field, LoadMode mode) { }
+
+        public void EnsureLinked(TestJavaMethod method, LoadMode mode) { }
 
     }
 

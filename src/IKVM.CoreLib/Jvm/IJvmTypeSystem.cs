@@ -55,9 +55,49 @@ namespace IKVM.CoreLib.Jvm
         TType TypeOfJavaLangThrowable { get; }
 
         /// <summary>
+        /// Gets the type for 'java.lang.String'.
+        /// </summary>
+        TType TypeOfJavaLangString { get; }
+
+        /// <summary>
+        /// Gets the type for 'java.lang.Class'.
+        /// </summary>
+        TType TypeOfJavaLangClass { get; }
+
+        /// <summary>
+        /// Gets the type for 'java.lang.invoke.MethodHandle'.
+        /// </summary>
+        TType TypeOfJavaLangInvokeMethodHandle { get; }
+
+        /// <summary>
+        /// Gets the type for 'java.lang.invoke.MethodType'.
+        /// </summary>
+        TType TypeOfJavaLangInvokeMethodType { get; }
+
+        /// <summary>
         /// Gets the type for 'void'.
         /// </summary>
         TType TypeOfVoid { get; }
+
+        /// <summary>
+        /// Gets the type for 'boolean'.
+        /// </summary>
+        TType TypeOfBoolean { get; }
+
+        /// <summary>
+        /// Gets the type for 'byte'.
+        /// </summary>
+        TType TypeOfByte { get; }
+
+        /// <summary>
+        /// Gets the type for 'char'.
+        /// </summary>
+        TType TypeOfChar { get; }
+
+        /// <summary>
+        /// Gets the type for 'short'.
+        /// </summary>
+        TType TypeOfShort { get; }
 
         /// <summary>
         /// Gets the type for 'int'.
@@ -102,6 +142,13 @@ namespace IKVM.CoreLib.Jvm
         /// <param name="type"></param>
         /// <returns></returns>
         string GetName(TType type);
+
+        /// <summary>
+        /// Gets the name of the type as it appears in a field descriptor, such as 'I' or 'Ljava/lang/String;' with dots in place of slashes.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        string GetSignatureName(TType type);
 
         /// <summary>
         /// Gets whether or not the type is unloadable.
@@ -175,6 +222,13 @@ namespace IKVM.CoreLib.Jvm
         TType? GetBaseType(TType type);
 
         /// <summary>
+        /// Gets the interfaces the type directly implements.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        TType[] GetInterfaces(TType type);
+
+        /// <summary>
         /// Returns <c>true</c> if <paramref name="type"/> is a sub type of <paramref name="baseType"/>.
         /// </summary>
         /// <param name="type"></param>
@@ -243,6 +297,20 @@ namespace IKVM.CoreLib.Jvm
         /// <param name="signature"></param>
         /// <returns></returns>
         TMethod? GetInterfaceMethod(TType type, string name, string signature);
+
+        /// <summary>
+        /// Gets the type of the field.
+        /// </summary>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        TType GetFieldType(TField field);
+
+        /// <summary>
+        /// Gets the return type of the method.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        TType GetReturnType(TMethod method);
 
         /// <summary>
         /// Loads a type by name, using <paramref name="context"/> as the loading context.
