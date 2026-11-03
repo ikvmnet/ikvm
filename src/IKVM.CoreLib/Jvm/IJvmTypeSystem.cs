@@ -50,9 +50,84 @@ namespace IKVM.CoreLib.Jvm
         TType TypeOfJavaLangObject { get; }
 
         /// <summary>
+        /// Gets the type for 'java.lang.Throwable'.
+        /// </summary>
+        TType TypeOfJavaLangThrowable { get; }
+
+        /// <summary>
+        /// Gets the type for 'java.lang.String'.
+        /// </summary>
+        TType TypeOfJavaLangString { get; }
+
+        /// <summary>
+        /// Gets the type for 'java.lang.Class'.
+        /// </summary>
+        TType TypeOfJavaLangClass { get; }
+
+        /// <summary>
+        /// Gets the type for 'java.lang.invoke.MethodHandle'.
+        /// </summary>
+        TType TypeOfJavaLangInvokeMethodHandle { get; }
+
+        /// <summary>
+        /// Gets the type for 'java.lang.invoke.MethodType'.
+        /// </summary>
+        TType TypeOfJavaLangInvokeMethodType { get; }
+
+        /// <summary>
+        /// Gets the type for 'void'.
+        /// </summary>
+        TType TypeOfVoid { get; }
+
+        /// <summary>
+        /// Gets the type for 'boolean'.
+        /// </summary>
+        TType TypeOfBoolean { get; }
+
+        /// <summary>
+        /// Gets the type for 'byte'.
+        /// </summary>
+        TType TypeOfByte { get; }
+
+        /// <summary>
+        /// Gets the type for 'char'.
+        /// </summary>
+        TType TypeOfChar { get; }
+
+        /// <summary>
+        /// Gets the type for 'short'.
+        /// </summary>
+        TType TypeOfShort { get; }
+
+        /// <summary>
+        /// Gets the type for 'int'.
+        /// </summary>
+        TType TypeOfInt { get; }
+
+        /// <summary>
+        /// Gets the type for 'long'.
+        /// </summary>
+        TType TypeOfLong { get; }
+
+        /// <summary>
+        /// Gets the type for 'float'.
+        /// </summary>
+        TType TypeOfFloat { get; }
+
+        /// <summary>
+        /// Gets the type for 'double'.
+        /// </summary>
+        TType TypeOfDouble { get; }
+
+        /// <summary>
         /// Gets the 'null' verifier type.
         /// </summary>
         TType TypeOfVerifierNull { get; }
+
+        /// <summary>
+        /// Gets the unloadable type the verifier uses for the result of merging types of which at least one is unloadable.
+        /// </summary>
+        TType TypeOfVerifierUnloadable { get; }
 
         /// <summary>
         /// Creates an unloadable type with the given name.
@@ -69,6 +144,13 @@ namespace IKVM.CoreLib.Jvm
         string GetName(TType type);
 
         /// <summary>
+        /// Gets the name of the type as it appears in a field descriptor, such as 'I' or 'Ljava/lang/String;' with dots in place of slashes.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        string GetSignatureName(TType type);
+
+        /// <summary>
         /// Gets whether or not the type is unloadable.
         /// </summary>
         /// <param name="type"></param>
@@ -81,6 +163,49 @@ namespace IKVM.CoreLib.Jvm
         /// <param name="type"></param>
         /// <returns></returns>
         bool IsInterface(TType type);
+
+        /// <summary>
+        /// Gets whether or not the type is a primitive type, including 'void'.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        bool IsPrimitive(TType type);
+
+        /// <summary>
+        /// Gets whether or not the type is a .NET value type that is not a Java primitive type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        bool IsNonPrimitiveValueType(TType type);
+
+        /// <summary>
+        /// Gets whether or not the type is an interface, or an array whose innermost element type is an interface.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        bool IsInterfaceOrInterfaceArray(TType type);
+
+        /// <summary>
+        /// Gets the number of dimensions of the type if it is an array, or zero.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        int GetArrayRank(TType type);
+
+        /// <summary>
+        /// Gets the element type of an array type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        TType GetElementType(TType type);
+
+        /// <summary>
+        /// Gets the array type with the given number of dimensions whose element type is <paramref name="type"/>.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="rank"></param>
+        /// <returns></returns>
+        TType MakeArrayType(TType type, int rank);
 
         /// <summary>
         /// Gets the modifiers of the type.
@@ -97,12 +222,45 @@ namespace IKVM.CoreLib.Jvm
         TType? GetBaseType(TType type);
 
         /// <summary>
+        /// Gets the interfaces the type directly implements.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        TType[] GetInterfaces(TType type);
+
+        /// <summary>
         /// Returns <c>true</c> if <paramref name="type"/> is a sub type of <paramref name="baseType"/>.
         /// </summary>
         /// <param name="type"></param>
         /// <param name="baseType"></param>
         /// <returns></returns>
         bool IsSubTypeOf(TType type, TType baseType);
+
+        /// <summary>
+        /// Returns <c>true</c> if <paramref name="type"/> implements the interface <paramref name="interfaceType"/>.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="interfaceType"></param>
+        /// <returns></returns>
+        bool ImplementsInterface(TType type, TType interfaceType);
+
+        /// <summary>
+        /// Returns <c>true</c> if a value of <paramref name="type"/> can be assigned to <paramref name="target"/>.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        bool IsAssignableTo(TType type, TType target);
+
+        /// <summary>
+        /// Returns <c>true</c> if one of the base types of <paramref name="type"/> is unloadable.
+        /// </summary>
+        /// <remarks>
+        /// The importer reports the missing type as a diagnostic.
+        /// </remarks>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        bool HasUnloadableBaseType(TType type);
 
         /// <summary>
         /// Returns <c>true</c> if <paramref name="type"/> is permitted to access the package of <paramref name="target"/>.
@@ -139,6 +297,20 @@ namespace IKVM.CoreLib.Jvm
         /// <param name="signature"></param>
         /// <returns></returns>
         TMethod? GetInterfaceMethod(TType type, string name, string signature);
+
+        /// <summary>
+        /// Gets the type of the field.
+        /// </summary>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        TType GetFieldType(TField field);
+
+        /// <summary>
+        /// Gets the return type of the method.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        TType GetReturnType(TMethod method);
 
         /// <summary>
         /// Loads a type by name, using <paramref name="context"/> as the loading context.

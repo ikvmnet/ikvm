@@ -143,49 +143,6 @@ namespace IKVM.Runtime
 
     }
 
-    sealed class VerifyError : LinkageError
-    {
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        internal VerifyError() :
-            base("")
-        {
-
-        }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="message"></param>
-        internal VerifyError(string message) :
-            base(message)
-        {
-
-        }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="innerException"></param>
-        internal VerifyError(string message, Exception innerException) : base(message, innerException)
-        {
-
-        }
-
-#if !IMPORTER && !FIRST_PASS && !EXPORTER
-
-        internal override Exception ToJava()
-        {
-            return new java.lang.VerifyError(Message);
-        }
-
-#endif
-
-    }
-
     sealed class ClassNotFoundException : RetargetableJavaException
     {
 

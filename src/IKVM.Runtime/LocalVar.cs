@@ -30,7 +30,7 @@ namespace IKVM.Runtime
 
 		internal bool isArg;
 		internal int local;
-		internal RuntimeJavaType type;
+		internal VerificationType type;
 		internal CodeEmitterLocal builder;
 		// used to emit debugging info, only available if ClassLoaderWrapper.EmitDebugInfo is true
 		internal string name;

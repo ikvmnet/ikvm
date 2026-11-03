@@ -1652,6 +1652,12 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 throw x.ToJava();
             }
+#if FIRST_PASS == false
+            catch (IKVM.CoreLib.Linking.VerifyException x)
+            {
+                throw JVM.Context.ExceptionHelper.MapException<Exception>(x, true, false);
+            }
+#endif
 
 #if NETFRAMEWORK
             return FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
