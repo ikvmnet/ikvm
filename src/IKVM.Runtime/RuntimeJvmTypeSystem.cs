@@ -1,4 +1,6 @@
-﻿using IKVM.CoreLib.Diagnostics;
+﻿using System;
+
+using IKVM.CoreLib.Diagnostics;
 using IKVM.CoreLib.Jvm;
 using IKVM.CoreLib.Linking;
 using IKVM.CoreLib.Runtime;
@@ -20,7 +22,7 @@ namespace IKVM.Runtime
         /// <param name="context"></param>
         public RuntimeJvmTypeSystem(RuntimeContext context)
         {
-            _context = context;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
 #if IMPORTER

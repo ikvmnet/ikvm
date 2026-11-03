@@ -56,7 +56,7 @@ namespace IKVM.CoreLib.Linking
         {
             base.Link(thisJavaType, mode);
 
-            ref readonly var ts = ref ClassFile.TypeSystem;
+            var ts = ClassFile.TypeSystem;
 
             var javaType = GetClassType();
             if (javaType != null && ts.IsUnloadable(javaType) == false)
