@@ -414,17 +414,15 @@ namespace IKVM.CoreLib.Collections
         {
             if (_head < _tail)
             {
-                for (int i = _head; i < Count; i++)
+                for (int i = _head; i < _tail; i++)
                     list.Add(_elements[i]!);
             }
             else if (_head > _tail)
             {
-                int headPortionLen = _elements.Length - _head;
-
-                for (int i = _head; i < headPortionLen; i++)
+                for (int i = _head; i < _elements.Length; i++)
                     list.Add(_elements[i]!);
 
-                for (int i = headPortionLen; i < _tail; i++)
+                for (int i = 0; i < _tail; i++)
                     list.Add(_elements[i]!);
             }
         }
@@ -443,7 +441,7 @@ namespace IKVM.CoreLib.Collections
             {
                 int headPortionLen = _elements.Length - _head;
                 builder.AddRange(_elements.AsSpan().Slice(_head, headPortionLen)!);
-                builder.AddRange(_elements.AsSpan().Slice(headPortionLen, _tail)!);
+                builder.AddRange(_elements.AsSpan().Slice(0, _tail)!);
             }
         }
 
@@ -477,17 +475,15 @@ namespace IKVM.CoreLib.Collections
         {
             if (_head < _tail)
             {
-                for (int i = _head; i < Count; i++)
+                for (int i = _head; i < _tail; i++)
                     yield return _elements[i]!;
             }
             else if (_head > _tail)
             {
-                int headPortionLen = _elements.Length - _head;
-
-                for (int i = _head; i < headPortionLen; i++)
+                for (int i = _head; i < _elements.Length; i++)
                     yield return _elements[i]!;
 
-                for (int i = headPortionLen; i < _tail; i++)
+                for (int i = 0; i < _tail; i++)
                     yield return _elements[i]!;
             }
         }
