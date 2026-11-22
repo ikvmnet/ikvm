@@ -546,7 +546,7 @@ jobs:
       matrix: ${{ fromJSON(needs.test-vars.outputs.matrix) }}
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     timeout-minutes: 240
-    runs-on: ${{ fromJSON('{"win-x86":["windows-2025-vs2026"],"win-x64":["windows-2025-vs2026"],"linux-x64":["ubuntu-24.04"],"linux-arm64":["ubuntu-24.04-arm"],"osx-x64":["macos-13"],"osx-arm64":["macos-14"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"win-x86":["windows-2025-vs2026"],"win-x64":["windows-2025-vs2026"],"linux-x64":["ubuntu-24.04"],"linux-arm64":["ubuntu-24.04-arm"],"osx-x64":["macos-15-intel"],"osx-arm64":["macos-15"]}')[matrix.sys] }}
     steps:
     - name: Install Visual C++ Runtime
       if: runner.os == 'Windows'

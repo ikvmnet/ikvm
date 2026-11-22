@@ -346,7 +346,7 @@ namespace IKVM.CoreLib.Linking
         /// <param name="length"></param>
         /// <param name="isstub"></param>
         /// <returns></returns>
-        internal static string GetClassName(TTypeSystem typeSystem, byte[] bytes, int offset, int length, out bool isstub)
+        internal static string GetClassName(byte[] bytes, int offset, int length, out bool isstub)
         {
             try
             {
@@ -658,7 +658,7 @@ namespace IKVM.CoreLib.Linking
         /// <summary>
         /// Gets the type system this class file is linked against.
         /// </summary>
-        internal ref readonly TTypeSystem TypeSystem => ref _typeSystem;
+        internal TTypeSystem TypeSystem => _typeSystem;
 
         /// <summary>
         /// Gets the underlying byte code decoder.

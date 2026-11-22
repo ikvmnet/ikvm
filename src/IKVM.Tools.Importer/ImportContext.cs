@@ -1003,7 +1003,7 @@ namespace IKVM.Tools.Importer
             {
                 try
                 {
-                    var name = ClassFile.GetClassName(new RuntimeJvmTypeSystem(context), data, 0, data.Length, out var stub);
+                    var name = ClassFile.GetClassName(data, 0, data.Length, out var stub);
                     if (options.IsExcludedClass(name) || (stub && EmitStubWarning(context, compiler, options, diagnostics, data)))
                     {
                         // we use stubs to add references, but otherwise ignore them
@@ -1108,7 +1108,7 @@ namespace IKVM.Tools.Importer
                     byte[] data = ReadAllBytes(fileInfo);
                     try
                     {
-                        var name = ClassFile.GetClassName(new RuntimeJvmTypeSystem(context), data, 0, data.Length, out var stub);
+                        var name = ClassFile.GetClassName(data, 0, data.Length, out var stub);
                         if (options.IsExcludedClass(name))
                             return;
 

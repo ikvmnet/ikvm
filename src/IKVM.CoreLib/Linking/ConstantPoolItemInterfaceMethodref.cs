@@ -56,7 +56,7 @@ namespace IKVM.CoreLib.Linking
             var wrapper = GetClassType();
             if (wrapper != null)
             {
-                ref readonly var ts = ref ClassFile.TypeSystem;
+                var ts = ClassFile.TypeSystem;
 
                 if (!ts.IsUnloadable(wrapper))
                     _method = ts.GetInterfaceMethod(wrapper, Name, Signature);

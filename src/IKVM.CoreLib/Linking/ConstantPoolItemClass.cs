@@ -163,9 +163,10 @@ namespace IKVM.CoreLib.Linking
         /// <inheritdoc />
         public override void Link(TType thisType, LoadMode mode)
         {
-            if (ReferenceEquals(_javaType, ClassFile.TypeSystem.TypeOfVerifierNull))
+            var ts = ClassFile.TypeSystem;
+
+            if (ReferenceEquals(_javaType, ts.TypeOfVerifierNull))
             {
-                ref readonly var ts = ref ClassFile.TypeSystem;
                 var tw = ts.LoadType(thisType, _name, mode | LoadMode.WarnClassNotFound);
 
                 if (ts.IsImporter == false && ts.IsUnloadable(tw) == false)

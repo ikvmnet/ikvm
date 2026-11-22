@@ -3933,7 +3933,7 @@ java/awt/Modal/ToBack/ToBackNonModal5Test.java                                  
 java/awt/Modal/ToBack/ToBackNonModal6Test.java                                                                          generic-all
 java/awt/Modal/ToBack/ToBackTKModal1Test.java                                                                           generic-all
 java/awt/Modal/ToBack/ToBackTKModal2Test.java                                                                           generic-all
-java/awt/Modal/ToBack/ToBackTKModal3Test.java                                                                           macosx-all,windows-all
+java/awt/Modal/ToBack/ToBackTKModal3Test.java                                                                           generic-all
 java/awt/Modal/ToBack/ToBackTKModal4Test.java                                                                           generic-all
 java/awt/Modal/ToBack/ToBackTKModal5Test.java                                                                           generic-all
 java/awt/Modal/ToBack/ToBackTKModal6Test.java                                                                           generic-all
