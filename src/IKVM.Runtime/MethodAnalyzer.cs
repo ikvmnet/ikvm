@@ -37,30 +37,18 @@ using IKVM.Tools.Importer;
 namespace IKVM.Runtime
 {
 
-    sealed class MethodAnalyzer
+    /// <summary>
+    /// Verifies a method, then prepares its code for the compiler: patches instructions that would fail to link with
+    /// hard errors, binds unloadable types dynamically, applies the class loader's optimizations, and analyzes its
+    /// exception handlers.
+    /// </summary>
+    sealed class MethodAnalyzer : MethodVerifier
     {
 
         readonly RuntimeContext _context;
-        readonly RuntimeJavaType _host;  // used to by Unsafe.defineAnonymousClass() to provide access to private members of the host
-        readonly RuntimeJavaType _type;
         readonly RuntimeJavaMethod _method;
-        readonly ClassFile _classFile;
-        readonly Method _classFileMethod;
         readonly RuntimeClassLoader _classLoader;
-        readonly RuntimeJavaType _thisType;
-        readonly InstructionState[] _state;
         List<string> _errorMessages;
-        readonly Dictionary<int, RuntimeJavaType> _newTypes = new Dictionary<int, RuntimeJavaType>();
-        readonly Dictionary<int, RuntimeJavaType> _faultTypes = new Dictionary<int, RuntimeJavaType>();
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="context"></param>
-        MethodAnalyzer(RuntimeContext context)
-        {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-        }
 
         /// <summary>
         /// Gets the <see cref="RuntimeContext"/> that hosts this method analyzer.
@@ -77,116 +65,53 @@ namespace IKVM.Runtime
         /// <param name="classFile"></param>
         /// <param name="classFileMethod"></param>
         /// <param name="classLoader"></param>
-        /// <exception cref="VerifyError"></exception>
+        /// <exception cref="VerifyException"></exception>
         /// <exception cref="ClassFormatError"></exception>
         internal MethodAnalyzer(RuntimeContext context, RuntimeJavaType host, RuntimeJavaType type, RuntimeJavaMethod method, ClassFile classFile, Method classFileMethod, RuntimeClassLoader classLoader) :
-            this(context)
+            base(classFile.TypeSystem, host, type, classFile, CheckMethod(classFile, classFileMethod), method?.GetParameters(), method?.ReturnType)
         {
-            if (classFileMethod.VerifyError != null)
-                throw new VerifyError(classFileMethod.VerifyError);
-
-            _host = host;
-            _type = type;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _method = method;
-            _classFile = classFile;
-            _classFileMethod = classFileMethod;
             _classLoader = classLoader;
-            _state = new InstructionState[classFileMethod.Instructions.Length];
 
-            try
-            {
-                // ensure that exception blocks and handlers start and end at instruction boundaries
-                for (int i = 0; i < classFileMethod.ExceptionTable.Length; i++)
-                {
-                    int start = classFileMethod.ExceptionTable[i].StartIndex;
-                    int end = classFileMethod.ExceptionTable[i].EndIndex;
-                    int handler = classFileMethod.ExceptionTable[i].HandlerIndex;
-                    if (start >= end || start == -1 || end == -1 || handler <= 0)
-                        throw new IndexOutOfRangeException();
-                }
-            }
-            catch (IndexOutOfRangeException)
-            {
-                // TODO figure out if we should throw this during class loading
-                throw new ClassFormatError($"Illegal exception table (class: {classFile.Name}, method: {classFileMethod.Name}, signature: {classFileMethod.Signature}");
-            }
-
-            // start by computing the initial state, the stack is empty and the locals contain the arguments
-            _state[0] = new InstructionState(context, classFileMethod.MaxLocals, classFileMethod.MaxStack);
-            int firstNonArgLocalIndex = 0;
-
-            if (classFileMethod.IsStatic == false)
-            {
-                _thisType = RuntimeVerifierJavaType.MakeThis(type);
-
-                // this reference. If we're a constructor, the this reference is uninitialized.
-                if (classFileMethod.IsConstructor)
-                {
-                    _state[0].SetLocalType(firstNonArgLocalIndex++, context.VerifierJavaTypeFactory.UninitializedThis, -1);
-                    _state[0].SetUnitializedThis(true);
-                }
-                else
-                {
-                    _state[0].SetLocalType(firstNonArgLocalIndex++, _thisType, -1);
-                }
-            }
-            else
-            {
-                _thisType = null;
-            }
-
-            // mw can be null when we're invoked from IsSideEffectFreeStaticInitializer
-            var argTypes = method != null ? method.GetParameters() : [];
-            for (int i = 0; i < argTypes.Length; i++)
-            {
-                var argType = argTypes[i];
-                if (argType.IsIntOnStackPrimitive)
-                    argType = context.PrimitiveJavaTypeFactory.INT;
-
-                _state[0].SetLocalType(firstNonArgLocalIndex++, argType, -1);
-                if (argType.IsWidePrimitive)
-                    firstNonArgLocalIndex++;
-            }
-
-            AnalyzeTypeFlow();
-            VerifyPassTwo();
-            PatchLoadConstants();
+            Verify();
         }
 
         /// <summary>
-        /// Replaces 'ldc' instructions with 'ldc_nothrow' pseudo instructions.
+        /// Performs the checks the base verifier would, but reports an illegal exception table as a <see cref="ClassFormatError"/>.
         /// </summary>
-        void PatchLoadConstants()
+        /// <param name="classFile"></param>
+        /// <param name="classFileMethod"></param>
+        /// <returns></returns>
+        /// <exception cref="VerifyException"></exception>
+        /// <exception cref="ClassFormatError"></exception>
+        static Method CheckMethod(ClassFile classFile, Method classFileMethod)
         {
-            var code = _classFileMethod.Instructions;
-            for (int i = 0; i < code.Length; i++)
-            {
-                if (_state[i]._initialized)
-                {
-                    switch (code[i].NormalizedOpCode)
-                    {
-                        case NormalizedOpCode.Ldc:
-                            switch (GetConstantPoolConstantType(code[i].Arg1))
-                            {
-                                case ConstantType.Double:
-                                case ConstantType.Float:
-                                case ConstantType.Integer:
-                                case ConstantType.Long:
-                                case ConstantType.String:
-                                case ConstantType.LiveObject:
-                                    code[i].PatchOpCode(NormalizedOpCode.LdcNothrow);
-                                    break;
-                            }
+            if (classFileMethod.VerifyError != null)
+                throw new VerifyException(classFileMethod.VerifyError);
 
-                            break;
-                    }
-                }
-            }
+            // TODO figure out if we should throw this during class loading
+            if (HasValidExceptionTable(classFileMethod) == false)
+                throw new ClassFormatError($"Illegal exception table (class: {classFile.Name}, method: {classFileMethod.Name}, signature: {classFileMethod.Signature}");
+
+            return classFileMethod;
+        }
+
+        /// <inheritdoc />
+        protected override RuntimeJavaType GetIntrinsicReturnType(ConstantPoolItemMI cpi, ref InstructionState state)
+        {
+            // HACK to allow the result of Unsafe.getObjectVolatile() (on an array)
+            // to be used with Unsafe.putObject() we need to propagate the
+            // element type here as the return type (instead of object)
+            if (cpi.GetMethod() != null && cpi.GetMethod().IsIntrinsic && cpi.Class == "sun.misc.Unsafe" && cpi.Name == "getObjectVolatile" && state.GetStackSlot(1).IsReference && Context.Intrinsics.IsSupportedArrayTypeForUnsafeOperation(state.GetStackSlot(1).Type))
+                return state.GetStackSlot(1).Type.ElementTypeWrapper;
+
+            return null;
         }
 
         internal CodeInfo GetCodeInfoAndErrors(UntangledExceptionTable exceptions, out List<string> errors)
         {
-            var codeInfo = new CodeInfo(_context, _state);
+            var codeInfo = new CodeInfo(_classFile.TypeSystem, _state);
 
             OptimizationPass(codeInfo, _classFile, _classFileMethod, exceptions, _type, _classLoader);
             PatchHardErrorsAndDynamicMemberAccess(_type, _method);
@@ -197,1200 +122,6 @@ namespace IKVM.Runtime
 
             ConvertFinallyBlocks(codeInfo, _classFileMethod, exceptions);
             return codeInfo;
-        }
-
-        void AnalyzeTypeFlow()
-        {
-            var s = new InstructionState(_context, _classFileMethod.MaxLocals, _classFileMethod.MaxStack);
-            var done = false;
-            var instructions = _classFileMethod.Instructions;
-
-            while (done == false)
-            {
-                done = true;
-
-                for (int i = 0; i < instructions.Length; i++)
-                {
-                    if (_state[i]._initialized && _state[i]._changed)
-                    {
-                        try
-                        {
-                            // we encountered a state that is marked as changed, so we will need a next loop
-                            done = false;
-                            _state[i]._changed = false;
-
-                            // mark the exception handlers reachable from this instruction
-                            for (int j = 0; j < _classFileMethod.ExceptionTable.Length; j++)
-                                if (_classFileMethod.ExceptionTable[j].StartIndex <= i && i < _classFileMethod.ExceptionTable[j].EndIndex)
-                                    MergeExceptionHandler(j, ref _state[i]);
-
-                            // copy current frame to this frame
-                            _state[i].CopyTo(ref s);
-
-                            var inst = instructions[i];
-                            switch (inst.NormalizedOpCode)
-                            {
-                                case NormalizedOpCode.Aload:
-                                    {
-                                        var type = s.GetLocalType(inst.NormalizedArg1);
-                                        if (type == _context.VerifierJavaTypeFactory.Invalid || type.IsPrimitive)
-                                            throw new VerifyError("Object reference expected");
-
-                                        s.PushType(type);
-                                        break;
-                                    }
-                                case NormalizedOpCode.Astore:
-                                    {
-                                        if (RuntimeVerifierJavaType.IsFaultBlockException(s.PeekType()))
-                                        {
-                                            s.SetLocalType(inst.NormalizedArg1, s.PopFaultBlockException(), i);
-                                            break;
-                                        }
-
-                                        // NOTE since the reference can be uninitialized, we cannot use PopObjectType
-                                        var type = s.PopType();
-                                        if (type.IsPrimitive)
-                                            throw new VerifyError("Object reference expected");
-
-                                        s.SetLocalType(inst.NormalizedArg1, type, i);
-                                        break;
-                                    }
-                                case NormalizedOpCode.AconstNull:
-                                    s.PushType(_context.VerifierJavaTypeFactory.Null);
-                                    break;
-                                case NormalizedOpCode.Aaload:
-                                    {
-                                        s.PopInt();
-                                        var type = s.PopArrayType();
-                                        if (type == _context.VerifierJavaTypeFactory.Null)
-                                        {
-                                            // if the array is null, we have use null as the element type, because
-                                            // otherwise the rest of the code will not verify correctly
-                                            s.PushType(_context.VerifierJavaTypeFactory.Null);
-                                        }
-                                        else if (type.IsUnloadable)
-                                        {
-                                            s.PushType(_context.VerifierJavaTypeFactory.Unloadable);
-                                        }
-                                        else
-                                        {
-                                            type = type.ElementTypeWrapper;
-                                            if (type.IsPrimitive)
-                                                throw new VerifyError("Object array expected");
-
-                                            s.PushType(type);
-                                        }
-                                        break;
-                                    }
-                                case NormalizedOpCode.Aastore:
-                                    s.PopObjectType();
-                                    s.PopInt();
-                                    s.PopArrayType();
-                                    // TODO check that elem is assignable to the array
-                                    break;
-                                case NormalizedOpCode.Baload:
-                                    {
-                                        s.PopInt();
-
-                                        var type = s.PopArrayType();
-                                        if (!RuntimeVerifierJavaType.IsNullOrUnloadable(type) && type != _context.MethodAnalyzerFactory.ByteArrayType && type != _context.MethodAnalyzerFactory.BooleanArrayType)
-                                            throw new VerifyError();
-
-                                        s.PushInt();
-                                        break;
-                                    }
-                                case NormalizedOpCode.Bastore:
-                                    {
-                                        s.PopInt();
-                                        s.PopInt();
-
-                                        var type = s.PopArrayType();
-                                        if (!RuntimeVerifierJavaType.IsNullOrUnloadable(type) && type != _context.MethodAnalyzerFactory.ByteArrayType && type != _context.MethodAnalyzerFactory.BooleanArrayType)
-                                            throw new VerifyError();
-
-                                        break;
-                                    }
-                                case NormalizedOpCode.Caload:
-                                    s.PopInt();
-                                    s.PopObjectType(_context.MethodAnalyzerFactory.CharArrayType);
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.Castore:
-                                    s.PopInt();
-                                    s.PopInt();
-                                    s.PopObjectType(_context.MethodAnalyzerFactory.CharArrayType);
-                                    break;
-                                case NormalizedOpCode.Saload:
-                                    s.PopInt();
-                                    s.PopObjectType(_context.MethodAnalyzerFactory.ShortArrayType);
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.Sastore:
-                                    s.PopInt();
-                                    s.PopInt();
-                                    s.PopObjectType(_context.MethodAnalyzerFactory.ShortArrayType);
-                                    break;
-                                case NormalizedOpCode.Iaload:
-                                    s.PopInt();
-                                    s.PopObjectType(_context.MethodAnalyzerFactory.IntArrayType);
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.Iastore:
-                                    s.PopInt();
-                                    s.PopInt();
-                                    s.PopObjectType(_context.MethodAnalyzerFactory.IntArrayType);
-                                    break;
-                                case NormalizedOpCode.Laload:
-                                    s.PopInt();
-                                    s.PopObjectType(_context.MethodAnalyzerFactory.LongArrayType);
-                                    s.PushLong();
-                                    break;
-                                case NormalizedOpCode.Lastore:
-                                    s.PopLong();
-                                    s.PopInt();
-                                    s.PopObjectType(_context.MethodAnalyzerFactory.LongArrayType);
-                                    break;
-                                case NormalizedOpCode.Daload:
-                                    s.PopInt();
-                                    s.PopObjectType(_context.MethodAnalyzerFactory.DoubleArrayType);
-                                    s.PushDouble();
-                                    break;
-                                case NormalizedOpCode.Dastore:
-                                    s.PopDouble();
-                                    s.PopInt();
-                                    s.PopObjectType(_context.MethodAnalyzerFactory.DoubleArrayType);
-                                    break;
-                                case NormalizedOpCode.Faload:
-                                    s.PopInt();
-                                    s.PopObjectType(_context.MethodAnalyzerFactory.FloatArrayType);
-                                    s.PushFloat();
-                                    break;
-                                case NormalizedOpCode.Fastore:
-                                    s.PopFloat();
-                                    s.PopInt();
-                                    s.PopObjectType(_context.MethodAnalyzerFactory.FloatArrayType);
-                                    break;
-                                case NormalizedOpCode.Arraylength:
-                                    s.PopArrayType();
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.Iconst:
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.IfIcmpeq:
-                                case NormalizedOpCode.IfIcmpne:
-                                case NormalizedOpCode.IfIcmplt:
-                                case NormalizedOpCode.IfIcmpge:
-                                case NormalizedOpCode.IfIcmpgt:
-                                case NormalizedOpCode.IfIcmple:
-                                    s.PopInt();
-                                    s.PopInt();
-                                    break;
-                                case NormalizedOpCode.Ifeq:
-                                case NormalizedOpCode.Ifge:
-                                case NormalizedOpCode.Ifgt:
-                                case NormalizedOpCode.Ifle:
-                                case NormalizedOpCode.Iflt:
-                                case NormalizedOpCode.Ifne:
-                                    s.PopInt();
-                                    break;
-                                case NormalizedOpCode.IfNonNull:
-                                case NormalizedOpCode.IfNull:
-                                    // TODO it might be legal to use an unitialized ref here
-                                    s.PopObjectType();
-                                    break;
-                                case NormalizedOpCode.IfAcmpeq:
-                                case NormalizedOpCode.IfAcmpne:
-                                    // TODO it might be legal to use an unitialized ref here
-                                    s.PopObjectType();
-                                    s.PopObjectType();
-                                    break;
-                                case NormalizedOpCode.GetStatic:
-                                case NormalizedOpCode.DynamicGetStatic:
-                                    // special support for when we're being called from IsSideEffectFreeStaticInitializer
-                                    if (_method == null)
-                                    {
-                                        switch (GetFieldref(inst.Arg1).Signature[0])
-                                        {
-                                            case 'B':
-                                            case 'Z':
-                                            case 'C':
-                                            case 'S':
-                                            case 'I':
-                                                s.PushInt();
-                                                break;
-                                            case 'F':
-                                                s.PushFloat();
-                                                break;
-                                            case 'D':
-                                                s.PushDouble();
-                                                break;
-                                            case 'J':
-                                                s.PushLong();
-                                                break;
-                                            case 'L':
-                                            case '[':
-                                                throw new VerifyError();
-                                            default:
-                                                throw new InvalidOperationException();
-                                        }
-                                    }
-                                    else
-                                    {
-                                        var cpi = GetFieldref(inst.Arg1);
-                                        if (cpi.GetField() != null && cpi.GetField().FieldTypeWrapper.IsUnloadable)
-                                            s.PushType(cpi.GetField().FieldTypeWrapper);
-                                        else
-                                            s.PushType(cpi.GetFieldType());
-                                    }
-                                    break;
-                                case NormalizedOpCode.PutStatic:
-                                case NormalizedOpCode.DynamicPutStatic:
-                                    // special support for when we're being called from IsSideEffectFreeStaticInitializer
-                                    if (_method == null)
-                                    {
-                                        switch (GetFieldref(inst.Arg1).Signature[0])
-                                        {
-                                            case 'B':
-                                            case 'Z':
-                                            case 'C':
-                                            case 'S':
-                                            case 'I':
-                                                s.PopInt();
-                                                break;
-                                            case 'F':
-                                                s.PopFloat();
-                                                break;
-                                            case 'D':
-                                                s.PopDouble();
-                                                break;
-                                            case 'J':
-                                                s.PopLong();
-                                                break;
-                                            case 'L':
-                                            case '[':
-                                                if (s.PopAnyType() != _context.VerifierJavaTypeFactory.Null)
-                                                    throw new VerifyError();
-                                                break;
-                                            default:
-                                                throw new InvalidOperationException();
-                                        }
-                                    }
-                                    else
-                                    {
-                                        s.PopType(GetFieldref(inst.Arg1).GetFieldType());
-                                    }
-                                    break;
-                                case NormalizedOpCode.GetField:
-                                case NormalizedOpCode.DynamicGetField:
-                                    {
-                                        s.PopObjectType(GetFieldref(inst.Arg1).GetClassType());
-
-                                        var cpi = GetFieldref(inst.Arg1);
-                                        if (cpi.GetField() != null && cpi.GetField().FieldTypeWrapper.IsUnloadable)
-                                            s.PushType(cpi.GetField().FieldTypeWrapper);
-                                        else
-                                            s.PushType(cpi.GetFieldType());
-
-                                        break;
-                                    }
-                                case NormalizedOpCode.PutField:
-                                case NormalizedOpCode.DynamicPutField:
-                                    s.PopType(GetFieldref(inst.Arg1).GetFieldType());
-
-                                    // putfield is allowed to access the uninitialized this
-                                    if (s.PeekType() == _context.VerifierJavaTypeFactory.UninitializedThis && _type.IsAssignableTo(GetFieldref(inst.Arg1).GetClassType()))
-                                        s.PopType();
-                                    else
-                                        s.PopObjectType(GetFieldref(inst.Arg1).GetClassType());
-
-                                    break;
-                                case NormalizedOpCode.LdcNothrow:
-                                case NormalizedOpCode.Ldc:
-                                    {
-                                        switch (GetConstantPoolConstantType(inst.Arg1))
-                                        {
-                                            case ConstantType.Double:
-                                                s.PushDouble();
-                                                break;
-                                            case ConstantType.Float:
-                                                s.PushFloat();
-                                                break;
-                                            case ConstantType.Integer:
-                                                s.PushInt();
-                                                break;
-                                            case ConstantType.Long:
-                                                s.PushLong();
-                                                break;
-                                            case ConstantType.String:
-                                                s.PushType(_context.JavaBase.TypeOfJavaLangString);
-                                                break;
-                                            case ConstantType.LiveObject:
-                                                s.PushType(_context.JavaBase.TypeOfJavaLangObject);
-                                                break;
-                                            case ConstantType.Class:
-                                                if (_classFile.MajorVersion < 49)
-                                                    throw new VerifyError("Illegal type in constant pool");
-
-                                                s.PushType(_context.JavaBase.TypeOfJavaLangClass);
-                                                break;
-                                            case ConstantType.MethodHandle:
-                                                s.PushType(_context.JavaBase.TypeOfJavaLangInvokeMethodHandle);
-                                                break;
-                                            case ConstantType.MethodType:
-                                                s.PushType(_context.JavaBase.TypeOfJavaLangInvokeMethodType);
-                                                break;
-                                            default:
-                                                // NOTE this is not a VerifyError, because it cannot happen (unless we have
-                                                // a bug in ClassFile.GetConstantPoolConstantType)
-                                                throw new InvalidOperationException();
-                                        }
-
-                                        break;
-                                    }
-                                case NormalizedOpCode.CloneArray:
-                                case NormalizedOpCode.InvokeVirtual:
-                                case NormalizedOpCode.InvokeSpecial:
-                                case NormalizedOpCode.InvokeInterface:
-                                case NormalizedOpCode.InvokeStatic:
-                                case NormalizedOpCode.DynamicInvokeVirtual:
-                                case NormalizedOpCode.DynamicInvokeSpecial:
-                                case NormalizedOpCode.DynamicInvokeInterface:
-                                case NormalizedOpCode.DynamicInvokeStatic:
-                                case NormalizedOpCode.PrivilegedInvokeVirtual:
-                                case NormalizedOpCode.PrivilegedInvokeSpecial:
-                                case NormalizedOpCode.PrivilegedInvokeStatic:
-                                case NormalizedOpCode.MethodHandleInvoke:
-                                case NormalizedOpCode.MethodHandleLink:
-                                    {
-                                        var cpi = GetMethodref(inst.Arg1);
-                                        var retType = cpi.GetRetType();
-
-                                        // HACK to allow the result of Unsafe.getObjectVolatile() (on an array)
-                                        // to be used with Unsafe.putObject() we need to propagate the
-                                        // element type here as the return type (instead of object)
-                                        if (cpi.GetMethod() != null && cpi.GetMethod().IsIntrinsic && cpi.Class == "sun.misc.Unsafe" && cpi.Name == "getObjectVolatile" && Context.Intrinsics.IsSupportedArrayTypeForUnsafeOperation(s.GetStackSlot(1)))
-                                            retType = s.GetStackSlot(1).ElementTypeWrapper;
-
-                                        s.MultiPopAnyType(cpi.GetArgTypes().Length);
-
-                                        if (inst.NormalizedOpCode != NormalizedOpCode.InvokeStatic && inst.NormalizedOpCode != NormalizedOpCode.DynamicInvokeStatic)
-                                        {
-                                            var type = s.PopType();
-                                            if (ReferenceEquals(cpi.Name, StringConstants.INIT))
-                                            {
-                                                // after we've invoked the constructor, the uninitialized references
-                                                // are now initialized
-                                                if (type == _context.VerifierJavaTypeFactory.UninitializedThis)
-                                                {
-                                                    if (s.GetLocalTypeEx(0) == type)
-                                                        s.SetLocalType(0, _thisType, i);
-
-                                                    s.MarkInitialized(type, _type, i);
-                                                    s.SetUnitializedThis(false);
-                                                }
-                                                else if (RuntimeVerifierJavaType.IsNew(type))
-                                                {
-                                                    s.MarkInitialized(type, ((RuntimeVerifierJavaType)type).UnderlyingType, i);
-                                                }
-                                                else
-                                                {
-                                                    // This is a VerifyError, but it will be caught by our second pass
-                                                }
-                                            }
-                                        }
-
-                                        if (retType != _context.PrimitiveJavaTypeFactory.VOID)
-                                        {
-                                            if (cpi.GetMethod() != null && cpi.GetMethod().ReturnType.IsUnloadable)
-                                            {
-                                                s.PushType(cpi.GetMethod().ReturnType);
-                                            }
-                                            else if (retType == _context.PrimitiveJavaTypeFactory.DOUBLE)
-                                            {
-                                                s.PushExtendedDouble();
-                                            }
-                                            else if (retType == _context.PrimitiveJavaTypeFactory.FLOAT)
-                                            {
-                                                s.PushExtendedFloat();
-                                            }
-                                            else
-                                            {
-                                                s.PushType(retType);
-                                            }
-                                        }
-
-                                        break;
-                                    }
-                                case NormalizedOpCode.InvokeDynamic:
-                                    {
-                                        var cpi = GetInvokeDynamic(inst.Arg1);
-                                        s.MultiPopAnyType(cpi.GetArgTypes().Length);
-
-                                        var retType = cpi.GetRetType();
-                                        if (retType != _context.PrimitiveJavaTypeFactory.VOID)
-                                        {
-                                            if (retType == _context.PrimitiveJavaTypeFactory.DOUBLE)
-                                            {
-                                                s.PushExtendedDouble();
-                                            }
-                                            else if (retType == _context.PrimitiveJavaTypeFactory.FLOAT)
-                                            {
-                                                s.PushExtendedFloat();
-                                            }
-                                            else
-                                            {
-                                                s.PushType(retType);
-                                            }
-                                        }
-
-                                        break;
-                                    }
-                                case NormalizedOpCode.Goto:
-                                    break;
-                                case NormalizedOpCode.Istore:
-                                    s.PopInt();
-                                    s.SetLocalInt(inst.NormalizedArg1, i);
-                                    break;
-                                case NormalizedOpCode.Iload:
-                                    s.GetLocalInt(inst.NormalizedArg1);
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.Ineg:
-                                    s.PopInt();
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.Iadd:
-                                case NormalizedOpCode.Isub:
-                                case NormalizedOpCode.Imul:
-                                case NormalizedOpCode.Idiv:
-                                case NormalizedOpCode.Irem:
-                                case NormalizedOpCode.Iand:
-                                case NormalizedOpCode.Ior:
-                                case NormalizedOpCode.Ixor:
-                                case NormalizedOpCode.Ishl:
-                                case NormalizedOpCode.Ishr:
-                                case NormalizedOpCode.Iushr:
-                                    s.PopInt();
-                                    s.PopInt();
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.Lneg:
-                                    s.PopLong();
-                                    s.PushLong();
-                                    break;
-                                case NormalizedOpCode.Ladd:
-                                case NormalizedOpCode.Lsub:
-                                case NormalizedOpCode.Lmul:
-                                case NormalizedOpCode.Ldiv:
-                                case NormalizedOpCode.Lrem:
-                                case NormalizedOpCode.Land:
-                                case NormalizedOpCode.Lor:
-                                case NormalizedOpCode.Lxor:
-                                    s.PopLong();
-                                    s.PopLong();
-                                    s.PushLong();
-                                    break;
-                                case NormalizedOpCode.Lshl:
-                                case NormalizedOpCode.Lshr:
-                                case NormalizedOpCode.Lushr:
-                                    s.PopInt();
-                                    s.PopLong();
-                                    s.PushLong();
-                                    break;
-                                case NormalizedOpCode.Fneg:
-                                    if (s.PopFloat())
-                                        s.PushExtendedFloat();
-                                    else
-                                        s.PushFloat();
-                                    break;
-                                case NormalizedOpCode.Fadd:
-                                case NormalizedOpCode.Fsub:
-                                case NormalizedOpCode.Fmul:
-                                case NormalizedOpCode.Fdiv:
-                                case NormalizedOpCode.Frem:
-                                    s.PopFloat();
-                                    s.PopFloat();
-                                    s.PushExtendedFloat();
-                                    break;
-                                case NormalizedOpCode.Dneg:
-                                    if (s.PopDouble())
-                                        s.PushExtendedDouble();
-                                    else
-                                        s.PushDouble();
-
-                                    break;
-                                case NormalizedOpCode.Dadd:
-                                case NormalizedOpCode.Dsub:
-                                case NormalizedOpCode.Dmul:
-                                case NormalizedOpCode.Ddiv:
-                                case NormalizedOpCode.Drem:
-                                    s.PopDouble();
-                                    s.PopDouble();
-                                    s.PushExtendedDouble();
-                                    break;
-                                case NormalizedOpCode.New:
-                                    {
-                                        // mark the type, so that we can ascertain that it is a "new object"
-                                        if (!_newTypes.TryGetValue(i, out var type))
-                                        {
-                                            type = GetConstantPoolClassType(inst.Arg1);
-                                            if (type.IsArray)
-                                                throw new VerifyError("Illegal use of array type");
-
-                                            type = RuntimeVerifierJavaType.MakeNew(type, i);
-                                            _newTypes[i] = type;
-                                        }
-
-                                        s.PushType(type);
-                                        break;
-                                    }
-                                case NormalizedOpCode.Multianewarray:
-                                    {
-                                        if (inst.Arg2 < 1)
-                                            throw new VerifyError("Illegal dimension argument");
-
-                                        for (int j = 0; j < inst.Arg2; j++)
-                                            s.PopInt();
-
-                                        var type = GetConstantPoolClassType(inst.Arg1);
-                                        if (type.ArrayRank < inst.Arg2)
-                                            throw new VerifyError("Illegal dimension argument");
-
-                                        s.PushType(type);
-                                        break;
-                                    }
-                                case NormalizedOpCode.Anewarray:
-                                    {
-                                        s.PopInt();
-                                        var type = GetConstantPoolClassType(inst.Arg1);
-                                        if (type.IsUnloadable)
-                                            s.PushType(new RuntimeUnloadableJavaType(_context, "[" + type.SignatureName));
-                                        else
-                                            s.PushType(type.MakeArrayType(1));
-
-                                        break;
-                                    }
-                                case NormalizedOpCode.Newarray:
-                                    s.PopInt();
-                                    switch (inst.Arg1)
-                                    {
-                                        case 4:
-                                            s.PushType(_context.MethodAnalyzerFactory.BooleanArrayType);
-                                            break;
-                                        case 5:
-                                            s.PushType(_context.MethodAnalyzerFactory.CharArrayType);
-                                            break;
-                                        case 6:
-                                            s.PushType(_context.MethodAnalyzerFactory.FloatArrayType);
-                                            break;
-                                        case 7:
-                                            s.PushType(_context.MethodAnalyzerFactory.DoubleArrayType);
-                                            break;
-                                        case 8:
-                                            s.PushType(_context.MethodAnalyzerFactory.ByteArrayType);
-                                            break;
-                                        case 9:
-                                            s.PushType(_context.MethodAnalyzerFactory.ShortArrayType);
-                                            break;
-                                        case 10:
-                                            s.PushType(_context.MethodAnalyzerFactory.IntArrayType);
-                                            break;
-                                        case 11:
-                                            s.PushType(_context.MethodAnalyzerFactory.LongArrayType);
-                                            break;
-                                        default:
-                                            throw new VerifyError("Bad type");
-                                    }
-                                    break;
-                                case NormalizedOpCode.Swap:
-                                    {
-                                        var t1 = s.PopType();
-                                        var t2 = s.PopType();
-                                        s.PushType(t1);
-                                        s.PushType(t2);
-                                        break;
-                                    }
-                                case NormalizedOpCode.Dup:
-                                    {
-                                        var t = s.PopType();
-                                        s.PushType(t);
-                                        s.PushType(t);
-                                        break;
-                                    }
-                                case NormalizedOpCode.Dup2:
-                                    {
-                                        var t = s.PopAnyType();
-                                        if (t.IsWidePrimitive || t == _context.VerifierJavaTypeFactory.ExtendedDouble)
-                                        {
-                                            s.PushType(t);
-                                            s.PushType(t);
-                                        }
-                                        else
-                                        {
-                                            var t2 = s.PopType();
-                                            s.PushType(t2);
-                                            s.PushType(t);
-                                            s.PushType(t2);
-                                            s.PushType(t);
-                                        }
-                                        break;
-                                    }
-                                case NormalizedOpCode.DupX1:
-                                    {
-                                        var value1 = s.PopType();
-                                        var value2 = s.PopType();
-                                        s.PushType(value1);
-                                        s.PushType(value2);
-                                        s.PushType(value1);
-                                        break;
-                                    }
-                                case NormalizedOpCode.Dup2X1:
-                                    {
-                                        var value1 = s.PopAnyType();
-                                        if (value1.IsWidePrimitive || value1 == _context.VerifierJavaTypeFactory.ExtendedDouble)
-                                        {
-                                            var value2 = s.PopType();
-                                            s.PushType(value1);
-                                            s.PushType(value2);
-                                            s.PushType(value1);
-                                        }
-                                        else
-                                        {
-                                            var value2 = s.PopType();
-                                            var value3 = s.PopType();
-                                            s.PushType(value2);
-                                            s.PushType(value1);
-                                            s.PushType(value3);
-                                            s.PushType(value2);
-                                            s.PushType(value1);
-                                        }
-                                        break;
-                                    }
-                                case NormalizedOpCode.DupX2:
-                                    {
-                                        var value1 = s.PopType();
-                                        var value2 = s.PopAnyType();
-                                        if (value2.IsWidePrimitive || value2 == _context.VerifierJavaTypeFactory.ExtendedDouble)
-                                        {
-                                            s.PushType(value1);
-                                            s.PushType(value2);
-                                            s.PushType(value1);
-                                        }
-                                        else
-                                        {
-                                            var value3 = s.PopType();
-                                            s.PushType(value1);
-                                            s.PushType(value3);
-                                            s.PushType(value2);
-                                            s.PushType(value1);
-                                        }
-                                        break;
-                                    }
-                                case NormalizedOpCode.Dup2X2:
-                                    {
-                                        var value1 = s.PopAnyType();
-                                        if (value1.IsWidePrimitive || value1 == _context.VerifierJavaTypeFactory.ExtendedDouble)
-                                        {
-                                            var value2 = s.PopAnyType();
-                                            if (value2.IsWidePrimitive || value2 == _context.VerifierJavaTypeFactory.ExtendedDouble)
-                                            {
-                                                // Form 4
-                                                s.PushType(value1);
-                                                s.PushType(value2);
-                                                s.PushType(value1);
-                                            }
-                                            else
-                                            {
-                                                // Form 2
-                                                var value3 = s.PopType();
-                                                s.PushType(value1);
-                                                s.PushType(value3);
-                                                s.PushType(value2);
-                                                s.PushType(value1);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            var value2 = s.PopType();
-                                            var value3 = s.PopAnyType();
-                                            if (value3.IsWidePrimitive || value3 == _context.VerifierJavaTypeFactory.ExtendedDouble)
-                                            {
-                                                // Form 3
-                                                s.PushType(value2);
-                                                s.PushType(value1);
-                                                s.PushType(value3);
-                                                s.PushType(value2);
-                                                s.PushType(value1);
-                                            }
-                                            else
-                                            {
-                                                // Form 4
-                                                var value4 = s.PopType();
-                                                s.PushType(value2);
-                                                s.PushType(value1);
-                                                s.PushType(value4);
-                                                s.PushType(value3);
-                                                s.PushType(value2);
-                                                s.PushType(value1);
-                                            }
-                                        }
-                                        break;
-                                    }
-                                case NormalizedOpCode.Pop:
-                                    s.PopType();
-                                    break;
-                                case NormalizedOpCode.Pop2:
-                                    {
-                                        var type = s.PopAnyType();
-                                        if (!type.IsWidePrimitive && type != _context.VerifierJavaTypeFactory.ExtendedDouble)
-                                            s.PopType();
-
-                                        break;
-                                    }
-                                case NormalizedOpCode.MonitorEnter:
-                                case NormalizedOpCode.MonitorExit:
-                                    // TODO these bytecodes are allowed on an uninitialized object, but
-                                    // we don't support that at the moment...
-                                    s.PopObjectType();
-                                    break;
-                                case NormalizedOpCode.Return:
-                                    // mw is null if we're called from IsSideEffectFreeStaticInitializer
-                                    if (_method != null)
-                                    {
-                                        if (_method.ReturnType != _context.PrimitiveJavaTypeFactory.VOID)
-                                            throw new VerifyError("Wrong return type in function");
-
-                                        // if we're a constructor, make sure we called the base class constructor
-                                        s.CheckUninitializedThis();
-                                    }
-                                    break;
-                                case NormalizedOpCode.Areturn:
-                                    s.PopObjectType(_method.ReturnType);
-                                    break;
-                                case NormalizedOpCode.Ireturn:
-                                    {
-                                        s.PopInt();
-                                        if (!_method.ReturnType.IsIntOnStackPrimitive)
-                                            throw new VerifyError("Wrong return type in function");
-
-                                        break;
-                                    }
-                                case NormalizedOpCode.Lreturn:
-                                    s.PopLong();
-                                    if (_method.ReturnType != _context.PrimitiveJavaTypeFactory.LONG)
-                                        throw new VerifyError("Wrong return type in function");
-
-                                    break;
-                                case NormalizedOpCode.Freturn:
-                                    s.PopFloat();
-                                    if (_method.ReturnType != _context.PrimitiveJavaTypeFactory.FLOAT)
-                                        throw new VerifyError("Wrong return type in function");
-
-                                    break;
-                                case NormalizedOpCode.Dreturn:
-                                    s.PopDouble();
-                                    if (_method.ReturnType != _context.PrimitiveJavaTypeFactory.DOUBLE)
-                                        throw new VerifyError("Wrong return type in function");
-
-                                    break;
-                                case NormalizedOpCode.Fload:
-                                    s.GetLocalFloat(inst.NormalizedArg1);
-                                    s.PushFloat();
-                                    break;
-                                case NormalizedOpCode.Fstore:
-                                    s.PopFloat();
-                                    s.SetLocalFloat(inst.NormalizedArg1, i);
-                                    break;
-                                case NormalizedOpCode.Dload:
-                                    s.GetLocalDouble(inst.NormalizedArg1);
-                                    s.PushDouble();
-                                    break;
-                                case NormalizedOpCode.Dstore:
-                                    s.PopDouble();
-                                    s.SetLocalDouble(inst.NormalizedArg1, i);
-                                    break;
-                                case NormalizedOpCode.Lload:
-                                    s.GetLocalLong(inst.NormalizedArg1);
-                                    s.PushLong();
-                                    break;
-                                case NormalizedOpCode.Lstore:
-                                    s.PopLong();
-                                    s.SetLocalLong(inst.NormalizedArg1, i);
-                                    break;
-                                case NormalizedOpCode.Lconst0:
-                                case NormalizedOpCode.Lconst1:
-                                    s.PushLong();
-                                    break;
-                                case NormalizedOpCode.Fconst0:
-                                case NormalizedOpCode.Fconst1:
-                                case NormalizedOpCode.Fconst2:
-                                    s.PushFloat();
-                                    break;
-                                case NormalizedOpCode.Dconst0:
-                                case NormalizedOpCode.Dconst1:
-                                    s.PushDouble();
-                                    break;
-                                case NormalizedOpCode.Lcmp:
-                                    s.PopLong();
-                                    s.PopLong();
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.Fcmpl:
-                                case NormalizedOpCode.Fcmpg:
-                                    s.PopFloat();
-                                    s.PopFloat();
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.Dcmpl:
-                                case NormalizedOpCode.Dcmpg:
-                                    s.PopDouble();
-                                    s.PopDouble();
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.Checkcast:
-                                    s.PopObjectType();
-                                    s.PushType(GetConstantPoolClassType(inst.Arg1));
-                                    break;
-                                case NormalizedOpCode.InstanceOf:
-                                    s.PopObjectType();
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.Iinc:
-                                    s.GetLocalInt(inst.Arg1);
-                                    break;
-                                case NormalizedOpCode.Athrow:
-                                    if (RuntimeVerifierJavaType.IsFaultBlockException(s.PeekType()))
-                                        s.PopFaultBlockException();
-                                    else
-                                        s.PopObjectType(_context.JavaBase.TypeOfjavaLangThrowable);
-                                    break;
-                                case NormalizedOpCode.TableSwitch:
-                                case NormalizedOpCode.LookupSwitch:
-                                    s.PopInt();
-                                    break;
-                                case NormalizedOpCode.I2b:
-                                    s.PopInt();
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.I2c:
-                                    s.PopInt();
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.I2s:
-                                    s.PopInt();
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.I2l:
-                                    s.PopInt();
-                                    s.PushLong();
-                                    break;
-                                case NormalizedOpCode.I2f:
-                                    s.PopInt();
-                                    s.PushFloat();
-                                    break;
-                                case NormalizedOpCode.I2d:
-                                    s.PopInt();
-                                    s.PushDouble();
-                                    break;
-                                case NormalizedOpCode.L2i:
-                                    s.PopLong();
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.L2f:
-                                    s.PopLong();
-                                    s.PushFloat();
-                                    break;
-                                case NormalizedOpCode.L2d:
-                                    s.PopLong();
-                                    s.PushDouble();
-                                    break;
-                                case NormalizedOpCode.F2i:
-                                    s.PopFloat();
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.F2l:
-                                    s.PopFloat();
-                                    s.PushLong();
-                                    break;
-                                case NormalizedOpCode.F2d:
-                                    s.PopFloat();
-                                    s.PushDouble();
-                                    break;
-                                case NormalizedOpCode.D2i:
-                                    s.PopDouble();
-                                    s.PushInt();
-                                    break;
-                                case NormalizedOpCode.D2f:
-                                    s.PopDouble();
-                                    s.PushFloat();
-                                    break;
-                                case NormalizedOpCode.D2l:
-                                    s.PopDouble();
-                                    s.PushLong();
-                                    break;
-                                case NormalizedOpCode.Nop:
-                                    if (i + 1 == instructions.Length)
-                                        throw new VerifyError("Falling off the end of the code");
-                                    break;
-                                case NormalizedOpCode.StaticError:
-                                    break;
-                                case NormalizedOpCode.Jsr:
-                                case NormalizedOpCode.Ret:
-                                    throw new VerifyError("Bad instruction");
-                                default:
-                                    throw new NotImplementedException(inst.NormalizedOpCode.ToString());
-                            }
-
-                            if (s.GetStackHeight() > _classFileMethod.MaxStack)
-                                throw new VerifyError("Stack size too large");
-
-                            for (int j = 0; j < _classFileMethod.ExceptionTable.Length; j++)
-                                if (_classFileMethod.ExceptionTable[j].EndIndex == i + 1)
-                                    MergeExceptionHandler(j, ref s);
-
-                            try
-                            {
-                                switch (OpCodeMetaData.GetFlowKind(inst.NormalizedOpCode))
-                                {
-                                    case OpCodeFlowControl.Switch:
-                                        for (int j = 0; j < inst.SwitchEntryCount; j++)
-                                            _state[inst.GetSwitchTargetIndex(j)] += s;
-
-                                        _state[inst.DefaultTarget] += s;
-                                        break;
-                                    case OpCodeFlowControl.ConditionalBranch:
-                                        _state[i + 1] += s;
-                                        _state[inst.TargetIndex] += s;
-                                        break;
-                                    case OpCodeFlowControl.Branch:
-                                        _state[inst.TargetIndex] += s;
-                                        break;
-                                    case OpCodeFlowControl.Return:
-                                    case OpCodeFlowControl.Throw:
-                                        break;
-                                    case OpCodeFlowControl.Next:
-                                        _state[i + 1] += s;
-                                        break;
-                                    default:
-                                        throw new InvalidOperationException();
-                                }
-                            }
-                            catch (IndexOutOfRangeException)
-                            {
-                                // we're going to assume that this always means that we have an invalid branch target
-                                // NOTE because PcIndexMap returns -1 for illegal PCs (in the middle of an instruction) and
-                                // we always use that value as an index into the state array, any invalid PC will result
-                                // in an IndexOutOfRangeException
-                                throw new VerifyError("Illegal target of jump or branch");
-                            }
-                        }
-
-                        catch (VerifyError x)
-                        {
-                            var opcode = instructions[i].NormalizedOpCode.ToString();
-                            if (opcode.StartsWith("__"))
-                                opcode = opcode.Substring(2);
-
-                            throw new VerifyError($"{x.Message} (class: {_classFile.Name}, method: {_classFileMethod.Name}, signature: {_classFileMethod.Signature}, offset: {instructions[i].PC}, instruction: {opcode})", x);
-                        }
-                    }
-                }
-            }
-        }
-
-        void MergeExceptionHandler(int exceptionIndex, ref InstructionState curr)
-        {
-            var idx = _classFileMethod.ExceptionTable[exceptionIndex].HandlerIndex;
-            var exp = curr.CopyLocals();
-
-            var catchType = _classFileMethod.ExceptionTable[exceptionIndex].CatchType;
-            if (catchType.IsNil)
-            {
-                if (_faultTypes.TryGetValue(idx, out var faultType) == false)
-                {
-                    faultType = RuntimeVerifierJavaType.MakeFaultBlockException(this, idx);
-                    _faultTypes.Add(idx, faultType);
-                }
-
-                exp.PushType(faultType);
-            }
-            else
-            {
-                // TODO if the exception type is unloadable we should consider pushing
-                // Throwable as the type and recording a loader constraint
-                exp.PushType(GetConstantPoolClassType(catchType));
-            }
-
-            _state[idx] += exp;
-        }
-
-        // this verification pass must run on the unmodified bytecode stream
-        void VerifyPassTwo()
-        {
-            var instructions = _classFileMethod.Instructions;
-            for (int i = 0; i < instructions.Length; i++)
-            {
-                if (_state[i]._initialized)
-                {
-                    try
-                    {
-                        switch (instructions[i].NormalizedOpCode)
-                        {
-                            case NormalizedOpCode.InvokeInterface:
-                            case NormalizedOpCode.InvokeSpecial:
-                            case NormalizedOpCode.InvokeStatic:
-                            case NormalizedOpCode.InvokeVirtual:
-                                VerifyInvokePassTwo(i);
-                                break;
-                            case NormalizedOpCode.InvokeDynamic:
-                                VerifyInvokeDynamic(i);
-                                break;
-                        }
-                    }
-                    catch (VerifyError x)
-                    {
-                        var opcode = instructions[i].NormalizedOpCode.ToString();
-                        if (opcode.StartsWith("__"))
-                            opcode = opcode.Substring(2);
-
-                        throw new VerifyError($"{x.Message} (class: {_classFile.Name}, method: {_classFileMethod.Name}, signature: {_classFileMethod.Signature}, offset: {instructions[i].PC}, instruction: {opcode})", x);
-                    }
-                }
-            }
-        }
-
-        void VerifyInvokePassTwo(int index)
-        {
-            var stack = new StackState(_state, index);
-            var invoke = _classFileMethod.Instructions[index].NormalizedOpCode;
-            var cpi = GetMethodref(_classFileMethod.Instructions[index].Arg1);
-            if ((invoke == NormalizedOpCode.InvokeStatic || invoke == NormalizedOpCode.InvokeSpecial) && _classFile.MajorVersion >= 52)
-            {
-                // invokestatic and invokespecial may be used to invoke interface methods in Java 8
-                // but invokespecial can only invoke methods in the current interface or a directly implemented interface
-                if (invoke == NormalizedOpCode.InvokeSpecial && cpi is ConstantPoolItemInterfaceMethodref)
-                {
-                    if (cpi.GetClassType() == _host)
-                    {
-                        // ok
-                    }
-                    else if (cpi.GetClassType() != _type && Array.IndexOf(_type.Interfaces, cpi.GetClassType()) == -1)
-                    {
-                        throw new VerifyError("Bad invokespecial instruction: interface method reference is in an indirect superinterface.");
-                    }
-                }
-            }
-            else if ((cpi is ConstantPoolItemInterfaceMethodref) != (invoke == NormalizedOpCode.InvokeInterface))
-            {
-                throw new VerifyError("Illegal constant pool index");
-            }
-
-            if (invoke != NormalizedOpCode.InvokeSpecial && ReferenceEquals(cpi.Name, StringConstants.INIT))
-                throw new VerifyError("Must call initializers using invokespecial");
-
-            if (ReferenceEquals(cpi.Name, StringConstants.CLINIT))
-                throw new VerifyError("Illegal call to internal method");
-
-            var args = cpi.GetArgTypes();
-            for (int j = args.Length - 1; j >= 0; j--)
-                stack.PopType(args[j]);
-
-            if (invoke == NormalizedOpCode.InvokeInterface)
-            {
-                int argcount = args.Length + 1;
-                for (int j = 0; j < args.Length; j++)
-                    if (args[j].IsWidePrimitive)
-                        argcount++;
-
-                if (_classFileMethod.Instructions[index].Arg2 != argcount)
-                    throw new VerifyError("Inconsistent args size");
-            }
-
-            if (invoke != NormalizedOpCode.InvokeStatic)
-            {
-                if (ReferenceEquals(cpi.Name, StringConstants.INIT))
-                {
-                    var type = stack.PopType();
-                    var isnew = RuntimeVerifierJavaType.IsNew(type);
-                    if ((isnew && ((RuntimeVerifierJavaType)type).UnderlyingType != cpi.GetClassType()) || (type == _context.VerifierJavaTypeFactory.UninitializedThis && cpi.GetClassType() != _type.BaseTypeWrapper && cpi.GetClassType() != _type) || (!isnew && type != _context.VerifierJavaTypeFactory.UninitializedThis))
-                    {
-                        // TODO oddly enough, Java fails verification for the class without
-                        // even running the constructor, so maybe constructors are always
-                        // verified...
-                        // NOTE when a constructor isn't verifiable, the static initializer
-                        // doesn't run either
-                        throw new VerifyError("Call to wrong initialization method");
-                    }
-                }
-                else
-                {
-                    if (invoke != NormalizedOpCode.InvokeInterface)
-                    {
-                        var refType = stack.PopObjectType();
-                        var targetType = cpi.GetClassType();
-
-                        if (!RuntimeVerifierJavaType.IsNullOrUnloadable(refType) && !targetType.IsUnloadable && !refType.IsAssignableTo(targetType))
-                            throw new VerifyError("Incompatible object argument for function call");
-
-                        // for invokespecial we also need to make sure we're calling ourself or a base class
-                        if (invoke == NormalizedOpCode.InvokeSpecial)
-                        {
-                            if (RuntimeVerifierJavaType.IsNullOrUnloadable(refType))
-                            {
-                                // ok
-                            }
-                            else if (refType.IsSubTypeOf(_type))
-                            {
-                                // ok
-                            }
-                            else if (_host != null && refType.IsSubTypeOf(_host))
-                            {
-                                // ok
-                            }
-                            else
-                            {
-                                throw new VerifyError("Incompatible target object for invokespecial");
-                            }
-                            if (targetType.IsUnloadable)
-                            {
-                                // ok
-                            }
-                            else if (_type.IsSubTypeOf(targetType))
-                            {
-                                // ok
-                            }
-                            else if (_host != null && _host.IsSubTypeOf(targetType))
-                            {
-                                // ok
-                            }
-                            else
-                            {
-                                throw new VerifyError("Invokespecial cannot call subclass methods");
-                            }
-                        }
-                    }
-                    else /* __invokeinterface */
-                    {
-                        // NOTE unlike in the above case, we also allow *any* interface target type
-                        // regardless of whether it is compatible or not, because if it is not compatible
-                        // we want an IncompatibleClassChangeError at runtime
-                        var refType = stack.PopObjectType();
-                        var targetType = cpi.GetClassType();
-                        if (!RuntimeVerifierJavaType.IsNullOrUnloadable(refType) && !targetType.IsUnloadable && !refType.IsAssignableTo(targetType) && !targetType.IsInterface)
-                            throw new VerifyError("Incompatible object argument for function call");
-                    }
-                }
-            }
-        }
-
-        void VerifyInvokeDynamic(int index)
-        {
-            var stack = new StackState(_state, index);
-            var cpi = GetInvokeDynamic(_classFileMethod.Instructions[index].Arg1);
-            var args = cpi.GetArgTypes();
-            for (int j = args.Length - 1; j >= 0; j--)
-                stack.PopType(args[j]);
         }
 
         static void OptimizationPass(CodeInfo codeInfo, ClassFile classFile, Method method, UntangledExceptionTable exceptions, RuntimeJavaType wrapper, RuntimeClassLoader classLoader)
@@ -1535,8 +266,8 @@ namespace IKVM.Runtime
                                 {
                                     stack.PopInt();
                                     var tw = stack.PopArrayType();
-                                    if (tw.IsUnloadable)
-                                        ConditionalPatchNoClassDefFoundError(ref instructions[i], tw);
+                                    if (tw.IsUnloadable())
+                                        ConditionalPatchNoClassDefFoundError(ref instructions[i], tw.Type);
 
                                     break;
                                 }
@@ -1544,10 +275,10 @@ namespace IKVM.Runtime
                                 {
                                     stack.PopObjectType();
                                     stack.PopInt();
-                                    RuntimeJavaType tw = stack.PopArrayType();
-                                    if (tw.IsUnloadable)
+                                    var tw = stack.PopArrayType();
+                                    if (tw.IsUnloadable())
                                     {
-                                        ConditionalPatchNoClassDefFoundError(ref instructions[i], tw);
+                                        ConditionalPatchNoClassDefFoundError(ref instructions[i], tw.Type);
                                     }
                                     break;
                                 }
@@ -1701,7 +432,7 @@ namespace IKVM.Runtime
                             if (exceptions[j].StartIndex <= i && i < exceptions[j].EndIndex)
                             {
                                 int idx = exceptions[j].HandlerIndex;
-                                if (!skipFaultBlocks || !RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(idx, 0)))
+                                if (!skipFaultBlocks || !codeInfo.GetRawStackType(idx, 0).IsFaultBlockException)
                                     flags[idx] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
                             }
                         }
@@ -2133,7 +864,7 @@ namespace IKVM.Runtime
                         current = stack.Pop();
 
                     Debug.Assert(exceptions[i].StartIndex >= current.StartIndex && exceptions[i].EndIndex <= current.EndIndex);
-                    if (exceptions[i].CatchType.IsNil && codeInfo.HasState(exceptions[i].HandlerIndex) && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].HandlerIndex, 0)))
+                    if (exceptions[i].CatchType.IsNil && codeInfo.HasState(exceptions[i].HandlerIndex) && codeInfo.GetRawStackType(exceptions[i].HandlerIndex, 0).IsFaultBlockException)
                     {
                         var flags = ComputePartialReachability(codeInfo, method.Instructions, exceptions, exceptions[i].HandlerIndex, true);
                         for (int j = 0; j < code.Length; j++)
@@ -2154,7 +885,7 @@ namespace IKVM.Runtime
                                             if (exceptions[k].StartIndex <= j && j < exceptions[k].EndIndex)
                                                 goto not_fault_block;
 
-                                        if (RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(j, 0)) && codeInfo.GetRawStackTypeWrapper(j, 0) != codeInfo.GetRawStackTypeWrapper(exceptions[i].HandlerIndex, 0))
+                                        if (codeInfo.GetRawStackType(j, 0).IsFaultBlockException && codeInfo.GetRawStackType(j, 0) != codeInfo.GetRawStackType(exceptions[i].HandlerIndex, 0))
                                             goto not_fault_block;
 
                                         break;
@@ -2168,7 +899,7 @@ namespace IKVM.Runtime
                                     continue;
 
                                 not_fault_block:
-                                RuntimeVerifierJavaType.ClearFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].HandlerIndex, 0));
+                                codeInfo.ClearFaultBlockException(exceptions[i].HandlerIndex);
                                 done = false;
                                 changed = true;
                                 break;
@@ -2190,7 +921,7 @@ namespace IKVM.Runtime
             var flags = ComputePartialReachability(codeInfo, code, exceptions, 0, false);
             for (int i = 0; i < exceptions.Length; i++)
             {
-                if (exceptions[i].CatchType.IsNil && codeInfo.HasState(exceptions[i].HandlerIndex) && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].HandlerIndex, 0)))
+                if (exceptions[i].CatchType.IsNil && codeInfo.HasState(exceptions[i].HandlerIndex) && codeInfo.GetRawStackType(exceptions[i].HandlerIndex, 0).IsFaultBlockException)
                 {
                     if (IsSynchronizedBlockHandler(code, exceptions[i].HandlerIndex) &&
                         exceptions[i].EndIndex - 2 >= exceptions[i].StartIndex &&
@@ -2503,7 +1234,7 @@ namespace IKVM.Runtime
                 if (ReferenceEquals(cpi.Name, StringConstants.INIT))
                 {
                     var type = stack.PopType();
-                    isnew = RuntimeVerifierJavaType.IsNew(type);
+                    isnew = type.IsUninitializedNew;
                 }
             }
 
@@ -2530,7 +1261,7 @@ namespace IKVM.Runtime
                             if (isnew)
                                 instr.PatchOpCode(NormalizedOpCode.DynamicInvokeSpecial);
                             else
-                                throw new VerifyError("Invokespecial cannot call subclass methods");
+                                throw new VerifyException("Invokespecial cannot call subclass methods");
 
                             break;
                         default:
@@ -2641,7 +1372,7 @@ namespace IKVM.Runtime
                     isStatic = false;
                     write = true;
                     // putfield is allowed to access the unintialized this
-                    if (stack.PeekType() == _context.VerifierJavaTypeFactory.UninitializedThis && wrapper.IsAssignableTo(GetFieldref(instr.Arg1).GetClassType()))
+                    if (stack.PeekType().IsUninitializedThis && wrapper.IsAssignableTo(GetFieldref(instr.Arg1).GetClassType()))
                     {
                         thisType = wrapper;
                     }
@@ -2679,9 +1410,9 @@ namespace IKVM.Runtime
                                 break;
                             case 'L':
                             case '[':
-                                if (stack.PopAnyType() != _context.VerifierJavaTypeFactory.Null)
+                                if (!stack.PopAnyType().IsNull)
                                 {
-                                    throw new VerifyError();
+                                    throw new VerifyException();
                                 }
                                 break;
                             default:
@@ -2770,23 +1501,23 @@ namespace IKVM.Runtime
         }
 
         // TODO this method should have a better name
-        RuntimeJavaType SigTypeToClassName(RuntimeJavaType type, RuntimeJavaType nullType, RuntimeJavaType wrapper)
+        RuntimeJavaType SigTypeToClassName(VerificationType type, RuntimeJavaType nullType, RuntimeJavaType wrapper)
         {
-            if (type == _context.VerifierJavaTypeFactory.UninitializedThis)
+            if (type.IsUninitializedThis)
             {
                 return wrapper;
             }
-            else if (RuntimeVerifierJavaType.IsNew(type))
+            else if (type.IsUninitializedNew)
             {
-                return ((RuntimeVerifierJavaType)type).UnderlyingType;
+                return type.Type;
             }
-            else if (type == _context.VerifierJavaTypeFactory.Null)
+            else if (type.IsNull)
             {
                 return nullType;
             }
             else
             {
-                return type;
+                return type.Type;
             }
         }
 
@@ -2830,167 +1561,6 @@ namespace IKVM.Runtime
             }
 
             return null;
-        }
-
-        ConstantPoolItemInvokeDynamic GetInvokeDynamic(int index)
-        {
-            try
-            {
-                var item = _classFile.GetInvokeDynamic(new InvokeDynamicConstantHandle(checked((ushort)index)));
-                if (item != null)
-                {
-                    return item;
-                }
-            }
-            catch (OverflowException)
-            {
-                // constant pool index out of range
-            }
-            catch (InvalidCastException)
-            {
-                // constant pool index not of proper type
-            }
-            catch (IndexOutOfRangeException)
-            {
-                // constant pool index out of range
-            }
-            catch (InvalidOperationException)
-            {
-                // specified constant pool entry doesn't contain a constant
-            }
-            catch (NullReferenceException)
-            {
-                // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
-            }
-
-            throw new VerifyError("Illegal constant pool index");
-        }
-
-        ConstantPoolItemMI GetMethodref(int index)
-        {
-            try
-            {
-                var item = _classFile.GetMethodref(new MethodrefConstantHandle(checked((ushort)index)));
-                if (item != null)
-                    return item;
-            }
-            catch (OverflowException)
-            {
-                // constant pool index out of range
-            }
-            catch (InvalidCastException)
-            {
-                // constant pool index not of proper type
-            }
-            catch (IndexOutOfRangeException)
-            {
-                // constant pool index out of range
-            }
-            catch (InvalidOperationException)
-            {
-                // specified constant pool entry doesn't contain a constant
-            }
-            catch (NullReferenceException)
-            {
-                // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
-            }
-
-            throw new VerifyError("Illegal constant pool index");
-        }
-
-        ConstantPoolItemFieldref GetFieldref(int index)
-        {
-            try
-            {
-                var item = _classFile.GetFieldref(new FieldrefConstantHandle(checked((ushort)index)));
-                if (item != null)
-                    return item;
-            }
-            catch (OverflowException)
-            {
-                // constant pool index out of range
-            }
-            catch (InvalidCastException)
-            {
-                // constant pool index not of proper type
-            }
-            catch (IndexOutOfRangeException)
-            {
-                // constant pool index out of range
-            }
-            catch (InvalidOperationException)
-            {
-                // specified constant pool entry doesn't contain a constant
-            }
-            catch (NullReferenceException)
-            {
-                // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
-            }
-
-            throw new VerifyError("Illegal constant pool index");
-        }
-
-        ConstantType GetConstantPoolConstantType(int slot)
-        {
-            try
-            {
-                return _classFile.GetConstantPoolConstantType(new ConstantHandle(ConstantKind.Unknown, checked((ushort)slot)));
-            }
-            catch (OverflowException)
-            {
-                // constant pool index out of range
-            }
-            catch (IndexOutOfRangeException)
-            {
-                // constant pool index out of range
-            }
-            catch (InvalidOperationException)
-            {
-                // specified constant pool entry doesn't contain a constant
-            }
-            catch (NullReferenceException)
-            {
-                // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
-            }
-
-            throw new VerifyError("Illegal constant pool index");
-        }
-
-        RuntimeJavaType GetConstantPoolClassType(int slot)
-        {
-            try
-            {
-                return _classFile.GetConstantPoolClassType(new ClassConstantHandle(checked((ushort)slot)));
-            }
-            catch (OverflowException)
-            {
-                // constant pool index out of range
-            }
-            catch (InvalidCastException)
-            {
-                // constant pool index out of range
-            }
-            catch (IndexOutOfRangeException)
-            {
-                // specified constant pool entry doesn't contain a constant
-            }
-            catch (NullReferenceException)
-            {
-                // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
-            }
-
-            throw new VerifyError("Illegal constant pool index");
-        }
-
-        RuntimeJavaType GetConstantPoolClassType(ClassConstantHandle handle)
-        {
-            return GetConstantPoolClassType(handle.Slot);
-        }
-
-        internal void ClearFaultBlockException(int instructionIndex)
-        {
-            Debug.Assert(_state[instructionIndex].GetStackHeight() == 1);
-            _state[instructionIndex].ClearFaultBlockException();
         }
 
     }

@@ -1,0 +1,952 @@
+﻿/*
+  Copyright (C) 2002-2014 Jeroen Frijters
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+
+  Jeroen Frijters
+  jeroen@frijters.net
+
+*/
+using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+
+using IKVM.CoreLib.Linking;
+
+namespace IKVM.CoreLib.Jvm
+{
+
+    struct InstructionState<TTypeSystem, TType, TMember, TField, TMethod>
+        where TTypeSystem : struct, IJvmTypeSystem<TType, TMember, TField, TMethod>
+        where TType : class
+        where TMember : class
+        where TField : class, TMember
+        where TMethod : class, TMember
+    {
+
+        struct LocalStoreSites
+        {
+
+            int[] data;
+            int count;
+            bool shared;
+
+            internal LocalStoreSites Copy()
+            {
+                var n = new LocalStoreSites();
+                n.data = data;
+                n.count = count;
+                n.shared = true;
+                return n;
+            }
+
+            internal static LocalStoreSites Alloc()
+            {
+                var n = new LocalStoreSites();
+                n.data = new int[4];
+                return n;
+            }
+
+            internal void Add(int store)
+            {
+                for (int i = 0; i < count; i++)
+                    if (data[i] == store)
+                        return;
+
+                if (count == data.Length)
+                {
+                    var newarray = new int[data.Length * 2];
+                    Buffer.BlockCopy(data, 0, newarray, 0, data.Length * 4);
+                    data = newarray;
+                    shared = false;
+                }
+
+                if (shared)
+                {
+                    shared = false;
+                    data = (int[])data.Clone();
+                }
+
+                data[count++] = store;
+            }
+
+            internal int this[int index] => data[index];
+
+            internal int Count => count;
+
+            internal static void MarkShared(LocalStoreSites[] localStoreSites)
+            {
+                for (int i = 0; i < localStoreSites.Length; i++)
+                    localStoreSites[i].shared = true;
+            }
+
+        }
+
+        enum ShareFlags : byte
+        {
+            None = 0,
+            Stack = 1,
+            Locals = 2,
+            All = Stack | Locals
+        }
+
+        readonly TTypeSystem _typeSystem;
+        readonly InstructionState<TTypeSystem, TType, TMember, TField, TMethod>[] _states;
+        VerificationType<TType>[] _stack;
+        int _stackLen;
+        int _stackEnd;
+        VerificationType<TType>[] _locals;
+        bool _uninitializedThis;
+        internal bool _changed = true;
+        ShareFlags _flags;
+        internal bool _initialized = false;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="typeSystem"></param>
+        /// <param name="states"></param>
+        /// <param name="stack"></param>
+        /// <param name="stackLen"></param>
+        /// <param name="stackEnd"></param>
+        /// <param name="locals"></param>
+        /// <param name="uninitializedThis"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        InstructionState(TTypeSystem typeSystem, InstructionState<TTypeSystem, TType, TMember, TField, TMethod>[] states, VerificationType<TType>[] stack, int stackLen, int stackEnd, VerificationType<TType>[] locals, bool uninitializedThis)
+        {
+            _typeSystem = typeSystem;
+            _states = states ?? throw new ArgumentNullException(nameof(states));
+            _flags = ShareFlags.All;
+            _stack = stack;
+            _stackLen = stackLen;
+            _stackEnd = stackEnd;
+            _locals = locals;
+            _uninitializedThis = uninitializedThis;
+            _initialized = true;
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="typeSystem"></param>
+        /// <param name="states">The states of every instruction of the method, through which a fault block exception is cleared once it is known not to belong to a fault block.</param>
+        /// <param name="maxLocals"></param>
+        /// <param name="maxStack"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        internal InstructionState(TTypeSystem typeSystem, InstructionState<TTypeSystem, TType, TMember, TField, TMethod>[] states, int maxLocals, int maxStack)
+        {
+            _typeSystem = typeSystem;
+            _states = states ?? throw new ArgumentNullException(nameof(states));
+            _flags = ShareFlags.None;
+            _stack = new VerificationType<TType>[maxStack];
+            _stackEnd = maxStack;
+            _locals = new VerificationType<TType>[maxLocals];
+            _initialized = true;
+        }
+
+        /// <summary>
+        /// Gets the type system.
+        /// </summary>
+        internal readonly TTypeSystem TypeSystem => _typeSystem;
+
+        /// <summary>
+        /// Creates a copy of this instance.
+        /// </summary>
+        /// <returns></returns>
+        internal InstructionState<TTypeSystem, TType, TMember, TField, TMethod> Copy()
+        {
+            return new InstructionState<TTypeSystem, TType, TMember, TField, TMethod>(_typeSystem, _states, _stack, _stackLen, _stackEnd, _locals, _uninitializedThis);
+        }
+
+        /// <summary>
+        /// Copies this instruction state to the specified instruction state.
+        /// </summary>
+        /// <param name="target"></param>
+        internal void CopyTo(ref InstructionState<TTypeSystem, TType, TMember, TField, TMethod> target)
+        {
+            if (_initialized == false)
+                throw new InvalidOperationException();
+
+            target._flags = ShareFlags.All;
+            target._stack = _stack;
+            target._stackLen = _stackLen;
+            target._stackEnd = _stackEnd;
+            target._locals = _locals;
+            target._uninitializedThis = _uninitializedThis;
+            target._changed = true;
+            target._initialized = _initialized;
+        }
+
+        /// <summary>
+        /// Creates a new instance with the same local variables.
+        /// </summary>
+        /// <returns></returns>
+        internal InstructionState<TTypeSystem, TType, TMember, TField, TMethod> CopyLocals()
+        {
+            var copy = new InstructionState<TTypeSystem, TType, TMember, TField, TMethod>(_typeSystem, _states, new VerificationType<TType>[_stack.Length], 0, _stack.Length, _locals, _uninitializedThis);
+            copy._flags &= ~ShareFlags.Stack;
+            return copy;
+        }
+
+        /// <summary>
+        /// Creates a new state which is the merged combination of the two specified states.
+        /// </summary>
+        /// <param name="s1"></param>
+        /// <param name="s2"></param>
+        /// <returns></returns>
+        /// <exception cref="VerifyException"></exception>
+        public static InstructionState<TTypeSystem, TType, TMember, TField, TMethod> operator +(InstructionState<TTypeSystem, TType, TMember, TField, TMethod> s1, InstructionState<TTypeSystem, TType, TMember, TField, TMethod> s2)
+        {
+            if (s1._initialized == false)
+                return s2.Copy();
+
+            if (s1._stackLen != s2._stackLen || s1._stackEnd != s2._stackEnd)
+                throw new VerifyException($"Inconsistent stack height: {s1._stackLen + s1._stack.Length - s1._stackEnd} != {s2._stackLen + s2._stack.Length - s2._stackEnd}");
+
+            var s = s1.Copy();
+            s._changed = s1._changed;
+
+            for (int i = 0; i < s._stackLen; i++)
+            {
+                var type1 = s._stack[i];
+                var type2 = s2._stack[i];
+                if (type1 == type2)
+                {
+                    // perfect match, nothing to do
+                }
+                else if ((type1.IsDouble && type2.IsDouble) || (type1.IsFloat && type2.IsFloat))
+                {
+                    // the types differ only in precision, so the result is the extended one
+                    if (type1.IsExtended == false)
+                    {
+                        s.StackCopyOnWrite();
+                        s._stack[i] = type2;
+                        s._changed = true;
+                    }
+                }
+                else if (!type1.IsPrimitive)
+                {
+                    var baseType = FindCommonBaseType(s1._typeSystem, s1._states, type1, type2);
+                    if (baseType.IsTop)
+                        throw new VerifyException(string.Format("cannot merge {0} and {1}", type1, type2));
+
+                    if (type1 != baseType)
+                    {
+                        s.StackCopyOnWrite();
+                        s._stack[i] = baseType;
+                        s._changed = true;
+                    }
+                }
+                else
+                {
+                    throw new VerifyException(string.Format("cannot merge {0} and {1}", type1, type2));
+                }
+            }
+
+            for (int i = 0; i < s._locals.Length; i++)
+            {
+                var type = s._locals[i];
+                var type2 = s2._locals[i];
+                var baseType = FindCommonBaseType(s1._typeSystem, s1._states, type, type2);
+                if (type != baseType)
+                {
+                    s.LocalsCopyOnWrite();
+                    s._locals[i] = baseType;
+                    s._changed = true;
+                }
+            }
+
+            if (!s._uninitializedThis && s2._uninitializedThis)
+            {
+                s._uninitializedThis = true;
+                s._changed = true;
+            }
+
+            return s;
+        }
+
+        internal void SetUnitializedThis(bool state)
+        {
+            _uninitializedThis = state;
+        }
+
+        internal void CheckUninitializedThis()
+        {
+            if (_uninitializedThis)
+                throw new VerifyException("Base class constructor wasn't called");
+        }
+
+        /// <summary>
+        /// Clears the fault block exception at the start of the handler at the given instruction index, because the
+        /// handler turned out not to be a fault block.
+        /// </summary>
+        /// <param name="states"></param>
+        /// <param name="handlerIndex"></param>
+        static void ClearFaultBlockException(InstructionState<TTypeSystem, TType, TMember, TField, TMethod>[] states, int handlerIndex)
+        {
+            states[handlerIndex].ClearFaultBlockException();
+        }
+
+        internal static VerificationType<TType> FindCommonBaseType(TTypeSystem typeSystem, InstructionState<TTypeSystem, TType, TMember, TField, TMethod>[] states, VerificationType<TType> type1, VerificationType<TType> type2)
+        {
+            // types are equal
+            if (type1 == type2)
+                return type1;
+
+            // merging java.lang.Object with anything can only result in java.lang.Object
+            var obj = VerificationType<TType>.Reference(typeSystem.TypeOfJavaLangObject);
+            if (type1 == obj || type2 == obj)
+                return obj;
+
+            // first type is null, return second
+            if (type1.IsNull)
+                return type2;
+
+            // second type is null, return first
+            if (type2.IsNull)
+                return type1;
+
+            // verifier invalid
+            if (type1.IsTop || type2.IsTop)
+                return VerificationType<TType>.Top;
+
+            if (type1.IsFaultBlockException)
+            {
+                ClearFaultBlockException(states, type1.Index);
+                return FindCommonBaseType(typeSystem, states, VerificationType<TType>.Reference(typeSystem.TypeOfJavaLangThrowable), type2);
+            }
+
+            if (type2.IsFaultBlockException)
+            {
+                ClearFaultBlockException(states, type2.Index);
+                return FindCommonBaseType(typeSystem, states, type1, VerificationType<TType>.Reference(typeSystem.TypeOfJavaLangThrowable));
+            }
+
+            // primitive types cannot be merged
+            if (type1.IsPrimitive || type2.IsPrimitive)
+                return VerificationType<TType>.Top;
+
+            // an object whose constructor has not run cannot be merged
+            if (type1.IsUninitialized || type2.IsUninitialized)
+                return VerificationType<TType>.Top;
+
+            // only references remain
+            var tw1 = type1.Type!;
+            var tw2 = type2.Type!;
+
+            // unloadable types cannot be merged
+            if (typeSystem.IsUnloadable(tw1) || typeSystem.IsUnloadable(tw2))
+                return VerificationType<TType>.Reference(typeSystem.TypeOfVerifierUnloadable);
+
+            // unpack array types into underlying element
+            if (typeSystem.GetArrayRank(tw1) > 0 && typeSystem.GetArrayRank(tw2) > 0)
+            {
+                int rank = 1;
+                int rank1 = typeSystem.GetArrayRank(tw1) - 1;
+                int rank2 = typeSystem.GetArrayRank(tw2) - 1;
+                var elem1 = typeSystem.GetElementType(tw1);
+                var elem2 = typeSystem.GetElementType(tw2);
+                while (rank1 != 0 && rank2 != 0)
+                {
+                    elem1 = typeSystem.GetElementType(elem1);
+                    elem2 = typeSystem.GetElementType(elem2);
+                    rank++;
+                    rank1--;
+                    rank2--;
+                }
+
+                // NOTE arrays of value types have special merging semantics!
+                // NOTE we don't have to test for the case where the element types are the same, because that
+                // is only relevant if the ranks are the same, but if that is the case the types are completely
+                // identical, in which case the identity test at the top of this method already returned.
+                TType baseType;
+                if (typeSystem.IsPrimitive(elem1) || typeSystem.IsPrimitive(elem2) || typeSystem.IsNonPrimitiveValueType(elem1) || typeSystem.IsNonPrimitiveValueType(elem2))
+                {
+                    baseType = typeSystem.TypeOfJavaLangObject;
+                    rank--;
+                    if (rank == 0)
+                        return VerificationType<TType>.Reference(baseType);
+                }
+                else
+                {
+                    baseType = FindCommonBaseTypeHelper(typeSystem, elem1, elem2);
+                }
+
+                // rebuild array type
+                return VerificationType<TType>.Reference(typeSystem.MakeArrayType(baseType, rank));
+            }
+
+            return VerificationType<TType>.Reference(FindCommonBaseTypeHelper(typeSystem, tw1, tw2));
+        }
+
+        static TType FindCommonBaseTypeHelper(TTypeSystem typeSystem, TType type1, TType type2)
+        {
+            if (type1 == type2)
+                return type1;
+
+            // NOTE according to a paper by Alessandro Coglio & Allen Goldberg titled
+            // "Type Safety in the JVM: Some Problems in Java 2 SDK 1.2 and Proposed Solutions"
+            // the common base of two interfaces is java.lang.Object, and there is special
+            // treatment for java.lang.Object types that allow it to be assigned to any interface
+            // type, the JVM's typesafety then depends on the invokeinterface instruction to make
+            // sure that the reference actually implements the interface.
+            // NOTE the ECMA CLI spec also specifies this interface merging algorithm, so we can't
+            // really do anything more clever than this.
+            if (typeSystem.IsInterface(type1) && typeSystem.IsInterface(type2))
+                return typeSystem.TypeOfJavaLangObject;
+
+            // t1 is an interface and is implemented by t2, common base type is t1
+            if (typeSystem.IsInterface(type1))
+                return typeSystem.ImplementsInterface(type2, type1) ? type1 : typeSystem.TypeOfJavaLangObject;
+
+            // t2 is an interface and is implemented by t1, common base type is t2
+            if (typeSystem.IsInterface(type2))
+                return typeSystem.ImplementsInterface(type1, type2) ? type2 : typeSystem.TypeOfJavaLangObject;
+
+            var st1 = new Stack<TType>();
+            for (TType? t = type1; t != null; t = typeSystem.GetBaseType(t))
+                st1.Push(t);
+
+            var st2 = new Stack<TType>();
+            for (TType? t = type2; t != null; t = typeSystem.GetBaseType(t))
+                st2.Push(t);
+
+            // pop each item off of the stacks until they do not match
+            var type = typeSystem.TypeOfJavaLangObject;
+            while (st1.Count > 0 && st2.Count > 0 && st1.Peek() == st2.Peek())
+            {
+                type = st1.Pop();
+                st2.Pop();
+            }
+
+            return type;
+        }
+
+        void SetLocal1(int index, VerificationType<TType> type)
+        {
+            try
+            {
+                LocalsCopyOnWrite();
+                if (index > 0 && _locals[index - 1].IsCategory2)
+                    _locals[index - 1] = VerificationType<TType>.Top;
+
+                _locals[index] = type;
+            }
+            catch (IndexOutOfRangeException)
+            {
+                throw new VerifyException("Illegal local variable number");
+            }
+        }
+
+        void SetLocal2(int index, VerificationType<TType> type)
+        {
+            try
+            {
+                LocalsCopyOnWrite();
+                if (index > 0 && _locals[index - 1].IsCategory2)
+                    _locals[index - 1] = VerificationType<TType>.Top;
+
+                _locals[index] = type;
+                _locals[index + 1] = VerificationType<TType>.Top;
+            }
+            catch (IndexOutOfRangeException)
+            {
+                throw new VerifyException("Illegal local variable number");
+            }
+        }
+
+        internal void GetLocalInt(int index)
+        {
+            if (GetLocalType(index) != VerificationType<TType>.Int)
+                throw new VerifyException("Invalid local type");
+        }
+
+        internal void SetLocalInt(int index, int instructionIndex)
+        {
+            SetLocal1(index, VerificationType<TType>.Int);
+        }
+
+        internal void GetLocalLong(int index)
+        {
+            if (GetLocalType(index) != VerificationType<TType>.Long)
+                throw new VerifyException("incorrect local type, not long");
+        }
+
+        internal void SetLocalLong(int index, int instructionIndex)
+        {
+            SetLocal2(index, VerificationType<TType>.Long);
+        }
+
+        internal void GetLocalFloat(int index)
+        {
+            if (GetLocalType(index) != VerificationType<TType>.Float)
+                throw new VerifyException("incorrect local type, not float");
+        }
+
+        internal void SetLocalFloat(int index, int instructionIndex)
+        {
+            SetLocal1(index, VerificationType<TType>.Float);
+        }
+
+        internal void GetLocalDouble(int index)
+        {
+            if (GetLocalType(index) != VerificationType<TType>.Double)
+                throw new VerifyException("incorrect local type, not double");
+        }
+
+        internal void SetLocalDouble(int index, int instructionIndex)
+        {
+            SetLocal2(index, VerificationType<TType>.Double);
+        }
+
+        internal VerificationType<TType> GetLocalType(int index)
+        {
+            try
+            {
+                return _locals[index];
+            }
+            catch (IndexOutOfRangeException)
+            {
+                throw new VerifyException("Illegal local variable number");
+            }
+        }
+
+        // this is used by the compiler (indirectly, through CodeInfo.GetLocalType),
+        // we've already verified the code so we know we won't run outside the array boundary,
+        // and we don't need to record the fact that we're reading the local.
+        internal VerificationType<TType> GetLocalTypeEx(int index)
+        {
+            return _locals[index];
+        }
+
+        internal void SetLocalType(int index, VerificationType<TType> type, int instructionIndex)
+        {
+            if (type.IsCategory2)
+                SetLocal2(index, type);
+            else
+                SetLocal1(index, type);
+        }
+
+        internal void PushType(TType type)
+        {
+            PushHelper(GetVerificationType(_typeSystem, type));
+        }
+
+        internal void PushType(VerificationType<TType> type)
+        {
+            PushHelper(type);
+        }
+
+        internal void PushInt()
+        {
+            PushHelper(VerificationType<TType>.Int);
+        }
+
+        internal void PushLong()
+        {
+            PushHelper(VerificationType<TType>.Long);
+        }
+
+        internal void PushFloat()
+        {
+            PushHelper(VerificationType<TType>.Float);
+        }
+
+        internal void PushExtendedFloat()
+        {
+            PushHelper(VerificationType<TType>.ExtendedFloat);
+        }
+
+        internal void PushDouble()
+        {
+            PushHelper(VerificationType<TType>.Double);
+        }
+
+        internal void PushExtendedDouble()
+        {
+            PushHelper(VerificationType<TType>.ExtendedDouble);
+        }
+
+        internal void PopInt()
+        {
+            PopIntImpl(PopAnyType());
+        }
+
+        internal static void PopIntImpl(VerificationType<TType> type)
+        {
+            if (!type.IsInt)
+                throw new VerifyException("Int expected on stack");
+        }
+
+        internal bool PopFloat()
+        {
+            var tw = PopAnyType();
+            PopFloatImpl(tw);
+            return tw.IsExtended;
+        }
+
+        internal static void PopFloatImpl(VerificationType<TType> tw)
+        {
+            if (!tw.IsFloat)
+                throw new VerifyException("Float expected on stack");
+        }
+
+        internal bool PopDouble()
+        {
+            var tw = PopAnyType();
+            PopDoubleImpl(tw);
+            return tw.IsExtended;
+        }
+
+        internal static void PopDoubleImpl(VerificationType<TType> tw)
+        {
+            if (!tw.IsDouble)
+                throw new VerifyException("Double expected on stack");
+        }
+
+        internal void PopLong()
+        {
+            PopLongImpl(PopAnyType());
+        }
+
+        internal static void PopLongImpl(VerificationType<TType> tw)
+        {
+            if (!tw.IsLong)
+            {
+                throw new VerifyException("Long expected on stack");
+            }
+        }
+
+        internal VerificationType<TType> PopArrayType()
+        {
+            return PopArrayTypeImpl(_typeSystem, PopAnyType());
+        }
+
+        internal static VerificationType<TType> PopArrayTypeImpl(TTypeSystem typeSystem, VerificationType<TType> type)
+        {
+            if (!type.IsNull && !IsUnloadable(typeSystem, type) && !(type.IsReference && typeSystem.GetArrayRank(type.Type) > 0))
+                throw new VerifyException("Array reference expected on stack");
+
+            return type;
+        }
+
+        // null or an initialized object reference
+        internal VerificationType<TType> PopObjectType()
+        {
+            return PopObjectTypeImpl(PopType());
+        }
+
+        internal static VerificationType<TType> PopObjectTypeImpl(VerificationType<TType> type)
+        {
+            if (!type.IsReference && !type.IsNull)
+                throw new VerifyException("Expected object reference on stack");
+
+            return type;
+        }
+
+        // null or an initialized object reference derived from baseType (or baseType)
+        internal VerificationType<TType> PopObjectType(TType baseType)
+        {
+            return PopObjectTypeImpl(_typeSystem, baseType, PopObjectType());
+        }
+
+        internal static VerificationType<TType> PopObjectTypeImpl(TTypeSystem typeSystem, TType baseType, VerificationType<TType> type)
+        {
+            // HACK because of the way interfaces references works, if baseType
+            // is an interface or array of interfaces, any reference will be accepted
+            if (!typeSystem.IsUnloadable(baseType) && !typeSystem.IsInterfaceOrInterfaceArray(baseType) && !(IsUnloadable(typeSystem, type) || IsAssignableTo(typeSystem, type, baseType)))
+                throw new VerifyException("Unexpected type " + type + " where " + typeSystem.GetName(baseType) + " was expected");
+
+            return type;
+        }
+
+        /// <summary>
+        /// Returns whether a value of the given type, which is null or an initialized reference, can be assigned to <paramref name="baseType"/>.
+        /// </summary>
+        /// <param name="typeSystem"></param>
+        /// <param name="type"></param>
+        /// <param name="baseType"></param>
+        /// <returns></returns>
+        static bool IsAssignableTo(TTypeSystem typeSystem, VerificationType<TType> type, TType baseType)
+        {
+            // verifier null can be assigned to anything
+            if (type.IsNull)
+                return true;
+
+            return type.IsReference && typeSystem.IsAssignableTo(type.Type, baseType);
+        }
+
+        /// <summary>
+        /// Returns whether the given type is a reference to an unloadable type.
+        /// </summary>
+        /// <param name="typeSystem"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        static bool IsUnloadable(TTypeSystem typeSystem, VerificationType<TType> type)
+        {
+            return type.IsReference && typeSystem.IsUnloadable(type.Type);
+        }
+
+        /// <summary>
+        /// Gets the verification type of a value of the given type: an int for every type that is an int on the stack,
+        /// null for the verifier's null type, and otherwise a reference.
+        /// </summary>
+        /// <param name="typeSystem"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException">The type is 'void', which no value has.</exception>
+        internal static VerificationType<TType> GetVerificationType(TTypeSystem typeSystem, TType type)
+        {
+            if (type == null)
+                throw new ArgumentNullException(nameof(type));
+
+            if (typeSystem.IsPrimitive(type))
+            {
+                if (type == typeSystem.TypeOfLong)
+                    return VerificationType<TType>.Long;
+                if (type == typeSystem.TypeOfFloat)
+                    return VerificationType<TType>.Float;
+                if (type == typeSystem.TypeOfDouble)
+                    return VerificationType<TType>.Double;
+                if (type == typeSystem.TypeOfVoid)
+                    throw new ArgumentException($"No value can have the type {typeSystem.GetName(type)}.", nameof(type));
+
+                // boolean, byte, char, short and int are all ints on the stack
+                return VerificationType<TType>.Int;
+            }
+
+            if (type == typeSystem.TypeOfVerifierNull)
+                return VerificationType<TType>.Null;
+
+            return VerificationType<TType>.Reference(type);
+        }
+
+        internal VerificationType<TType> PeekType()
+        {
+            if (_stackLen == 0)
+                throw new VerifyException("Unable to pop operand off an empty stack");
+
+            return _stack[_stackLen - 1];
+        }
+
+        internal void MultiPopAnyType(int count)
+        {
+            while (count-- != 0)
+                PopAnyType();
+        }
+
+        internal VerificationType<TType> PopFaultBlockException()
+        {
+            return _stack[--_stackLen];
+        }
+
+        internal VerificationType<TType> PopAnyType()
+        {
+            if (_stackLen == 0)
+                throw new VerifyException("Unable to pop operand off an empty stack");
+
+            var type = _stack[--_stackLen];
+            if (type.IsCategory2)
+                _stackEnd++;
+
+            return Unwrap(_typeSystem, _states, type);
+        }
+
+        /// <summary>
+        /// Returns the type of a value as it is once popped off the stack: 'this' becomes a plain reference, and a fault
+        /// block exception becomes a plain 'java.lang.Throwable', which means its handler is not a fault block.
+        /// </summary>
+        /// <param name="typeSystem"></param>
+        /// <param name="states"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        internal static VerificationType<TType> Unwrap(TTypeSystem typeSystem, InstructionState<TTypeSystem, TType, TMember, TField, TMethod>[] states, VerificationType<TType> type)
+        {
+            if (type.IsThis)
+                type = type.WithoutFlags();
+
+            if (type.IsFaultBlockException)
+            {
+                ClearFaultBlockException(states, type.Index);
+                type = VerificationType<TType>.Reference(typeSystem.TypeOfJavaLangThrowable);
+            }
+
+            return type;
+        }
+
+        // NOTE this can *not* be used to pop double or long
+        internal VerificationType<TType> PopType()
+        {
+            return PopTypeImpl(PopAnyType());
+        }
+
+        internal static VerificationType<TType> PopTypeImpl(VerificationType<TType> type)
+        {
+            if (type.IsCategory2)
+                throw new VerifyException("Attempt to split long or double on the stack");
+
+            return type;
+        }
+
+        // this will accept null, a primitive type of the specified type or an initialized reference of the
+        // specified type or derived from it
+        // NOTE this can also be used to pop double or long
+        internal VerificationType<TType> PopType(TType baseType)
+        {
+            return PopTypeImpl(_typeSystem, baseType, PopAnyType());
+        }
+
+        internal static VerificationType<TType> PopTypeImpl(TTypeSystem typeSystem, TType baseType, VerificationType<TType> type)
+        {
+            if (type.IsUninitialized)
+                throw new VerifyException("Expecting to find object/array on stack");
+
+            if (typeSystem.IsPrimitive(baseType))
+            {
+                // a float or double of extended precision is accepted where a plain one is expected
+                if (type.WithoutFlags() == GetVerificationType(typeSystem, baseType))
+                    return type;
+            }
+            else if (type.IsPrimitive == false)
+            {
+                if (type.IsReference && type.Type == baseType)
+                    return type;
+
+                if (baseType == typeSystem.TypeOfJavaLangObject)
+                    return type;
+
+                if (IsUnloadable(typeSystem, type) || typeSystem.IsUnloadable(baseType))
+                    return type;
+
+                // because of the way interfaces references works, if baseType
+                // is an interface or array of interfaces, any reference will be accepted
+                if (typeSystem.IsInterfaceOrInterfaceArray(baseType))
+                    return type;
+
+                if (IsAssignableTo(typeSystem, type, baseType))
+                    return type;
+
+                // the importer accepts a type whose hierarchy it cannot load, and reports the missing type
+                if (typeSystem.IsImporter && ((type.IsReference && typeSystem.HasUnloadableBaseType(type.Type)) || typeSystem.HasUnloadableBaseType(baseType)))
+                    return type;
+            }
+
+            throw new VerifyException("Unexpected type " + type + " where " + typeSystem.GetName(baseType) + " was expected");
+        }
+
+        internal int GetStackHeight()
+        {
+            return _stackLen;
+        }
+
+        /// <summary>
+        /// Gets the type at the given position from the top of the stack, without extended precision.
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <returns></returns>
+        internal VerificationType<TType> GetStackSlot(int pos)
+        {
+            var tw = _stack[_stackLen - 1 - pos];
+            if (tw.IsExtended)
+                tw = tw.WithoutFlags();
+
+            return tw;
+        }
+
+        internal VerificationType<TType> GetStackSlotEx(int pos)
+        {
+            return _stack[_stackLen - 1 - pos];
+        }
+
+        internal VerificationType<TType> GetStackByIndex(int index)
+        {
+            return _stack[index];
+        }
+
+        void PushHelper(VerificationType<TType> type)
+        {
+            if (type.IsCategory2)
+                _stackEnd--;
+
+            if (_stackLen >= _stackEnd)
+                throw new VerifyException("Stack overflow");
+
+            StackCopyOnWrite();
+            _stack[_stackLen++] = type;
+        }
+
+        internal void MarkInitialized(VerificationType<TType> type, VerificationType<TType> initType, int instructionIndex)
+        {
+            global::System.Diagnostics.Debug.Assert(type.IsUninitialized && initType.IsReference);
+
+            for (int i = 0; i < _locals.Length; i++)
+            {
+                if (_locals[i] == type)
+                {
+                    LocalsCopyOnWrite();
+                    _locals[i] = initType;
+                }
+            }
+
+            for (int i = 0; i < _stackLen; i++)
+            {
+                if (_stack[i] == type)
+                {
+                    StackCopyOnWrite();
+                    _stack[i] = initType;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Copies the stack for future modification.
+        /// </summary>
+        void StackCopyOnWrite()
+        {
+            if ((_flags & ShareFlags.Stack) != 0)
+            {
+                _flags &= ~ShareFlags.Stack;
+                _stack = (VerificationType<TType>[])_stack.Clone();
+            }
+        }
+
+        /// <summary>
+        /// Copies the locals for future modification.
+        /// </summary>
+        void LocalsCopyOnWrite()
+        {
+            if ((_flags & ShareFlags.Locals) != 0)
+            {
+                _flags &= ~ShareFlags.Locals;
+                _locals = (VerificationType<TType>[])_locals.Clone();
+            }
+        }
+
+        internal void ClearFaultBlockException()
+        {
+            if (_stack[0].IsFaultBlockException)
+            {
+                StackCopyOnWrite();
+                _changed = true;
+                _stack[0] = VerificationType<TType>.Reference(_typeSystem.TypeOfJavaLangThrowable);
+            }
+        }
+
+    }
+
+}

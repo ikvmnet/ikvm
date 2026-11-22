@@ -464,7 +464,7 @@ namespace IKVM.Tools.Importer
                     {
                         Diagnostics.IllegalAccessError(name, e.Message);
                     }
-                    catch (VerifyError e)
+                    catch (VerifyException e)
                     {
                         Diagnostics.VerificationError(name, e.Message);
                     }

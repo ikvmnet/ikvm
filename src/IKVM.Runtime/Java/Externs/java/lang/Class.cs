@@ -580,7 +580,7 @@ namespace IKVM.Java.Externs.java.lang
                 type.Finish();
 
                 if (type.HasVerifyError)
-                    throw new VerifyError();
+                    throw new IKVM.CoreLib.Linking.VerifyException();
 
                 if (type.HasClassFormatError)
                     throw new ClassFormatError(type.Name);
@@ -614,7 +614,7 @@ namespace IKVM.Java.Externs.java.lang
                 type.Finish();
 
                 if (type.HasVerifyError)
-                    throw new VerifyError();
+                    throw new IKVM.CoreLib.Linking.VerifyException();
 
                 if (type.HasClassFormatError)
                     throw new ClassFormatError(type.Name);
