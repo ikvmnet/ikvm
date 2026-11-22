@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
-using com.sun.tools.javac.util;
-
 using java.io;
 using java.lang;
 using java.util;
@@ -45,18 +43,40 @@ namespace IKVM.MSBuild.Tasks
             {
                 var kind = diagnostic.getKind();
                 var code = diagnostic.getCode();
-                var source = diagnostic.getSource() is DiagnosticSource f ? f.getFile().toUri().getPath() : null;
-                var startPosition = (int)diagnostic.getStartPosition();
-                var columnNumber = (int)diagnostic.getColumnNumber();
-                var endPosition = (int)diagnostic.getEndPosition();
+                var file = diagnostic.getSource() is JavaFileObject source ? GetPath(source) : null;
+                var line = ToMSBuildPosition(diagnostic.getLineNumber());
+                var column = ToMSBuildPosition(diagnostic.getColumnNumber());
                 var message = diagnostic.getMessage(Locale.getDefault()) ?? "unknown";
 
+                // javac gives the end of the range as a character offset, not a line, so it is reported as unknown
                 if (kind == Diagnostic.Kind.ERROR)
-                    log.LogError(null, code, null, source, startPosition, columnNumber, endPosition, -1, message);
+                    log.LogError(null, code, null, file, line, column, 0, 0, message);
                 else if (kind == Diagnostic.Kind.WARNING || kind == Diagnostic.Kind.MANDATORY_WARNING)
-                    log.LogWarning(null, code, null, source, startPosition, columnNumber, endPosition, -1, message);
+                    log.LogWarning(null, code, null, file, line, column, 0, 0, message);
                 else
-                    log.LogMessage(null, code, null, source, startPosition, columnNumber, endPosition, -1, MessageImportance.Normal, message);
+                    log.LogMessage(null, code, null, file, line, column, 0, 0, MessageImportance.Normal, message);
+            }
+
+            /// <summary>
+            /// Gets the path of a source file as a path of the host OS.
+            /// </summary>
+            /// <param name="source"></param>
+            /// <returns></returns>
+            static string GetPath(JavaFileObject source)
+            {
+                // the path of the URI itself would be "/C:/..." on Windows
+                var uri = source.toUri();
+                return uri != null && string.Equals(uri.getScheme(), "file", StringComparison.OrdinalIgnoreCase) ? new File(uri).getPath() : source.getName();
+            }
+
+            /// <summary>
+            /// Converts a javac line or column number to an MSBuild one: javac reports a missing position as -1, MSBuild as 0.
+            /// </summary>
+            /// <param name="position"></param>
+            /// <returns></returns>
+            static int ToMSBuildPosition(long position)
+            {
+                return position > 0 ? (int)position : 0;
             }
 
         }

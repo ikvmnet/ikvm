@@ -71,6 +71,33 @@ namespace IKVM.MSBuild.Tasks.Tests
             File.Exists(Path.Combine(headersDir, "ikvm_msbuild_tasks_tests_IkvmReferenceItemPrepareTests.h")).Should().BeTrue();
         }
 
+        [TestMethod]
+        public void ReportsErrorLocation()
+        {
+            var dir = Path.Combine(WorkRoot, "ReportsErrorLocation");
+            Directory.CreateDirectory(dir);
+
+            // line 3 is missing its semicolon, which javac reports just after the 1, in column 14
+            var source = Path.Combine(dir, "Broken.java");
+            File.WriteAllText(source, "class Broken\n{\n    int x = 1\n}\n");
+
+            var engine = new Mock<IBuildEngine3>();
+            var errors = new List<BuildErrorEventArgs>();
+            engine.Setup(x => x.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback((BuildErrorEventArgs e) => errors.Add(e));
+
+            var t = new IkvmJavaCompiler();
+            t.BuildEngine = engine.Object;
+            t.Sources = [new TaskItem(source)];
+            t.Destination = Path.Combine(dir, "classes");
+            t.Execute().Should().BeFalse();
+
+            errors.Should().ContainSingle();
+            errors[0].Code.Should().Be("compiler.err.expected");
+            errors[0].File.Should().Be(source);
+            errors[0].LineNumber.Should().Be(3);
+            errors[0].ColumnNumber.Should().Be(14);
+        }
+
     }
 
 }
